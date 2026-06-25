@@ -2939,7 +2939,7 @@ def render_qr_code_page() -> None:
     if not HAS_QRCODE or qrcode is None:
         st.warning("Le module `qrcode` n'est pas disponible dans cet environnement.")
         return
-    default_home_url = os.getenv("PORTFOLIO_APP_URL", "http://localhost:8501")
+    default_home_url = os.getenv("PORTFOLIO_APP_URL", "https://portfolio-cyriack.streamlit.app/")
     home_url = st.text_input(
         "URL de la page d'accueil de l'application",
         value=default_home_url,
@@ -2947,8 +2947,8 @@ def render_qr_code_page() -> None:
     ).strip()
     st.caption(
         "Cette URL est l'adresse que les utilisateurs ouvriront après scan du QR code. "
-        "Exemples: `http://localhost:8501` (en local sur votre machine), "
-        "`http://192.168.x.x:8501` (réseau local), ou URL publique de déploiement."
+        "Par défaut, elle pointe vers l'hébergement Streamlit Cloud public: "
+        "`https://portfolio-cyriack.streamlit.app/`."
     )
 
     if not home_url:
