@@ -2109,6 +2109,27 @@ def open_missing_values_management_from_sidebar(
     }
 
 
+def _render_html_fragment(html_content: object, *, height: int | None = None) -> None:
+    """Render trusted app-generated HTML without deprecated Streamlit components when possible."""
+    html_body = str(html_content or "")
+    if height is not None:
+        html_body = (
+            f'<div style="height:{int(height)}px; width:100%; overflow:auto;">'
+            f"{html_body}"
+            "</div>"
+        )
+
+    if hasattr(st, "html"):
+        try:
+            st.html(html_body, unsafe_allow_javascript=True)
+            return
+        except TypeError:
+            st.html(html_body)
+            return
+
+    components.html(str(html_content or ""), height=height)
+
+
 def _scroll_to_top_on_navigation(section: str, subpage: str) -> None:
     signature = f"{section}::{subpage}"
     previous = st.session_state.get("_last_navigation_signature")
@@ -2116,7 +2137,7 @@ def _scroll_to_top_on_navigation(section: str, subpage: str) -> None:
     if previous is None or previous == signature:
         return
 
-    components.html(
+    _render_html_fragment(
         """
         <script>
         (() => {
@@ -2149,7 +2170,6 @@ def _scroll_to_top_on_navigation(section: str, subpage: str) -> None:
         </script>
         """,
         height=0,
-        width=0,
     )
 
 
@@ -2984,7 +3004,7 @@ Ce sommaire couvre l'ensemble du portfolio. Cliquez sur une section pour y être
                     navigate_to(section, subpage)
 
     section_names = json.dumps(list(SECTIONS.keys()) + list(summary_section_labels.values()))
-    components.html(
+    _render_html_fragment(
         f"""
         <script>
         (function() {{
@@ -3052,7 +3072,6 @@ Ce sommaire couvre l'ensemble du portfolio. Cliquez sur une section pour y être
         </script>
         """,
         height=0,
-        width=0,
     )
 
 
@@ -13922,7 +13941,7 @@ def _scraping_preview_dataset(api_name: str, df: pd.DataFrame) -> None:
                     tooltip=str(row.get("city", row.get("name", row.get("station_id", api_name)))),
                 ).add_to(fmap)
             with c1:
-                st.components.v1.html(fmap._repr_html_(), height=360)
+                _render_html_fragment(fmap._repr_html_(), height=360)
     date_cols = [c for c in df.columns if pd.api.types.is_datetime64_any_dtype(df[c])]
     if date_cols and numeric_cols:
         dt = date_cols[0]
@@ -16117,7 +16136,7 @@ def _render_scraping_infrastructure() -> None:
     st.markdown("##### Carte des hébergeurs et localisations")
     _, map_col, _ = st.columns([0.18, 0.64, 0.18])
     with map_col:
-        st.components.v1.html(fmap._repr_html_(), height=480)
+        _render_html_fragment(fmap._repr_html_(), height=480)
 
 
 def _render_scraping_catalog() -> None:
@@ -16912,7 +16931,7 @@ def _render_adaptive_collected_data_views(df: pd.DataFrame, dataset_key: str, ap
             with col:
                 if isinstance(chart, folium.Map):
                     st.markdown(f"##### {title}")
-                    st.components.v1.html(chart._repr_html_(), height=390)
+                    _render_html_fragment(chart._repr_html_(), height=390)
                 else:
                     st.plotly_chart(chart, use_container_width=True)
 
@@ -18581,7 +18600,7 @@ def render_map(store_daily: pd.DataFrame) -> None:
         if not heat_values.empty and float(heat_values["w"].max()) > 0.0:
             HeatMap(heat_values[["lat", "lon", "w"]].values.tolist(), radius=22, blur=18).add_to(m)
 
-    st.components.v1.html(m._repr_html_(), height=580)
+    _render_html_fragment(m._repr_html_(), height=580)
 
     focus_options = store_agg["store_id"].dropna().sort_values().unique().tolist()
     if not focus_options:
@@ -21330,7 +21349,7 @@ L'objectif est d'identifier si la cible dépend de son **voisinage**, si les err
     lisa_html = _spatial_points_map_html(lisa_df, target_col, "store_id", cluster_col="lisa_cluster")
     if lisa_html:
         with use_block:
-            components.html(lisa_html, height=520)
+            _render_html_fragment(lisa_html, height=520)
 
     lm_show = lm_df.copy()
     lm_show["p-value"] = pd.to_numeric(lm_show["p-value"], errors="coerce").map(lambda v: "" if pd.isna(v) else f"{float(v):.4f}")
