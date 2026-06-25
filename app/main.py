@@ -49697,7 +49697,8 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                 _render_collapsible_dataframe("Détail simulation système EDO", sim, hide_index=True)
 
         elif family in {"EDP diffusion 1D", "EDP"}:
-            c1, c2 = st.columns([1.0, 1.25])
+            c1 = st.container()
+            c2 = st.container()
             with c1:
                 pde_applications = {
                     "Diffusion": "Applications: pollution, concentration, migration d'une grandeur dans l'espace.",
@@ -49718,13 +49719,16 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     pde_result = _render_pde_model(pde_model)
                 _render_physical_formula_panel(
                     formula_slot,
-                    title="Équations du modèle EDP",
+                    title="Formule",
                     equations=pde_result["equations"],
+                    solutions=[r"\mathrm{Solution\ approchée\ par\ discrétisation\ numérique\ du\ domaine.}"],
                     notes=pde_result["notes"],
+                    separate_sections=True,
                 )
             with c2:
                 pde_type = pde_result["type"]
                 pde_slug = _physical_slug(str(pde_model))
+                pde_figures: list[tuple[go.Figure, str]] = []
                 if pde_type in {"1d", "finance"}:
                     x = np.asarray(pde_result["x"], dtype=float)
                     times = np.asarray(pde_result["time"], dtype=float)
@@ -49738,15 +49742,14 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                         labels={"x": "Espace / sous-jacent", "y": "Temps", "color": pde_result["field_label"]},
                         title=f"Heatmap - {pde_model}",
                     )
-                    heat.update_layout(template="plotly_white")
-                    st.plotly_chart(heat, use_container_width=True, key=f"phys_pde_heat_{pde_slug}")
+                    heat.update_layout(template="plotly_white", height=360, margin=dict(l=10, r=10, t=50, b=10))
+                    pde_figures.append((heat, f"phys_pde_heat_{pde_slug}"))
                     idx_25 = max(0, min(len(times) - 1, int(len(times) * 0.25)))
                     idx_50 = max(0, min(len(times) - 1, int(len(times) * 0.50)))
                     profile_df = pd.DataFrame({"x": x, "t0": hist[0], "t25%": hist[idx_25], "t50%": hist[idx_50], "t100%": hist[-1]})
                     prof = px.line(profile_df, x="x", y=["t0", "t25%", "t50%", "t100%"], title="Profils à différents temps")
-                    prof.update_layout(template="plotly_white", legend_title_text="")
-                    st.plotly_chart(prof, use_container_width=True, key=f"phys_pde_profiles_{pde_slug}")
-                    pde_cols = st.columns(2)
+                    prof.update_layout(template="plotly_white", legend_title_text="", height=360, margin=dict(l=10, r=10, t=50, b=10))
+                    pde_figures.append((prof, f"phys_pde_profiles_{pde_slug}"))
                     contour = go.Figure(
                         go.Contour(
                             z=hist,
@@ -49765,7 +49768,7 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                         yaxis_title="Temps",
                         margin=dict(l=10, r=10, t=50, b=10),
                     )
-                    pde_cols[0].plotly_chart(contour, use_container_width=True, key=f"phys_pde_contour_{pde_slug}")
+                    pde_figures.append((contour, f"phys_pde_contour_{pde_slug}"))
                     if pde_type == "finance" and "aux" in pde_result:
                         aux = np.asarray(pde_result["aux"], dtype=float)
                         aux_fig = px.imshow(
@@ -49778,7 +49781,7 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                             title="Sensibilité Delta",
                         )
                         aux_fig.update_layout(template="plotly_white", height=360, margin=dict(l=10, r=10, t=50, b=10))
-                        pde_cols[1].plotly_chart(aux_fig, use_container_width=True, key=f"phys_pde_aux_{pde_slug}")
+                        pde_figures.append((aux_fig, f"phys_pde_aux_{pde_slug}"))
                     else:
                         dx = float(x[1] - x[0]) if len(x) > 1 else 1.0
                         mass = hist.sum(axis=1) * dx
@@ -49794,7 +49797,7 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                         )
                         diag_fig = px.line(diag_df, x="Temps", y=["Masse / énergie totale", "Gradient bord gauche", "Gradient bord droit"], title="Conservation et gradients aux bords")
                         diag_fig.update_layout(template="plotly_white", height=360, margin=dict(l=10, r=10, t=50, b=10), legend_title_text="")
-                        pde_cols[1].plotly_chart(diag_fig, use_container_width=True, key=f"phys_pde_mass_flux_{pde_slug}")
+                        pde_figures.append((diag_fig, f"phys_pde_mass_flux_{pde_slug}"))
                 else:
                     x = np.asarray(pde_result["x"], dtype=float)
                     y = np.asarray(pde_result["y"], dtype=float)
@@ -49809,13 +49812,12 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                         labels={"x": "x", "y": "y", "color": pde_result["field_label"]},
                         title=f"Champ final - {pde_model}",
                     )
-                    fig_final.update_layout(template="plotly_white")
-                    st.plotly_chart(fig_final, use_container_width=True, key=f"phys_pde_2d_field_{pde_slug}")
-                    c_left, c_right = st.columns(2)
+                    fig_final.update_layout(template="plotly_white", height=360, margin=dict(l=10, r=10, t=50, b=10))
+                    pde_figures.append((fig_final, f"phys_pde_2d_field_{pde_slug}"))
                     if pde_type == "vector2d":
                         aux_fig = px.imshow(aux, x=x, y=y, origin="lower", color_continuous_scale="RdBu", labels={"color": pde_result.get("aux_label", "Aux")}, title=pde_result.get("aux_label", "Champ auxiliaire"))
                         aux_fig.update_layout(template="plotly_white", height=360, margin=dict(l=10, r=10, t=50, b=10))
-                        c_left.plotly_chart(aux_fig, use_container_width=True, key=f"phys_pde_2d_aux_{pde_slug}")
+                        pde_figures.append((aux_fig, f"phys_pde_2d_aux_{pde_slug}"))
                         u = np.asarray(pde_result["u"], dtype=float)
                         v = np.asarray(pde_result["v"], dtype=float)
                         step = max(1, len(x) // 14)
@@ -49833,14 +49835,15 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                                     )
                                 )
                         qfig.update_layout(title="Champ vectoriel simplifié", template="plotly_white", height=360, margin=dict(l=10, r=10, t=50, b=10), xaxis=dict(range=[0, 1]), yaxis=dict(range=[0, 1], scaleanchor="x", scaleratio=1))
-                        c_right.plotly_chart(qfig, use_container_width=True, key=f"phys_pde_vector_{pde_slug}")
+                        pde_figures.append((qfig, f"phys_pde_vector_{pde_slug}"))
                     else:
                         aux_fig = px.imshow(aux, x=x, y=y, origin="lower", color_continuous_scale="Viridis", labels={"color": pde_result.get("aux_label", "Aux")}, title=pde_result.get("aux_label", "Champ auxiliaire"))
                         aux_fig.update_layout(template="plotly_white", height=360, margin=dict(l=10, r=10, t=50, b=10))
-                        c_left.plotly_chart(aux_fig, use_container_width=True, key=f"phys_pde_2d_aux_{pde_slug}")
+                        pde_figures.append((aux_fig, f"phys_pde_2d_aux_{pde_slug}"))
                         surf = go.Figure(go.Surface(x=x, y=y, z=field, colorscale="Viridis", showscale=False))
                         surf.update_layout(title="Surface 3D", template="plotly_white", height=360, margin=dict(l=10, r=10, t=50, b=10))
-                        c_right.plotly_chart(surf, use_container_width=True, key=f"phys_pde_2d_surface_{pde_slug}")
+                        pde_figures.append((surf, f"phys_pde_2d_surface_{pde_slug}"))
+                _render_plotly_grid(pde_figures)
                 summary_rows = [
                     ("Type", pde_type),
                     ("Modèle", pde_model),
@@ -49854,7 +49857,8 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                 )
 
         elif family == "Système discret et chaos":
-            c1, c2 = st.columns([1.0, 1.25])
+            c1 = st.container()
+            c2 = st.container()
             with c1:
                 disc_applications = {
                     "Population": "Applications: dynamique de population, stabilité, surcompensation, chaos discret.",
@@ -49873,18 +49877,21 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     discrete_result = _render_discrete_model(discrete_model)
                 _render_physical_formula_panel(
                     formula_slot,
-                    title="Équations du système discret",
+                    title="Formule",
                     equations=discrete_result["equations"],
+                    solutions=[r"x_{t+1}=f(x_t)\quad\mathrm{ou}\quad \mathbf{x}_{t+1}=F(\mathbf{x}_t)"],
                     notes=discrete_result["notes"],
+                    separate_sections=True,
                 )
             with c2:
                 sim = discrete_result["sim"]
                 y_cols = discrete_result["y_cols"]
                 dslug = _physical_slug(str(discrete_model))
+                discrete_figures: list[tuple[go.Figure, str]] = []
                 if y_cols:
                     fig = px.line(sim, x="t", y=y_cols, title=f"Séries discrètes - {discrete_model}")
-                    fig.update_layout(template="plotly_white", legend_title_text="", xaxis_title="Période")
-                    st.plotly_chart(fig, use_container_width=True, key=f"phys_discrete_series_{dslug}")
+                    fig.update_layout(template="plotly_white", legend_title_text="", xaxis_title="Période", height=360, margin=dict(l=10, r=10, t=50, b=10))
+                    discrete_figures.append((fig, f"phys_discrete_series_{dslug}"))
                 if discrete_result.get("cobweb"):
                     r_val = float(discrete_result["cobweb"]["r"])
                     x0 = float(discrete_result["cobweb"]["x0"])
@@ -49901,10 +49908,9 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     bif = pd.DataFrame(bif_rows)
                     bfig = px.scatter(bif, x="r", y="x", opacity=0.35, title="Diagramme de bifurcation", render_mode="webgl")
                     bfig.update_traces(marker=dict(size=2))
-                    bfig.update_layout(template="plotly_white")
-                    st.plotly_chart(bfig, use_container_width=True, key=f"phys_discrete_bif_{dslug}")
-                    chaos_cols = st.columns(2)
-                    chaos_cols[0].plotly_chart(_make_physical_cobweb(r_val, x0), use_container_width=True, key=f"phys_discrete_cobweb_{dslug}")
+                    bfig.update_layout(template="plotly_white", height=360, margin=dict(l=10, r=10, t=50, b=10))
+                    discrete_figures.append((bfig, f"phys_discrete_bif_{dslug}"))
+                    discrete_figures.append((_make_physical_cobweb(r_val, x0), f"phys_discrete_cobweb_{dslug}"))
                     lyap_values = []
                     xcur = x0
                     for i in range(max(120, len(sim))):
@@ -49913,18 +49919,6 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                             lyap_values.append(np.log(max(abs(r_val * (1 - 2 * xcur)), 1e-12)))
                     lyap = float(np.mean(lyap_values)) if lyap_values else float("nan")
                     regime = "chaotique probable" if np.isfinite(lyap) and lyap > 0 else "stable / périodique probable"
-                    try:
-                        chaos_box = chaos_cols[1].container(border=True)
-                    except TypeError:
-                        chaos_box = chaos_cols[1].container()
-                    chaos_box.markdown("**Diagnostic du régime**")
-                    _render_dataset_construction_stats(
-                        chaos_box,
-                        [("Lyapunov", f"{lyap:.4f}" if np.isfinite(lyap) else "n/a"), ("Régime", regime)],
-                        compact_values=True,
-                        value_font_size="1.0rem",
-                    )
-                    chaos_box.caption("Un exposant de Lyapunov positif indique une sensibilité aux conditions initiales.")
                 elif discrete_result.get("sankey"):
                     sk = discrete_result["sankey"]
                     sankey_fig = go.Figure(
@@ -49934,15 +49928,30 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                         )
                     )
                     sankey_fig.update_layout(title="Flux compartimentaux finaux", height=360, template="plotly_white")
-                    st.plotly_chart(sankey_fig, use_container_width=True, key=f"phys_discrete_sankey_{dslug}")
+                    discrete_figures.append((sankey_fig, f"phys_discrete_sankey_{dslug}"))
                 elif len(y_cols) >= 2:
                     phase = px.line(sim, x=y_cols[0], y=y_cols[1], title="Portrait discret")
-                    phase.update_layout(template="plotly_white", height=360)
-                    st.plotly_chart(phase, use_container_width=True, key=f"phys_discrete_phase_{dslug}")
+                    phase.update_layout(template="plotly_white", height=360, margin=dict(l=10, r=10, t=50, b=10))
+                    discrete_figures.append((phase, f"phys_discrete_phase_{dslug}"))
+                _render_plotly_grid(discrete_figures)
+                if discrete_result.get("cobweb"):
+                    try:
+                        chaos_box = st.container(border=True)
+                    except TypeError:
+                        chaos_box = st.container()
+                    chaos_box.markdown("**Diagnostic du régime**")
+                    _render_dataset_construction_stats(
+                        chaos_box,
+                        [("Lyapunov", f"{lyap:.4f}" if np.isfinite(lyap) else "n/a"), ("Régime", regime)],
+                        compact_values=True,
+                        value_font_size="1.0rem",
+                    )
+                    chaos_box.caption("Un exposant de Lyapunov positif indique une sensibilité aux conditions initiales.")
                 _render_collapsible_dataframe("Détail simulation système discret", sim, hide_index=True)
 
         elif family == "Chaos":
-            c1, c2 = st.columns([1.0, 1.25])
+            c1 = st.container()
+            c2 = st.container()
             with c1:
                 st.caption("Graphiques intégrés: attracteurs, bifurcations lorsque pertinent, et diagnostic Lyapunov.")
                 formula_slot = st.container()
@@ -49955,16 +49964,21 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     chaos_result = _render_chaos_model(chaos_model)
                 _render_physical_formula_panel(
                     formula_slot,
-                    title="Équations du système chaotique",
+                    title="Formule",
                     equations=chaos_result["equations"],
+                    solutions=[r"\mathrm{Trajectoire\ obtenue\ par\ itération\ ou\ intégration\ numérique.}"],
                     notes=chaos_result["notes"],
+                    separate_sections=True,
                 )
             with c2:
                 sim = chaos_result["sim"]
                 cslug = _physical_slug(str(chaos_model))
                 lyap = float(chaos_result.get("lyapunov", float("nan")))
+                chaos_figures: list[tuple[go.Figure, str]] = []
                 if chaos_result["type"] == "1d":
-                    st.plotly_chart(px.line(sim, x="t", y="x", title=f"Série chaotique - {chaos_model}").update_layout(template="plotly_white"), use_container_width=True, key=f"phys_chaos_series_{cslug}")
+                    series_fig = px.line(sim, x="t", y="x", title=f"Série chaotique - {chaos_model}")
+                    series_fig.update_layout(template="plotly_white", height=360, margin=dict(l=10, r=10, t=50, b=10))
+                    chaos_figures.append((series_fig, f"phys_chaos_series_{cslug}"))
                     bif_rows = []
                     for r in np.linspace(2.6, 4.0, 260):
                         xcur = 0.31
@@ -49978,24 +49992,19 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     bif = pd.DataFrame(bif_rows)
                     bfig = px.scatter(bif, x="r", y="x", opacity=0.35, title="Bifurcation - Logistic Map", render_mode="webgl")
                     bfig.update_traces(marker=dict(size=2))
-                    bfig.update_layout(template="plotly_white")
-                    st.plotly_chart(bfig, use_container_width=True, key=f"phys_chaos_bif_{cslug}")
+                    bfig.update_layout(template="plotly_white", height=360, margin=dict(l=10, r=10, t=50, b=10))
+                    chaos_figures.append((bfig, f"phys_chaos_bif_{cslug}"))
                     if chaos_result.get("cobweb"):
                         cob = chaos_result["cobweb"]
-                        chaos_cols = st.columns(2)
-                        chaos_cols[0].plotly_chart(_make_physical_cobweb(float(cob["r"]), float(cob["x0"])), use_container_width=True, key=f"phys_chaos_cobweb_{cslug}")
-                        target = chaos_cols[1]
-                    else:
-                        target = st
+                        chaos_figures.append((_make_physical_cobweb(float(cob["r"]), float(cob["x0"])), f"phys_chaos_cobweb_{cslug}"))
                 elif chaos_result["type"] == "2d":
                     fig = px.scatter(sim, x="x", y="y", opacity=0.52, title=f"Attracteur 2D - {chaos_model}", render_mode="webgl")
                     fig.update_traces(marker=dict(size=2))
-                    fig.update_layout(template="plotly_white", height=520, xaxis_title="x", yaxis_title="y")
-                    st.plotly_chart(fig, use_container_width=True, key=f"phys_chaos_attr2d_{cslug}")
+                    fig.update_layout(template="plotly_white", height=360, xaxis_title="x", yaxis_title="y", margin=dict(l=10, r=10, t=50, b=10))
+                    chaos_figures.append((fig, f"phys_chaos_attr2d_{cslug}"))
                     dens = _make_physical_phase_density(sim, "x", "y", title="Densité de l'attracteur")
                     if dens is not None:
-                        st.plotly_chart(dens, use_container_width=True, key=f"phys_chaos_density_{cslug}")
-                    target = st
+                        chaos_figures.append((dens, f"phys_chaos_density_{cslug}"))
                 else:
                     fig3d = go.Figure(
                         go.Scatter3d(
@@ -50007,21 +50016,20 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                             name=chaos_model,
                         )
                     )
-                    fig3d.update_layout(title=f"Attracteur 3D - {chaos_model}", template="plotly_white", height=560, margin=dict(l=0, r=0, t=50, b=0))
-                    st.plotly_chart(fig3d, use_container_width=True, key=f"phys_chaos_attr3d_{cslug}")
-                    proj_cols = st.columns(2)
+                    fig3d.update_layout(title=f"Attracteur 3D - {chaos_model}", template="plotly_white", height=420, margin=dict(l=0, r=0, t=50, b=0))
+                    chaos_figures.append((fig3d, f"phys_chaos_attr3d_{cslug}"))
                     proj_xy = px.line(sim, x="x", y="y", title="Projection x-y")
-                    proj_xy.update_layout(template="plotly_white", height=340)
-                    proj_cols[0].plotly_chart(proj_xy, use_container_width=True, key=f"phys_chaos_proj_xy_{cslug}")
+                    proj_xy.update_layout(template="plotly_white", height=360, margin=dict(l=10, r=10, t=50, b=10))
+                    chaos_figures.append((proj_xy, f"phys_chaos_proj_xy_{cslug}"))
                     proj_xz = px.line(sim, x="x", y="z", title="Projection x-z")
-                    proj_xz.update_layout(template="plotly_white", height=340)
-                    proj_cols[1].plotly_chart(proj_xz, use_container_width=True, key=f"phys_chaos_proj_xz_{cslug}")
-                    target = st
+                    proj_xz.update_layout(template="plotly_white", height=360, margin=dict(l=10, r=10, t=50, b=10))
+                    chaos_figures.append((proj_xz, f"phys_chaos_proj_xz_{cslug}"))
+                _render_plotly_grid(chaos_figures)
                 regime = "chaotique probable" if np.isfinite(lyap) and lyap > 0 else "stable / périodique probable"
                 try:
-                    chaos_box = target.container(border=True)
+                    chaos_box = st.container(border=True)
                 except TypeError:
-                    chaos_box = target.container()
+                    chaos_box = st.container()
                 chaos_box.markdown("**Diagnostic Lyapunov**")
                 _render_dataset_construction_stats(
                     chaos_box,
@@ -50036,7 +50044,8 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                 _render_collapsible_dataframe("Détail trajectoire chaotique", sim, hide_index=True)
 
         else:
-            c1, c2 = st.columns([1.0, 1.25])
+            c1 = st.container()
+            c2 = st.container()
             with c1:
                 stoch_applications = {
                     "Diffusion": "Applications: bruit continu, séries financières, signaux bruités, retour à la moyenne.",
@@ -50055,40 +50064,50 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     stoch_result = _render_stochastic_model(stoch_model)
                 _render_physical_formula_panel(
                     formula_slot,
-                    title="Équations / loi du processus",
+                    title="Formule",
                     equations=stoch_result["equations"],
+                    solutions=[r"\mathrm{Trajectoires\ simulées\ par\ Monte\ Carlo,\ discrétisation\ ou\ transitions\ markoviennes.}"],
                     notes=stoch_result["notes"],
+                    separate_sections=True,
                 )
             with c2:
                 paths = np.asarray(stoch_result["paths"], dtype=float)
                 fan = stoch_result["fan"]
                 sslug = _physical_slug(str(stoch_model))
+                stoch_figures: list[tuple[go.Figure, str]] = []
                 fig = go.Figure()
                 for j in range(min(18, int(paths.shape[1]))):
                     fig.add_trace(go.Scatter(x=np.arange(paths.shape[0]), y=paths[:, j], mode="lines", line=dict(width=1, color="rgba(70,130,180,0.25)"), showlegend=False))
                 fig.add_trace(go.Scatter(x=fan["t"], y=fan["q50"], mode="lines", name="Médiane", line=dict(color="#111827", width=2.5)))
-                fig.update_layout(title=f"Réalisations stochastiques - {stoch_model}", template="plotly_white", xaxis_title="Temps", yaxis_title="X")
-                st.plotly_chart(fig, use_container_width=True, key=f"phys_stoch_paths_{sslug}")
+                fig.update_layout(title=f"Réalisations stochastiques - {stoch_model}", template="plotly_white", xaxis_title="Temps", yaxis_title="X", height=360, margin=dict(l=10, r=10, t=50, b=10))
+                stoch_figures.append((fig, f"phys_stoch_paths_{sslug}"))
                 fan_fig = go.Figure()
                 fan_fig.add_trace(go.Scatter(x=fan["t"], y=fan["q95"], mode="lines", line=dict(width=0), showlegend=False))
                 fan_fig.add_trace(go.Scatter(x=fan["t"], y=fan["q05"], mode="lines", fill="tonexty", fillcolor="rgba(14,165,233,0.18)", line=dict(width=0), name="90%"))
                 fan_fig.add_trace(go.Scatter(x=fan["t"], y=fan["q75"], mode="lines", line=dict(width=0), showlegend=False))
                 fan_fig.add_trace(go.Scatter(x=fan["t"], y=fan["q25"], mode="lines", fill="tonexty", fillcolor="rgba(14,165,233,0.28)", line=dict(width=0), name="50%"))
                 fan_fig.add_trace(go.Scatter(x=fan["t"], y=fan["q50"], mode="lines", name="Médiane", line=dict(color="#0f172a", width=2)))
-                fan_fig.update_layout(title="Fan chart quantile", template="plotly_white")
-                st.plotly_chart(fan_fig, use_container_width=True, key=f"phys_stoch_fan_{sslug}")
-                dist_cols = st.columns([1.2, 0.8])
+                fan_fig.update_layout(title="Fan chart quantile", template="plotly_white", height=360, margin=dict(l=10, r=10, t=50, b=10))
+                stoch_figures.append((fan_fig, f"phys_stoch_fan_{sslug}"))
                 terminal = pd.DataFrame({"X final": paths[-1, :]})
                 hist_fig = px.histogram(terminal, x="X final", nbins=28, marginal="box", title="Distribution terminale des trajectoires")
                 hist_fig.update_layout(template="plotly_white", height=360, margin=dict(l=10, r=10, t=50, b=10))
-                dist_cols[0].plotly_chart(hist_fig, use_container_width=True, key=f"phys_stoch_terminal_distribution_{sslug}")
+                stoch_figures.append((hist_fig, f"phys_stoch_terminal_distribution_{sslug}"))
                 terminal_mean = float(np.mean(paths[-1, :]))
                 terminal_std = float(np.std(paths[-1, :], ddof=1)) if paths.shape[1] > 1 else 0.0
                 prob_above_median = float(np.mean(paths[-1, :] > np.median(paths[-1, :])))
+                if isinstance(stoch_result.get("extra"), pd.DataFrame) and not stoch_result["extra"].empty:
+                    extra_df = stoch_result["extra"].copy()
+                    if "t" in extra_df.columns:
+                        extra_y = [col for col in extra_df.columns if col != "t"]
+                        extra_fig = px.line(extra_df, x="t", y=extra_y, title="Indicateurs auxiliaires")
+                        extra_fig.update_layout(template="plotly_white", legend_title_text="", height=360, margin=dict(l=10, r=10, t=50, b=10))
+                        stoch_figures.append((extra_fig, f"phys_stoch_extra_{sslug}"))
+                _render_plotly_grid(stoch_figures)
                 try:
-                    dist_box = dist_cols[1].container(border=True)
+                    dist_box = st.container(border=True)
                 except TypeError:
-                    dist_box = dist_cols[1].container()
+                    dist_box = st.container()
                 dist_box.markdown("**Synthèse distributionnelle**")
                 _render_dataset_construction_stats(
                     dist_box,
@@ -50102,12 +50121,7 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                 )
                 if isinstance(stoch_result.get("extra"), pd.DataFrame) and not stoch_result["extra"].empty:
                     extra_df = stoch_result["extra"].copy()
-                    if "t" in extra_df.columns:
-                        extra_y = [col for col in extra_df.columns if col != "t"]
-                        extra_fig = px.line(extra_df, x="t", y=extra_y, title="Indicateurs auxiliaires")
-                        extra_fig.update_layout(template="plotly_white", legend_title_text="")
-                        st.plotly_chart(extra_fig, use_container_width=True, key=f"phys_stoch_extra_{sslug}")
-                    else:
+                    if "t" not in extra_df.columns:
                         st.dataframe(extra_df, use_container_width=True, hide_index=True, height=_table_height(len(extra_df), max_height=260))
 
         st.markdown("### Taxonomie")
