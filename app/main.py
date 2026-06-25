@@ -2941,15 +2941,10 @@ def render_qr_code_page() -> None:
         return
     default_home_url = os.getenv("PORTFOLIO_APP_URL", "https://portfolio-cyriack.streamlit.app/")
     home_url = st.text_input(
-        "URL de la page d'accueil de l'application",
+        "URL de la page d'accueil de l'application (hébergement Streamlit Cloud public)",
         value=default_home_url,
         key="portfolio_home_url",
     ).strip()
-    st.caption(
-        "Cette URL est l'adresse que les utilisateurs ouvriront après scan du QR code. "
-        "Par défaut, elle pointe vers l'hébergement Streamlit Cloud public: "
-        "`https://portfolio-cyriack.streamlit.app/`."
-    )
 
     if not home_url:
         st.info("Renseignez une URL pour générer le QR code.")
@@ -2969,13 +2964,16 @@ def render_qr_code_page() -> None:
     img.save(png_bytes, format="PNG")
     png_data = png_bytes.getvalue()
 
-    st.image(png_data, caption=f"QR code vers: {home_url}", width=280)
-    st.download_button(
-        "Télécharger le QR code (PNG)",
-        data=png_data,
-        file_name="portfolio_home_qr.png",
-        mime="image/png",
-    )
+    _, qr_col, _ = st.columns([1, 1, 1])
+    with qr_col:
+        st.image(png_data, caption="QR code", width=280)
+        st.download_button(
+            "Télécharger le QR code (PNG)",
+            data=png_data,
+            file_name="portfolio_home_qr.png",
+            mime="image/png",
+            use_container_width=True,
+        )
 
 
 def render_summary() -> None:
