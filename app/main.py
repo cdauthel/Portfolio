@@ -17240,7 +17240,7 @@ def _assistant_provider_profiles() -> pd.DataFrame:
                 "Mode": "Cloud",
                 "Endpoint défaut": "https://ollama.com/api/chat",
                 "Endpoints alternatifs": "https://ollama.com/api/chat | https://ollama.com/v1/chat/completions",
-                "Modèles suggérés": "gpt-oss:20b, gpt-oss:120b, qwen3:8b-cloud, glm-4.7:cloud, minimax-m2.1:cloud",
+                "Modèles suggérés": "gpt-oss:120b, gpt-oss:20b, qwen3:8b-cloud, glm-4.7:cloud, minimax-m2.1:cloud",
                 "Compatibilité": "API native + OpenAI-compatible",
                 "Usage recommandé": "Déploiement Streamlit Cloud avec clé API Ollama dans st.secrets.",
             },
@@ -17866,18 +17866,26 @@ div[data-testid="stChatInput"] {
     bottom: .35rem;
     z-index: 40;
     padding: .35rem 0 0 0;
-    background: transparent !important;
+    background: rgba(248, 250, 252, .96) !important;
+    border-radius: 12px !important;
 }
 div[data-testid="stChatInput"] > div,
 div[data-testid="stChatInput"] section,
 div[data-testid="stChatInput"] form {
-    background: transparent !important;
+    background: rgba(248, 250, 252, .96) !important;
     padding-bottom: 0 !important;
     margin-bottom: 0 !important;
+    border-radius: 12px !important;
+    box-shadow: none !important;
 }
 div[data-testid="stChatInput"] textarea {
     min-height: 46px !important;
-    background: #f9fafb !important;
+    background: #f3f4f6 !important;
+    border: 1px solid rgba(107,114,128,.22) !important;
+    box-shadow: none !important;
+}
+div[data-testid="stChatInput"] [data-baseweb="textarea"] {
+    background: #f3f4f6 !important;
 }
 div[data-testid="stChatInput"] button {
     border-radius: 999px !important;
@@ -18028,13 +18036,14 @@ def _render_ai_chatbot_rag(data: dict[str, pd.DataFrame]) -> None:
     except TypeError:
         cfg = st.container()
     cfg.markdown("#### Configuration automatisée")
-    c1, c2, c3 = cfg.columns([1.05, 1.7, 1.15])
+    c1, c2 = cfg.columns([1.05, 2.85])
     provider_options = provider_df["Fournisseur"].tolist()
-    default_provider = config.get("AI_PROVIDER", "Ollama")
+    default_provider = config.get("AI_PROVIDER", "Ollama Cloud")
     if default_provider not in provider_options:
         default_provider = "Endpoint compatible"
     with c1:
         provider = st.selectbox("Fournisseur LLM", provider_options, index=provider_options.index(default_provider), key="ai_provider")
+    api_key = config.get("AI_API_KEY", "")
     endpoint_options = _assistant_endpoint_candidates(provider, config)
     provider_slug = re.sub(r"\W+", "_", provider.lower()).strip("_")
     configured_for_provider = config.get("AI_PROVIDER", provider) == provider
@@ -18059,11 +18068,9 @@ def _render_ai_chatbot_rag(data: dict[str, pd.DataFrame]) -> None:
             base_url = st.text_input("Endpoint personnalisé", value=config.get("AI_BASE_URL", ""), key=f"ai_base_url_custom_{provider_slug}")
         else:
             base_url = endpoint_choice
-    with c3:
-        api_key = st.text_input("Clé API / token", value=config.get("AI_API_KEY", ""), type="password", key="ai_api_key")
     docs = _build_assistant_rag_documents(data)
     rag_docs_count = max(1, len(docs))
-    current_mode = st.session_state.get("ai_mode", "Chatbot")
+    current_mode = st.session_state.get("ai_mode", "LLM + RAG")
     if current_mode == "LLM seul":
         current_mode = "Chatbot"
         st.session_state["ai_mode"] = "Chatbot"
@@ -18075,7 +18082,7 @@ def _render_ai_chatbot_rag(data: dict[str, pd.DataFrame]) -> None:
     with d1:
         mode_options = ["Chatbot", "LLM + RAG"]
         if st.session_state.get("ai_mode") not in mode_options:
-            st.session_state["ai_mode"] = "Chatbot"
+            st.session_state["ai_mode"] = "LLM + RAG"
         mode = st.selectbox(
             "Mode",
             mode_options,
@@ -18133,7 +18140,14 @@ def _render_ai_chatbot_rag(data: dict[str, pd.DataFrame]) -> None:
     else:
         configured_model = config.get("AI_MODEL") if configured_for_provider and config.get("AI_MODEL") else ""
         model_options = [configured_model or "Modèle personnalisé"]
-    default_model = model_options[0]
+    configured_model = config.get("AI_MODEL") if configured_for_provider and config.get("AI_MODEL") else ""
+    preferred_cloud_model = "gpt-oss:120b"
+    if configured_model and configured_model in model_options:
+        default_model = configured_model
+    elif provider == "Ollama Cloud" and preferred_cloud_model in model_options:
+        default_model = preferred_cloud_model
+    else:
+        default_model = model_options[0]
     model_key = f"ai_model_choice_{provider_slug}"
     if st.session_state.get(model_key) not in model_options:
         st.session_state[model_key] = default_model
@@ -18152,7 +18166,7 @@ def _render_ai_chatbot_rag(data: dict[str, pd.DataFrame]) -> None:
             model = st.text_input("Nom du modèle personnalisé", value=config.get("AI_MODEL", ""), key=f"ai_model_custom_{provider_slug}")
     else:
         model = model_choice
-    if provider == "Ollama Cloud":
+    if provider == "Ollama Cloud" and model != preferred_cloud_model:
         cfg.info(
             "Conseil: privilégier `gpt-oss:120b` avec Ollama Cloud pour cette app. C'est l'un des meilleurs compromis disponibles ici entre vitesse d'exécution, temps de calcul et d'affichage du résultat, et qualité de réponse."
         )
