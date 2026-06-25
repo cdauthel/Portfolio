@@ -1,0 +1,46 @@
+{
+  "storage_policy": {
+    "ollama_project_cache": "models/llm/ollama",
+    "git_policy": "Les poids LLM sont ignorés par Git. Le projet conserve le manifeste, les connecteurs et les scripts, pas les binaires multi-Go.",
+    "sharing_policy": "Pour une app publique, privilégier un endpoint cloud/proxy ou Ollama Cloud. Pour une démo locale, l'app peut lancer le runtime et télécharger le modèle sur la machine."
+  },
+  "recommended_models": [
+    {
+      "provider": "Ollama",
+      "model": "llama3.2",
+      "purpose": "Assistant général local pour réponses portfolio et RAG.",
+      "download": "ollama pull llama3.2"
+    },
+    {
+      "provider": "Ollama",
+      "model": "qwen3:8b",
+      "purpose": "Raisonnement, code et explications techniques plus solides si la machine le permet.",
+      "download": "ollama pull qwen3:8b"
+    },
+    {
+      "provider": "Ollama",
+      "model": "mistral",
+      "purpose": "Modèle généraliste léger et robuste pour questions métier.",
+      "download": "ollama pull mistral"
+    },
+    {
+      "provider": "Jan.ai",
+      "model": "Jan-v3-4B",
+      "purpose": "Modèle local compact pour assistant général.",
+      "download": "Téléchargement depuis le Hub Jan Desktop"
+    },
+    {
+      "provider": "Jan.ai",
+      "model": "Jan-Code-4B",
+      "purpose": "Aide code, debug et explication technique.",
+      "download": "Téléchargement depuis le Hub Jan Desktop"
+    },
+    {
+      "provider": "LM Studio",
+      "model": "Modèle GGUF compatible machine",
+      "purpose": "Runtime local ergonomique; modèle selon matériel disponible.",
+      "download": "Téléchargement depuis le catalogue LM Studio"
+    }
+  ]
+}
+

@@ -1,0 +1,46 @@
+# Configuration locale Assistant IA
+#
+# Copiez ce fichier vers:
+#   secrets/assistant_ia.local.txt
+#
+# Le fichier dans `secrets/` est ignoré par Git. Ne publiez jamais une vraie clé API
+# dans le dépôt public. Les valeurs ci-dessous sont des exemples à remplacer.
+
+# Fournisseur: Ollama | Jan.ai | LM Studio | Endpoint compatible
+AI_PROVIDER=Ollama
+
+# Ollama natif:
+AI_BASE_URL=http://localhost:11434/api/chat
+AI_MODEL=llama3.2
+
+# Ollama cloud:
+# AI_PROVIDER=Ollama
+# AI_BASE_URL=https://ollama.com/api/chat
+# AI_MODEL=gpt-oss:120b
+# AI_API_KEY=coller_la_cle_ollama_cloud_ici_uniquement_dans_le_fichier_local
+
+# Jan.ai OpenAI-compatible:
+# AI_PROVIDER=Jan.ai
+# AI_BASE_URL=http://127.0.0.1:1337/v1/chat/completions
+# AI_MODEL=YOUR_MODEL_ID
+# AI_API_KEY=secret-key-123
+
+# LM Studio OpenAI-compatible:
+# AI_PROVIDER=LM Studio
+# AI_BASE_URL=http://localhost:1234/v1/chat/completions
+# AI_MODEL=openai/gpt-oss-20b
+# AI_API_KEY=
+
+# Endpoint cloud/proxy OpenAI-compatible:
+# AI_PROVIDER=Endpoint compatible
+# AI_BASE_URL=https://votre-proxy.example.com/v1/chat/completions
+# AI_MODEL=modele_deploye
+# AI_API_KEY=cle_cote_proxy_ou_token_local
+
+# Paramètres d'exécution
+AI_TEMPERATURE=0.2
+AI_TIMEOUT=40
+
+# Option pour ChatMD ou accès recruteur.
+# Le mot de passe ne doit pas être exposé dans un fichier public.
+AI_PASSWORD=mot_de_passe_local_a_remplacer
