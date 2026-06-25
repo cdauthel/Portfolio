@@ -2459,14 +2459,21 @@ def render_profile_cv() -> None:
         "ambitieuse où la donnée est un moteur stratégique."
     )
     root = Path(__file__).resolve().parents[1]
+    cv_dir = root / "assets" / "cv"
 
     image_candidates = [
+        cv_dir / "CV_Dauthel_Cyriack.png",
+        cv_dir / "CV_Dauthel_Cyriack.jpg",
+        cv_dir / "CV_Cyriack_Dauthel.png",
+        cv_dir / "CV_Cyriack_Dauthel.jpg",
         root / "CV_Cyriack_Dauthel.jpeg",
         root / "CV_Cyriack_Dauthel.jpg",
         root / "CV_Dauthel_Cyriack.jpeg",
         root / "CV_Dauthel_Cyriack.jpg",
     ]
     pdf_candidates = [
+        cv_dir / "CV_Dauthel_Cyriack.pdf",
+        cv_dir / "CV_Cyriack_Dauthel.pdf",
         root / "CV_Cyriack_Dauthel.pdf",
         root / "CV_Dauthel_Cyriack.pdf",
     ]
@@ -2478,7 +2485,7 @@ def render_profile_cv() -> None:
         if cv_image:
             st.image(str(cv_image), caption="CV - aperçu", use_container_width=True)
         else:
-            st.warning("Image du CV introuvable à la racine du projet.")
+            st.warning("Image du CV introuvable dans `assets/cv/`.")
         st.markdown("### Aujourd'hui je me forme à...")
         st.markdown(
             """
@@ -2533,7 +2540,7 @@ def render_profile_cv() -> None:
                 use_container_width=True,
             )
         else:
-            st.warning("PDF du CV introuvable à la racine du projet.")
+            st.warning("PDF du CV introuvable dans `assets/cv/`.")
 
 
 def render_book_detailed() -> None:

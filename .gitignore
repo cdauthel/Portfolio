@@ -116,6 +116,11 @@ CV_*.png
 *Dauthel_Cyriack*.doc*
 *Dauthel_Cyriack*.pdf
 !docs/assistant_rag/identity_and_audience.md
+!assets/
+!assets/cv/
+!assets/cv/CV_Dauthel_Cyriack.pdf
+!assets/cv/CV_Dauthel_Cyriack.jpg
+!assets/cv/CV_Dauthel_Cyriack.png
 ~$*
 
 # Local screenshots / working media
