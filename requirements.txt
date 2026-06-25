@@ -29,6 +29,8 @@ xgboost>=2.1,<4
 lightgbm>=4.5,<5
 catboost>=1.2,<2
 shap>=0.46,<1
+numba>=0.60,<0.66
+llvmlite>=0.43,<0.48
 
 # --- Geospatial analytics ---
 geopandas>=1.0,<2
