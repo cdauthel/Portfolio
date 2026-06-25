@@ -47783,7 +47783,7 @@ def _render_named_ode_system_model(model: str, t_max: float) -> dict[str, Any]:
         force_freq = 1.0
         if model == "Oscillateur forcé":
             force_amp = _physical_slider("Force F", 0.0, 20.0, 1.8, 0.1, f"phys_named_{slug}_force", parent=c_f)
-            force_freq = _physical_slider("Fréquence ω", 0.05, 5.0, 0.9, 0.05, f"phys_named_{slug}_omega")
+            force_freq = _physical_slider("Fréquence ω", 0.05, 5.0, 0.9, 0.05, f"phys_named_{slug}_omega", parent=c_f)
 
         def rhs(_t: float, state: np.ndarray) -> list[float]:
             x, v = state
@@ -47851,7 +47851,8 @@ def _render_named_ode_system_model(model: str, t_max: float) -> dict[str, Any]:
         mass = _physical_slider("Masse commune", 0.2, 8.0, 1.0, 0.1, f"phys_named_{slug}_mass", parent=c_a)
         k_wall = _physical_slider("Raideur mur", 0.0, 12.0, 1.0, 0.1, f"phys_named_{slug}_kwall", parent=c_b)
         k_link = _physical_slider("Raideur couplage", 0.0, 12.0, 1.8, 0.1, f"phys_named_{slug}_klink", parent=c_c)
-        damping = _physical_slider("Amortissement", 0.0, 3.0, 0.10, 0.02, f"phys_named_{slug}_damping")
+        c_d, _, _ = st.columns(3)
+        damping = _physical_slider("Amortissement", 0.0, 3.0, 0.10, 0.02, f"phys_named_{slug}_damping", parent=c_d)
         y0 = []
         for idx in range(n_mass):
             y0.extend([1.0 if idx == 0 else 0.0, 0.0])
@@ -47903,8 +47904,9 @@ def _render_named_ode_system_model(model: str, t_max: float) -> dict[str, Any]:
             y_cols, phase_x, phase_y = ["Courant", "Tension R"], "Courant", "Tension R"
         else:
             cap = _physical_slider("Capacité C", 0.05, 20.0, 1.0, 0.05, f"phys_named_{slug}_c", parent=c_c)
-            inductance = _physical_slider("Inductance L", 0.05, 20.0, 1.2, 0.05, f"phys_named_{slug}_l")
-            omega = _physical_slider("Fréquence forçage", 0.05, 6.0, 0.9, 0.05, f"phys_named_{slug}_omega") if model == "Circuit RLC forcé" else 0.0
+            c_d, c_e, _ = st.columns(3)
+            inductance = _physical_slider("Inductance L", 0.05, 20.0, 1.2, 0.05, f"phys_named_{slug}_l", parent=c_d)
+            omega = _physical_slider("Fréquence forçage", 0.05, 6.0, 0.9, 0.05, f"phys_named_{slug}_omega", parent=c_e) if model == "Circuit RLC forcé" else 0.0
 
             def rhs(_t: float, state: np.ndarray) -> list[float]:
                 q, current = state
@@ -47922,11 +47924,12 @@ def _render_named_ode_system_model(model: str, t_max: float) -> dict[str, Any]:
         r1 = _physical_slider("Taux espèce 1", 0.05, 2.0, 0.75, 0.05, f"phys_named_{slug}_r1", parent=c_a)
         r2 = _physical_slider("Taux espèce 2", 0.05, 2.0, 0.55, 0.05, f"phys_named_{slug}_r2", parent=c_b)
         interaction = _physical_slider("Interaction", 0.001, 0.25, 0.045, 0.002, f"phys_named_{slug}_interaction", parent=c_c)
-        x0 = _physical_slider("Population 1 initiale", 1.0, 200.0, 42.0, 1.0, f"phys_named_{slug}_x0")
-        y0_pop = _physical_slider("Population 2 initiale", 1.0, 200.0, 14.0, 1.0, f"phys_named_{slug}_y0")
+        c_d, c_e, c_f = st.columns(3)
+        x0 = _physical_slider("Population 1 initiale", 1.0, 200.0, 42.0, 1.0, f"phys_named_{slug}_x0", parent=c_d)
+        y0_pop = _physical_slider("Population 2 initiale", 1.0, 200.0, 14.0, 1.0, f"phys_named_{slug}_y0", parent=c_e)
         if model == "Lotka-Volterra":
             beta = interaction
-            delta = _physical_slider("Conversion δ", 0.001, 0.20, 0.035, 0.002, f"phys_named_{slug}_delta")
+            delta = _physical_slider("Conversion δ", 0.001, 0.20, 0.035, 0.002, f"phys_named_{slug}_delta", parent=c_f)
 
             def rhs(_t: float, state: np.ndarray) -> list[float]:
                 x, y = np.maximum(state, 1e-9)
@@ -47935,9 +47938,10 @@ def _render_named_ode_system_model(model: str, t_max: float) -> dict[str, Any]:
             equations = [r"\dot{x}=\alpha x-\beta xy", r"\dot{y}=\delta xy-\gamma y"]
             system_extra = {"type": "lotka", "alpha": r1, "beta": beta, "delta": delta, "gamma": r2}
         elif model == "Prédateur-proie avec saturation":
-            handling = _physical_slider("Saturation h", 0.001, 0.20, 0.025, 0.002, f"phys_named_{slug}_h")
-            cap = _physical_slider("Capacité proies K", 20.0, 500.0, 180.0, 5.0, f"phys_named_{slug}_k")
-            delta = _physical_slider("Conversion δ", 0.001, 0.20, 0.035, 0.002, f"phys_named_{slug}_delta")
+            handling = _physical_slider("Saturation h", 0.001, 0.20, 0.025, 0.002, f"phys_named_{slug}_h", parent=c_f)
+            c_g, c_h, _ = st.columns(3)
+            cap = _physical_slider("Capacité proies K", 20.0, 500.0, 180.0, 5.0, f"phys_named_{slug}_k", parent=c_g)
+            delta = _physical_slider("Conversion δ", 0.001, 0.20, 0.035, 0.002, f"phys_named_{slug}_delta", parent=c_h)
 
             def rhs(_t: float, state: np.ndarray) -> list[float]:
                 x, y = np.maximum(state, 1e-9)
@@ -47946,8 +47950,9 @@ def _render_named_ode_system_model(model: str, t_max: float) -> dict[str, Any]:
 
             equations = [r"\dot{x}=\alpha x(1-x/K)-\frac{\beta xy}{1+hx}", r"\dot{y}=\delta\frac{\beta xy}{1+hx}-\gamma y"]
         elif model == "Compétition de populations":
-            cap1 = _physical_slider("Capacité K1", 20.0, 500.0, 180.0, 5.0, f"phys_named_{slug}_k1")
-            cap2 = _physical_slider("Capacité K2", 20.0, 500.0, 160.0, 5.0, f"phys_named_{slug}_k2")
+            cap1 = _physical_slider("Capacité K1", 20.0, 500.0, 180.0, 5.0, f"phys_named_{slug}_k1", parent=c_f)
+            c_g, _, _ = st.columns(3)
+            cap2 = _physical_slider("Capacité K2", 20.0, 500.0, 160.0, 5.0, f"phys_named_{slug}_k2", parent=c_g)
 
             def rhs(_t: float, state: np.ndarray) -> list[float]:
                 x, y = np.maximum(state, 1e-9)
@@ -47955,8 +47960,9 @@ def _render_named_ode_system_model(model: str, t_max: float) -> dict[str, Any]:
 
             equations = [r"\dot{x}=r_1x\left(1-\frac{x+\alpha_{12}y}{K_1}\right)", r"\dot{y}=r_2y\left(1-\frac{y+\alpha_{21}x}{K_2}\right)"]
         elif model == "Mutualisme":
-            cap1 = _physical_slider("Capacité K1", 20.0, 500.0, 180.0, 5.0, f"phys_named_{slug}_k1")
-            cap2 = _physical_slider("Capacité K2", 20.0, 500.0, 160.0, 5.0, f"phys_named_{slug}_k2")
+            cap1 = _physical_slider("Capacité K1", 20.0, 500.0, 180.0, 5.0, f"phys_named_{slug}_k1", parent=c_f)
+            c_g, _, _ = st.columns(3)
+            cap2 = _physical_slider("Capacité K2", 20.0, 500.0, 160.0, 5.0, f"phys_named_{slug}_k2", parent=c_g)
 
             def rhs(_t: float, state: np.ndarray) -> list[float]:
                 x, y = np.maximum(state, 1e-9)
@@ -47964,8 +47970,9 @@ def _render_named_ode_system_model(model: str, t_max: float) -> dict[str, Any]:
 
             equations = [r"\dot{x}=r_1x(1-x/K_1+m_{12}y/(1+y))", r"\dot{y}=r_2y(1-y/K_2+m_{21}x/(1+x))"]
         else:
-            migration = _physical_slider("Migration", 0.0, 0.40, 0.08, 0.01, f"phys_named_{slug}_migration")
-            cap = _physical_slider("Capacité patch", 20.0, 500.0, 120.0, 5.0, f"phys_named_{slug}_cap")
+            migration = _physical_slider("Migration", 0.0, 0.40, 0.08, 0.01, f"phys_named_{slug}_migration", parent=c_f)
+            c_g, _, _ = st.columns(3)
+            cap = _physical_slider("Capacité patch", 20.0, 500.0, 120.0, 5.0, f"phys_named_{slug}_cap", parent=c_g)
 
             def rhs(_t: float, state: np.ndarray) -> list[float]:
                 p1, p2, p3 = np.maximum(state, 1e-9)
@@ -48066,8 +48073,9 @@ def _render_named_ode_system_model(model: str, t_max: float) -> dict[str, Any]:
             a11 = _physical_slider("a11", -2.0, 2.0, -0.20, 0.05, f"phys_named_{slug}_a11", parent=c_a)
             a12 = _physical_slider("a12", -2.0, 2.0, 0.80, 0.05, f"phys_named_{slug}_a12", parent=c_b)
             a21 = _physical_slider("a21", -2.0, 2.0, -0.65, 0.05, f"phys_named_{slug}_a21", parent=c_c)
-            a22 = _physical_slider("a22", -2.0, 2.0, -0.25, 0.05, f"phys_named_{slug}_a22")
-            u = _physical_slider("Entrée u", -5.0, 5.0, 1.0, 0.1, f"phys_named_{slug}_u")
+            c_d, c_e, _ = st.columns(3)
+            a22 = _physical_slider("a22", -2.0, 2.0, -0.25, 0.05, f"phys_named_{slug}_a22", parent=c_d)
+            u = _physical_slider("Entrée u", -5.0, 5.0, 1.0, 0.1, f"phys_named_{slug}_u", parent=c_e)
 
             def rhs(_t: float, state: np.ndarray) -> list[float]:
                 x1, x2 = state
@@ -48079,7 +48087,8 @@ def _render_named_ode_system_model(model: str, t_max: float) -> dict[str, Any]:
             kp = _physical_slider("Kp", 0.0, 20.0, 3.0, 0.1, f"phys_named_{slug}_kp", parent=c_a)
             ki = _physical_slider("Ki", 0.0, 10.0, 0.7, 0.05, f"phys_named_{slug}_ki", parent=c_b)
             kd = _physical_slider("Kd", 0.0, 10.0, 0.35, 0.05, f"phys_named_{slug}_kd", parent=c_c)
-            setpoint = _physical_slider("Consigne", -5.0, 5.0, 1.0, 0.1, f"phys_named_{slug}_setpoint")
+            c_d, _, _ = st.columns(3)
+            setpoint = _physical_slider("Consigne", -5.0, 5.0, 1.0, 0.1, f"phys_named_{slug}_setpoint", parent=c_d)
 
             def rhs(_t: float, state: np.ndarray) -> list[float]:
                 y, v, integ = state
@@ -48107,7 +48116,8 @@ def _render_named_ode_system_model(model: str, t_max: float) -> dict[str, Any]:
 
 def _render_discrete_model(model: str) -> dict[str, Any]:
     slug = _physical_slug(model)
-    n_steps = int(st.slider("Périodes", 30, 500, 160, 10, key=f"phys_disc_{slug}_steps"))
+    step_cols = st.columns(3)
+    n_steps = int(step_cols[0].slider("Périodes", 30, 500, 160, 10, key=f"phys_disc_{slug}_steps"))
     rows: list[dict[str, float | int]] = []
     equations: list[str] = []
     notes: list[str] = []
@@ -48157,7 +48167,8 @@ def _render_discrete_model(model: str) -> dict[str, Any]:
         price = _physical_slider("Prix initial", 1.0, 200.0, 80.0, 1.0, f"phys_disc_{slug}_price", parent=c1)
         adjustment = _physical_slider("Vitesse ajustement", 0.01, 1.50, 0.35, 0.01, f"phys_disc_{slug}_adj", parent=c2)
         demand_slope = _physical_slider("Sensibilité demande", 0.05, 3.0, 0.55, 0.05, f"phys_disc_{slug}_ds", parent=c3)
-        supply_slope = _physical_slider("Sensibilité offre", 0.05, 3.0, 0.38, 0.05, f"phys_disc_{slug}_ss")
+        c4, _, _ = st.columns(3)
+        supply_slope = _physical_slider("Sensibilité offre", 0.05, 3.0, 0.38, 0.05, f"phys_disc_{slug}_ss", parent=c4)
         expected = price
         for t in range(n_steps):
             demand = max(160.0 - demand_slope * price, 0.0)
@@ -48181,10 +48192,12 @@ def _render_discrete_model(model: str) -> dict[str, Any]:
         population = _physical_slider("Population", 1000.0, 1000000.0, 100000.0, 1000.0, f"phys_disc_{slug}_pop", parent=c1)
         beta = _physical_slider("Transmission β", 0.01, 1.50, 0.28, 0.01, f"phys_disc_{slug}_beta", parent=c2)
         gamma = _physical_slider("Guérison γ", 0.01, 0.80, 0.10, 0.01, f"phys_disc_{slug}_gamma", parent=c3)
-        exposed_rate = _physical_slider("Incubation σ", 0.01, 0.80, 0.18, 0.01, f"phys_disc_{slug}_sigma") if "SE" in model else 0.0
-        death_rate = _physical_slider("Mortalité μ", 0.0, 0.20, 0.012, 0.002, f"phys_disc_{slug}_mu") if model in {"SIRD discret", "SEIHRD hospitalier"} else 0.0
-        hospital_rate = _physical_slider("Hospitalisation h", 0.0, 0.40, 0.06, 0.005, f"phys_disc_{slug}_hosp") if model == "SEIHRD hospitalier" else 0.0
-        waning = _physical_slider("Perte immunité ω", 0.0, 0.30, 0.045, 0.005, f"phys_disc_{slug}_waning") if model == "SIS discret" else 0.0
+        c4, c5, c6 = st.columns(3)
+        exposed_rate = _physical_slider("Incubation σ", 0.01, 0.80, 0.18, 0.01, f"phys_disc_{slug}_sigma", parent=c4) if "SE" in model else 0.0
+        death_rate = _physical_slider("Mortalité μ", 0.0, 0.20, 0.012, 0.002, f"phys_disc_{slug}_mu", parent=c5) if model in {"SIRD discret", "SEIHRD hospitalier"} else 0.0
+        hospital_rate = _physical_slider("Hospitalisation h", 0.0, 0.40, 0.06, 0.005, f"phys_disc_{slug}_hosp", parent=c6) if model == "SEIHRD hospitalier" else 0.0
+        c7, _, _ = st.columns(3)
+        waning = _physical_slider("Perte immunité ω", 0.0, 0.30, 0.045, 0.005, f"phys_disc_{slug}_waning", parent=c7) if model == "SIS discret" else 0.0
         s = population - 100.0
         e = 60.0 if "SE" in model else 0.0
         i = 100.0
@@ -48235,7 +48248,8 @@ def _render_discrete_model(model: str) -> dict[str, Any]:
         market = _physical_slider("Marché potentiel", 1000.0, 500000.0, 50000.0, 1000.0, f"phys_disc_{slug}_market", parent=c1)
         innovators = _physical_slider("Innovation p", 0.001, 0.20, 0.025, 0.001, f"phys_disc_{slug}_p", parent=c2)
         imitators = _physical_slider("Imitation q", 0.01, 1.20, 0.38, 0.01, f"phys_disc_{slug}_q", parent=c3)
-        adopters = _physical_slider("Adoptants initiaux", 0.0, 50000.0, 400.0, 100.0, f"phys_disc_{slug}_a0")
+        c4, _, _ = st.columns(3)
+        adopters = _physical_slider("Adoptants initiaux", 0.0, 50000.0, 400.0, 100.0, f"phys_disc_{slug}_a0", parent=c4)
         for t in range(n_steps):
             remaining = max(market - adopters, 0.0)
             new_adopters = (innovators + imitators * adopters / max(market, 1e-9)) * remaining
@@ -48261,7 +48275,8 @@ def _estimate_lyapunov_proxy(points: np.ndarray) -> float:
 
 def _render_chaos_model(model: str) -> dict[str, Any]:
     slug = _physical_slug(model)
-    n_steps = int(st.slider("Itérations / points", 800, 12000, 3500, 200, key=f"phys_chaos_{slug}_steps"))
+    top_cols = st.columns(2)
+    n_steps = int(top_cols[0].slider("Itérations / points", 800, 12000, 3500, 200, key=f"phys_chaos_{slug}_steps"))
     burn = max(50, int(0.12 * n_steps))
     equations: list[str]
     notes: list[str]
@@ -48318,7 +48333,7 @@ def _render_chaos_model(model: str) -> dict[str, Any]:
         notes = ["Carte 2D issue d'un modèle d'optique non linéaire.", "Produit des attracteurs très visuels selon u et la phase."]
         return {"sim": sim, "equations": equations, "notes": notes, "cols": ["x", "y"], "type": "2d", "lyapunov": lyap}
 
-    t_max = _physical_slider("Horizon", 10.0, 120.0, 45.0, 1.0, f"phys_chaos_{slug}_tmax")
+    t_max = _physical_slider("Horizon", 10.0, 120.0, 45.0, 1.0, f"phys_chaos_{slug}_tmax", parent=top_cols[1])
     t_eval = np.linspace(0, t_max, n_steps)
     if model == "Lorenz":
         c1, c2, c3 = st.columns(3)
@@ -48351,7 +48366,8 @@ def _render_chaos_model(model: str) -> dict[str, Any]:
         alpha = _physical_slider("α", 5.0, 25.0, 15.6, 0.1, f"phys_chaos_{slug}_alpha", parent=c1)
         beta = _physical_slider("β", 10.0, 40.0, 28.0, 0.5, f"phys_chaos_{slug}_beta", parent=c2)
         m0 = _physical_slider("m0", -2.0, -0.2, -1.143, 0.01, f"phys_chaos_{slug}_m0", parent=c3)
-        m1 = _physical_slider("m1", -1.5, 0.2, -0.714, 0.01, f"phys_chaos_{slug}_m1")
+        c4, _, _ = st.columns(3)
+        m1 = _physical_slider("m1", -1.5, 0.2, -0.714, 0.01, f"phys_chaos_{slug}_m1", parent=c4)
 
         def chua_nonlinear(x: float) -> float:
             return m1 * x + 0.5 * (m0 - m1) * (abs(x + 1) - abs(x - 1))
@@ -48372,8 +48388,9 @@ def _render_chaos_model(model: str) -> dict[str, Any]:
 def _render_stochastic_model(model: str) -> dict[str, Any]:
     slug = _physical_slug(model)
     rng = np.random.default_rng(42)
-    n_steps = int(st.slider("Pas", 60, 800, 240, 20, key=f"phys_stoch_{slug}_steps"))
-    n_paths = int(st.slider("Trajectoires", 10, 300, 80, 10, key=f"phys_stoch_{slug}_paths"))
+    top_cols = st.columns(2)
+    n_steps = int(top_cols[0].slider("Pas", 60, 800, 240, 20, key=f"phys_stoch_{slug}_steps"))
+    n_paths = int(top_cols[1].slider("Trajectoires", 10, 300, 80, 10, key=f"phys_stoch_{slug}_paths"))
     dt = 1.0 / max(n_steps / 24.0, 1.0)
     t = np.arange(n_steps)
     equations: list[str] = []
@@ -48382,7 +48399,8 @@ def _render_stochastic_model(model: str) -> dict[str, Any]:
     state_labels: list[str] | None = None
 
     if model == "Brownien":
-        sigma = _physical_slider("Volatilité σ", 0.05, 3.0, 0.55, 0.05, f"phys_stoch_{slug}_sigma")
+        c1, _, _ = st.columns(3)
+        sigma = _physical_slider("Volatilité σ", 0.05, 3.0, 0.55, 0.05, f"phys_stoch_{slug}_sigma", parent=c1)
         increments = sigma * np.sqrt(dt) * rng.normal(size=(n_steps, n_paths))
         paths = np.vstack([np.zeros((1, n_paths)), np.cumsum(increments[1:], axis=0)])
         equations = [r"dX_t=\sigma dW_t"]
@@ -48413,7 +48431,8 @@ def _render_stochastic_model(model: str) -> dict[str, Any]:
         theta = _physical_slider("Vitesse κ", 0.05, 2.0, 0.45, 0.05, f"phys_stoch_{slug}_theta", parent=c1)
         mu = _physical_slider("Niveau long terme", 0.0, 0.20, 0.045, 0.002, f"phys_stoch_{slug}_mu", parent=c2)
         sigma = _physical_slider("Volatilité σ", 0.005, 0.30, 0.06, 0.005, f"phys_stoch_{slug}_sigma", parent=c3)
-        r0 = _physical_slider("Taux initial", 0.0, 0.20, 0.035, 0.002, f"phys_stoch_{slug}_r0")
+        c4, _, _ = st.columns(3)
+        r0 = _physical_slider("Taux initial", 0.0, 0.20, 0.035, 0.002, f"phys_stoch_{slug}_r0", parent=c4)
         paths = np.zeros((n_steps, n_paths))
         paths[0] = r0
         for i in range(1, n_steps):
@@ -48429,9 +48448,10 @@ def _render_stochastic_model(model: str) -> dict[str, Any]:
         s0 = _physical_slider("S0", 1.0, 1000.0, 100.0, 1.0, f"phys_stoch_{slug}_s0", parent=c1)
         mu = _physical_slider("Drift μ", -0.20, 0.40, 0.06, 0.005, f"phys_stoch_{slug}_mu", parent=c2)
         rho = _physical_slider("Corrélation ρ", -0.95, 0.95, -0.45, 0.05, f"phys_stoch_{slug}_rho", parent=c3)
-        kappa = _physical_slider("κ variance", 0.05, 3.0, 1.2, 0.05, f"phys_stoch_{slug}_kappa")
-        theta_v = _physical_slider("Variance long terme", 0.005, 0.25, 0.04, 0.005, f"phys_stoch_{slug}_theta")
-        vol_of_vol = _physical_slider("Vol de vol ξ", 0.05, 1.50, 0.35, 0.01, f"phys_stoch_{slug}_xi")
+        c4, c5, c6 = st.columns(3)
+        kappa = _physical_slider("κ variance", 0.05, 3.0, 1.2, 0.05, f"phys_stoch_{slug}_kappa", parent=c4)
+        theta_v = _physical_slider("Variance long terme", 0.005, 0.25, 0.04, 0.005, f"phys_stoch_{slug}_theta", parent=c5)
+        vol_of_vol = _physical_slider("Vol de vol ξ", 0.05, 1.50, 0.35, 0.01, f"phys_stoch_{slug}_xi", parent=c6)
         paths = np.zeros((n_steps, n_paths))
         variance = np.zeros_like(paths)
         paths[0] = s0
@@ -48458,7 +48478,7 @@ def _render_stochastic_model(model: str) -> dict[str, Any]:
             notes = ["Processus de comptage à intensité constante.", "Usage: arrivées, défauts, événements rares."]
         elif model == "Hawkes":
             alpha = _physical_slider("Auto-excitation α", 0.0, 3.0, 0.75, 0.05, f"phys_stoch_{slug}_alpha", parent=c2)
-            decay = _physical_slider("Décroissance β", 0.05, 5.0, 1.4, 0.05, f"phys_stoch_{slug}_decay")
+            decay = _physical_slider("Décroissance β", 0.05, 5.0, 1.4, 0.05, f"phys_stoch_{slug}_decay", parent=c2)
             intensities = np.full(n_paths, base_rate)
             for i in range(1, n_steps):
                 events = rng.poisson(np.maximum(intensities, 0.0) * dt)
@@ -48469,7 +48489,8 @@ def _render_stochastic_model(model: str) -> dict[str, Any]:
             notes = ["Processus auto-excitant: un événement augmente temporairement l'intensité future.", "Usage: finance haute fréquence, incidents, contagion d'événements."]
         else:
             death = _physical_slider("Taux décès", 0.01, 2.0, 0.22, 0.01, f"phys_stoch_{slug}_death", parent=c2)
-            paths[0] = _physical_slider("Population initiale", 1.0, 1000.0, 120.0, 5.0, f"phys_stoch_{slug}_n0")
+            c3, _ = st.columns(2)
+            paths[0] = _physical_slider("Population initiale", 1.0, 1000.0, 120.0, 5.0, f"phys_stoch_{slug}_n0", parent=c3)
             for i in range(1, n_steps):
                 births = rng.poisson(np.maximum(base_rate * paths[i - 1] * dt, 0.0))
                 deaths = rng.poisson(np.maximum(death * paths[i - 1] * dt, 0.0))
@@ -48479,8 +48500,9 @@ def _render_stochastic_model(model: str) -> dict[str, Any]:
             notes = ["Processus de comptage populationnel avec naissances et décès.", "Usage: files, population, fiabilité, systèmes biologiques."]
         extra = pd.DataFrame({"t": t, "Intensité moyenne": intensity_series})
     elif model in {"Chaîne de Markov", "HMM"}:
-        n_states = int(st.slider("Nombre d'états", 2, 6, 3, 1, key=f"phys_stoch_{slug}_states"))
-        stickiness = _physical_slider("Persistance diagonale", 0.20, 0.95, 0.72, 0.01, f"phys_stoch_{slug}_stick")
+        c1, c2 = st.columns(2)
+        n_states = int(c1.slider("Nombre d'états", 2, 6, 3, 1, key=f"phys_stoch_{slug}_states"))
+        stickiness = _physical_slider("Persistance diagonale", 0.20, 0.95, 0.72, 0.01, f"phys_stoch_{slug}_stick", parent=c2)
         transition = np.full((n_states, n_states), (1.0 - stickiness) / max(n_states - 1, 1))
         np.fill_diagonal(transition, stickiness)
         paths = np.zeros((n_steps, n_paths), dtype=float)
@@ -48554,16 +48576,18 @@ def _render_pde_model(model: str) -> dict[str, Any]:
         }
 
     if model in {"Diffusion 2D", "Équation de la chaleur 2D", "Onde 2D", "Membrane vibrante", "Gray-Scott", "Turing patterns", "Navier-Stokes simplifié"}:
-        n = int(st.slider("Résolution grille", 30, 90, 58, 4, key=f"phys_pde_{slug}_n"))
-        steps = int(st.slider("Pas de calcul", 40, 420, 160, 20, key=f"phys_pde_{slug}_steps"))
+        top_cols = st.columns(2)
+        n = int(top_cols[0].slider("Résolution grille", 30, 90, 58, 4, key=f"phys_pde_{slug}_n"))
+        steps = int(top_cols[1].slider("Pas de calcul", 40, 420, 160, 20, key=f"phys_pde_{slug}_steps"))
         x = np.linspace(0, 1, n)
         y = np.linspace(0, 1, n)
         xx, yy = np.meshgrid(x, y)
         if model in {"Onde 2D", "Membrane vibrante"}:
-            celerity = _physical_slider("Célérité c", 0.1, 4.0, 1.0, 0.05, f"phys_pde_{slug}_c")
-            mode_x = int(st.slider("Mode x", 1, 5, 1, 1, key=f"phys_pde_{slug}_mx"))
-            mode_y = int(st.slider("Mode y", 1, 5, 1, 1, key=f"phys_pde_{slug}_my"))
-            t_final = _physical_slider("Temps affiché", 0.0, 10.0, 3.0, 0.1, f"phys_pde_{slug}_tf")
+            c1, c2, c3, c4 = st.columns(4)
+            celerity = _physical_slider("Célérité c", 0.1, 4.0, 1.0, 0.05, f"phys_pde_{slug}_c", parent=c1)
+            mode_x = int(c2.slider("Mode x", 1, 5, 1, 1, key=f"phys_pde_{slug}_mx"))
+            mode_y = int(c3.slider("Mode y", 1, 5, 1, 1, key=f"phys_pde_{slug}_my"))
+            t_final = _physical_slider("Temps affiché", 0.0, 10.0, 3.0, 0.1, f"phys_pde_{slug}_tf", parent=c4)
             omega = celerity * np.pi * np.sqrt(mode_x**2 + mode_y**2)
             field = np.sin(mode_x * np.pi * xx) * np.sin(mode_y * np.pi * yy) * np.cos(omega * t_final)
             aux = np.abs(field)
@@ -48571,8 +48595,9 @@ def _render_pde_model(model: str) -> dict[str, Any]:
             notes = ["Solution modale d'onde 2D sur membrane rectangulaire.", "Graphes utiles: champ spatial, surface 3D, amplitude."]
             return {"type": "2d", "x": x, "y": y, "field": field, "aux": aux, "equations": equations, "notes": notes, "field_label": "Déplacement", "aux_label": "Amplitude"}
         if model == "Navier-Stokes simplifié":
-            viscosity = _physical_slider("Viscosité ν", 0.001, 0.20, 0.035, 0.001, f"phys_pde_{slug}_nu")
-            t_final = _physical_slider("Temps affiché", 0.0, 20.0, 4.0, 0.2, f"phys_pde_{slug}_tf")
+            c1, c2 = st.columns(2)
+            viscosity = _physical_slider("Viscosité ν", 0.001, 0.20, 0.035, 0.001, f"phys_pde_{slug}_nu", parent=c1)
+            t_final = _physical_slider("Temps affiché", 0.0, 20.0, 4.0, 0.2, f"phys_pde_{slug}_tf", parent=c2)
             decay = np.exp(-2 * np.pi**2 * viscosity * t_final)
             u = np.sin(np.pi * xx) * np.cos(np.pi * yy) * decay
             v = -np.cos(np.pi * xx) * np.sin(np.pi * yy) * decay
@@ -48585,12 +48610,13 @@ def _render_pde_model(model: str) -> dict[str, Any]:
             notes = ["Champ de Taylor-Green simplifié: incompressible, périodique, décroissant par viscosité.", "Ce démonstrateur illustre vitesse et vorticité sans résoudre une CFD complète."]
             return {"type": "vector2d", "x": x, "y": y, "field": speed, "aux": vort, "u": u, "v": v, "equations": equations, "notes": notes, "field_label": "Vitesse", "aux_label": "Vorticité"}
         if model in {"Gray-Scott", "Turing patterns"}:
-            du = _physical_slider("Diffusion U", 0.02, 0.30, 0.16, 0.01, f"phys_pde_{slug}_du")
-            dv = _physical_slider("Diffusion V", 0.005, 0.15, 0.08, 0.005, f"phys_pde_{slug}_dv")
+            c1, c2, c3, c4 = st.columns(4)
+            du = _physical_slider("Diffusion U", 0.02, 0.30, 0.16, 0.01, f"phys_pde_{slug}_du", parent=c1)
+            dv = _physical_slider("Diffusion V", 0.005, 0.15, 0.08, 0.005, f"phys_pde_{slug}_dv", parent=c2)
             feed_default = 0.035 if model == "Gray-Scott" else 0.025
             kill_default = 0.060 if model == "Gray-Scott" else 0.055
-            feed = _physical_slider("Feed F", 0.005, 0.080, feed_default, 0.001, f"phys_pde_{slug}_feed")
-            kill = _physical_slider("Kill k", 0.020, 0.090, kill_default, 0.001, f"phys_pde_{slug}_kill")
+            feed = _physical_slider("Feed F", 0.005, 0.080, feed_default, 0.001, f"phys_pde_{slug}_feed", parent=c3)
+            kill = _physical_slider("Kill k", 0.020, 0.090, kill_default, 0.001, f"phys_pde_{slug}_kill", parent=c4)
             u = np.ones((n, n), dtype=float)
             v = np.zeros((n, n), dtype=float)
             r0, r1 = n // 2 - n // 10, n // 2 + n // 10
@@ -48606,8 +48632,9 @@ def _render_pde_model(model: str) -> dict[str, Any]:
             equations = [r"\partial_tU=D_U\nabla^2U-UV^2+F(1-U)", r"\partial_tV=D_V\nabla^2V+UV^2-(F+k)V"]
             notes = ["Modèle réaction-diffusion à deux espèces.", "Les motifs émergent par interaction entre réaction locale et diffusion spatiale."]
             return {"type": "2d", "x": x, "y": y, "field": v, "aux": u, "equations": equations, "notes": notes, "field_label": "Espèce V / motif", "aux_label": "Espèce U"}
-        diffusivity = _physical_slider("Diffusivité D", 0.001, 0.40, 0.08, 0.005, f"phys_pde_{slug}_d")
-        source_strength = _physical_slider("Source centrale", 0.0, 2.0, 0.20 if model == "Diffusion 2D" else 0.0, 0.05, f"phys_pde_{slug}_source")
+        c1, c2 = st.columns(2)
+        diffusivity = _physical_slider("Diffusivité D", 0.001, 0.40, 0.08, 0.005, f"phys_pde_{slug}_d", parent=c1)
+        source_strength = _physical_slider("Source centrale", 0.0, 2.0, 0.20 if model == "Diffusion 2D" else 0.0, 0.05, f"phys_pde_{slug}_source", parent=c2)
         dx = float(x[1] - x[0])
         dt = min(0.20 * dx * dx / max(diffusivity, 1e-9), 0.01)
         field = np.exp(-((xx - 0.32) ** 2 + (yy - 0.35) ** 2) / 0.015) + 0.65 * np.exp(-((xx - 0.70) ** 2 + (yy - 0.68) ** 2) / 0.025)
@@ -48619,15 +48646,17 @@ def _render_pde_model(model: str) -> dict[str, Any]:
         label = "Température" if "chaleur" in model else "Concentration"
         return {"type": "2d", "x": x, "y": y, "field": field, "aux": src, "equations": equations, "notes": notes, "field_label": label, "aux_label": "Source"}
 
-    nx = int(st.slider("Points espace", 40, 220, 110, 5, key=f"phys_pde_{slug}_nx"))
-    nt = int(st.slider("Pas temps", 80, 800, 300, 20, key=f"phys_pde_{slug}_nt"))
+    top_cols = st.columns(2)
+    nx = int(top_cols[0].slider("Points espace", 40, 220, 110, 5, key=f"phys_pde_{slug}_nx"))
+    nt = int(top_cols[1].slider("Pas temps", 80, 800, 300, 20, key=f"phys_pde_{slug}_nt"))
     x = np.linspace(0, 1, nx)
     dx = float(x[1] - x[0])
     times: np.ndarray
     if model in {"Onde 1D", "Corde vibrante"}:
-        celerity = _physical_slider("Célérité c", 0.1, 4.0, 1.0, 0.05, f"phys_pde_{slug}_c")
-        mode = int(st.slider("Mode", 1, 8, 1, 1, key=f"phys_pde_{slug}_mode"))
-        t_end = _physical_slider("Horizon temps", 2.0, 40.0, 12.0, 0.5, f"phys_pde_{slug}_tend")
+        c1, c2, c3 = st.columns(3)
+        celerity = _physical_slider("Célérité c", 0.1, 4.0, 1.0, 0.05, f"phys_pde_{slug}_c", parent=c1)
+        mode = int(c2.slider("Mode", 1, 8, 1, 1, key=f"phys_pde_{slug}_mode"))
+        t_end = _physical_slider("Horizon temps", 2.0, 40.0, 12.0, 0.5, f"phys_pde_{slug}_tend", parent=c3)
         times = np.linspace(0, t_end, nt)
         omega = celerity * mode * np.pi
         hist = np.array([np.sin(mode * np.pi * x) * np.cos(omega * ti) for ti in times])
@@ -48635,9 +48664,10 @@ def _render_pde_model(model: str) -> dict[str, Any]:
         notes = ["Solution modale d'onde 1D / corde vibrante.", "Graphes utiles: heatmap espace-temps, profils, énergie qualitative."]
         return {"type": "1d", "x": x, "time": times, "hist": hist, "equations": equations, "notes": notes, "field_label": "Déplacement"}
     if model == "Conduction multicouche":
-        d1 = _physical_slider("Diffusivité couche 1", 0.001, 0.40, 0.10, 0.005, f"phys_pde_{slug}_d1")
-        d2 = _physical_slider("Diffusivité couche 2", 0.001, 0.40, 0.035, 0.005, f"phys_pde_{slug}_d2")
-        d3 = _physical_slider("Diffusivité couche 3", 0.001, 0.40, 0.16, 0.005, f"phys_pde_{slug}_d3")
+        c1, c2, c3 = st.columns(3)
+        d1 = _physical_slider("Diffusivité couche 1", 0.001, 0.40, 0.10, 0.005, f"phys_pde_{slug}_d1", parent=c1)
+        d2 = _physical_slider("Diffusivité couche 2", 0.001, 0.40, 0.035, 0.005, f"phys_pde_{slug}_d2", parent=c2)
+        d3 = _physical_slider("Diffusivité couche 3", 0.001, 0.40, 0.16, 0.005, f"phys_pde_{slug}_d3", parent=c3)
         diffusivity = np.where(x < 0.33, d1, np.where(x < 0.66, d2, d3))
         dt = min(0.35 * dx * dx / max(float(np.max(diffusivity)), 1e-9), 0.01)
         field = 20 + 70 * (x < 0.12).astype(float)
@@ -48651,7 +48681,8 @@ def _render_pde_model(model: str) -> dict[str, Any]:
         equations = [r"\partial_tT=\partial_x\left(D(x)\partial_xT\right)", r"D(x)=D_1,D_2,D_3\ \mathrm{selon\ la\ couche}"]
         notes = ["Conduction 1D avec diffusivité variable par couche.", "Illustre interfaces matériaux, isolation et propagation thermique."]
         return {"type": "1d", "x": x, "time": np.arange(nt) * dt, "hist": hist, "equations": equations, "notes": notes, "field_label": "Température"}
-    diffusivity = _physical_slider("Diffusivité D", 0.001, 0.40, 0.08, 0.005, f"phys_pde_{slug}_d")
+    c1, c2, c3 = st.columns(3)
+    diffusivity = _physical_slider("Diffusivité D", 0.001, 0.40, 0.08, 0.005, f"phys_pde_{slug}_d", parent=c1)
     dt = min(0.45 * dx * dx / max(diffusivity, 1e-9), 0.01)
     field = np.exp(-((x - 0.32) ** 2) / 0.004) + 0.65 * np.exp(-((x - 0.72) ** 2) / 0.012)
     hist = np.zeros((nt, nx))
@@ -48659,15 +48690,15 @@ def _render_pde_model(model: str) -> dict[str, Any]:
     sink_rate = 0.0
     reaction = ""
     if model in {"Diffusion avec source", "Diffusion 1D", "Équation de la chaleur 1D"}:
-        source_strength = _physical_slider("Source centrale", 0.0, 2.0, 0.25 if model == "Diffusion avec source" else 0.0, 0.05, f"phys_pde_{slug}_source")
+        source_strength = _physical_slider("Source centrale", 0.0, 2.0, 0.25 if model == "Diffusion avec source" else 0.0, 0.05, f"phys_pde_{slug}_source", parent=c2)
     if model == "Diffusion avec puits":
-        sink_rate = _physical_slider("Puits / absorption", 0.0, 2.0, 0.35, 0.05, f"phys_pde_{slug}_sink")
+        sink_rate = _physical_slider("Puits / absorption", 0.0, 2.0, 0.35, 0.05, f"phys_pde_{slug}_sink", parent=c2)
     if model == "Fisher-KPP":
-        growth = _physical_slider("Croissance r", 0.0, 5.0, 1.2, 0.05, f"phys_pde_{slug}_growth")
+        growth = _physical_slider("Croissance r", 0.0, 5.0, 1.2, 0.05, f"phys_pde_{slug}_growth", parent=c2)
         reaction = "fisher"
         field = np.exp(-((x - 0.20) ** 2) / 0.012)
     if model == "Burgers":
-        viscosity = _physical_slider("Viscosité ν", 0.001, 0.20, 0.025, 0.001, f"phys_pde_{slug}_nu")
+        viscosity = _physical_slider("Viscosité ν", 0.001, 0.20, 0.025, 0.001, f"phys_pde_{slug}_nu", parent=c2)
         dt = min(0.20 * dx * dx / max(viscosity, 1e-9), 0.003)
         field = 0.8 + 0.45 * np.sin(2 * np.pi * x)
     src = source_strength * np.exp(-((x - 0.5) ** 2) / 0.018)
@@ -48890,18 +48921,18 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     )
                     g1, g2, g3 = param_box.columns(3)
                     with g1:
-                        y0 = param_box.number_input("Condition initiale y(0)", value=1.0, step=0.25, key="phys_edo1_y0")
-                        c0 = param_box.number_input("c0 constant", value=0.0, step=0.05, key="phys_edo1_c0")
+                        y0 = st.number_input("Condition initiale y(0)", value=1.0, step=0.25, key="phys_edo1_y0")
+                        c0 = st.number_input("c0 constant", value=0.0, step=0.05, key="phys_edo1_c0")
                     with g2:
-                        c1_coef = param_box.number_input("c1 linéaire", value=-0.08, step=0.01, key="phys_edo1_c1")
+                        c1_coef = st.number_input("c1 linéaire", value=-0.08, step=0.01, key="phys_edo1_c1")
                         c2_coef = (
-                            param_box.number_input("c2 non linéaire", value=-0.015, step=0.005, key="phys_edo1_c2")
+                            st.number_input("c2 non linéaire", value=-0.015, step=0.005, key="phys_edo1_c2")
                             if is_nonlinear
                             else 0.0
                         )
                     with g3:
-                        force_amp = param_box.slider("Amplitude A", 0.0, 10.0, 0.6, 0.1, key="phys_edo1_amp")
-                        force_freq = param_box.slider("Fréquence ω", 0.0, 3.0, 0.35, 0.05, key="phys_edo1_freq")
+                        force_amp = st.slider("Amplitude A", 0.0, 10.0, 0.6, 0.1, key="phys_edo1_amp")
+                        force_freq = st.slider("Fréquence ω", 0.0, 3.0, 0.35, 0.05, key="phys_edo1_freq")
 
                     def rhs_first(ti: float, state: np.ndarray) -> list[float]:
                         yi = float(state[0])
@@ -48937,26 +48968,26 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     )
                     a_col1, a_col2, a_col3 = param_box.columns(3)
                     with a_col1:
-                        a2 = param_box.number_input("a2 devant y''", value=1.0, step=0.1, key="phys_edo2_a2")
-                        y0 = param_box.number_input("y(0)", value=1.0, step=0.25, key="phys_edo2_y0")
+                        a2 = st.number_input("a2 devant y''", value=1.0, step=0.1, key="phys_edo2_a2")
+                        y0 = st.number_input("y(0)", value=1.0, step=0.25, key="phys_edo2_y0")
                     with a_col2:
-                        a1 = param_box.number_input("a1 devant y'", value=0.35, step=0.05, key="phys_edo2_a1")
-                        v0 = param_box.number_input("y'(0)", value=0.0, step=0.25, key="phys_edo2_v0")
+                        a1 = st.number_input("a1 devant y'", value=0.35, step=0.05, key="phys_edo2_a1")
+                        v0 = st.number_input("y'(0)", value=0.0, step=0.25, key="phys_edo2_v0")
                     with a_col3:
-                        a0 = param_box.number_input("a0 devant y", value=1.25, step=0.05, key="phys_edo2_a0")
-                        b0 = param_box.number_input("b0 constant", value=0.0, step=0.1, key="phys_edo2_b0")
+                        a0 = st.number_input("a0 devant y", value=1.25, step=0.05, key="phys_edo2_a0")
+                        b0 = st.number_input("b0 constant", value=0.0, step=0.1, key="phys_edo2_b0")
                     f_col1, f_col2 = param_box.columns(2)
                     with f_col1:
-                        force_amp = param_box.slider("Amplitude A", 0.0, 20.0, 1.0, 0.1, key="phys_edo2_amp")
+                        force_amp = st.slider("Amplitude A", 0.0, 20.0, 1.0, 0.1, key="phys_edo2_amp")
                     with f_col2:
-                        force_freq = param_box.slider("Fréquence ω", 0.0, 5.0, 0.8, 0.05, key="phys_edo2_freq")
+                        force_freq = st.slider("Fréquence ω", 0.0, 5.0, 0.8, 0.05, key="phys_edo2_freq")
                     alpha_nl = beta_nl = 0.0
                     if is_nonlinear:
                         nl1, nl2 = param_box.columns(2)
                         with nl1:
-                            alpha_nl = param_box.number_input("α devant y³", value=0.08, step=0.01, key="phys_edo2_alpha")
+                            alpha_nl = st.number_input("α devant y³", value=0.08, step=0.01, key="phys_edo2_alpha")
                         with nl2:
-                            beta_nl = param_box.number_input("β devant y y'", value=0.02, step=0.01, key="phys_edo2_beta")
+                            beta_nl = st.number_input("β devant y y'", value=0.02, step=0.01, key="phys_edo2_beta")
 
                         def rhs_second(ti: float, state: np.ndarray) -> np.ndarray:
                             yi = float(state[0])
@@ -49019,7 +49050,7 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                         with coeff_cols[idx % 3]:
                             coeffs_desc.append(
                                 float(
-                                    param_box.number_input(
+                                    st.number_input(
                                         f"a{power} devant y" + (f"^({power})" if power > 1 else ("'" if power == 1 else "")),
                                         value=float(default),
                                         step=0.05,
@@ -49032,20 +49063,20 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     for idx in range(order_n):
                         with init_cols[idx % 3]:
                             label = "y(0)" if idx == 0 else f"y^({idx})(0)"
-                            initials.append(float(param_box.number_input(label, value=1.0 if idx == 0 else 0.0, step=0.25, key=f"phys_edon_init_{idx}")))
+                            initials.append(float(st.number_input(label, value=1.0 if idx == 0 else 0.0, step=0.25, key=f"phys_edon_init_{idx}")))
                     f_col1, f_col2, f_col3 = param_box.columns(3)
                     with f_col1:
-                        b0 = param_box.number_input("b0 constant", value=0.0, step=0.1, key="phys_edon_b0")
+                        b0 = st.number_input("b0 constant", value=0.0, step=0.1, key="phys_edon_b0")
                     with f_col2:
-                        force_amp = param_box.slider("Amplitude A", 0.0, 20.0, 0.8, 0.1, key="phys_edon_amp")
+                        force_amp = st.slider("Amplitude A", 0.0, 20.0, 0.8, 0.1, key="phys_edon_amp")
                     with f_col3:
-                        force_freq = param_box.slider("Fréquence ω", 0.0, 5.0, 0.6, 0.05, key="phys_edon_freq")
+                        force_freq = st.slider("Fréquence ω", 0.0, 5.0, 0.6, 0.05, key="phys_edon_freq")
                     if is_nonlinear:
                         nl1, nl2 = param_box.columns(2)
                         with nl1:
-                            nl_strength = param_box.number_input("Intensité non linéaire", value=0.035, step=0.005, key="phys_edon_nl_strength")
+                            nl_strength = st.number_input("Intensité non linéaire", value=0.035, step=0.005, key="phys_edon_nl_strength")
                         with nl2:
-                            sat_strength = param_box.number_input("Saturation tanh", value=0.10, step=0.01, key="phys_edon_sat_strength")
+                            sat_strength = st.number_input("Saturation tanh", value=0.10, step=0.01, key="phys_edon_sat_strength")
                         sim = _solve_nonlinear_general_ode(
                             order=order_n,
                             initial_conditions=initials,
@@ -49082,8 +49113,9 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                         ),
                     ]
                 elif model == "Croissance exponentielle":
-                    y0 = param_box.slider("État initial", 1.0, 1000.0, 100.0, 5.0, key="phys_exp_growth_y0")
-                    r = param_box.slider("Taux de croissance r", 0.001, 0.20, 0.035, 0.001, key="phys_exp_growth_r")
+                    p1, p2 = param_box.columns(2)
+                    y0 = p1.slider("État initial", 1.0, 1000.0, 100.0, 5.0, key="phys_exp_growth_y0")
+                    r = p2.slider("Taux de croissance r", 0.001, 0.20, 0.035, 0.001, key="phys_exp_growth_r")
                     t = np.linspace(0, t_max, 420)
                     y = y0 * np.exp(r * t)
                     dy = r * y
@@ -49093,8 +49125,9 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     sols = [r"N(t)=N_0e^{rt}"]
                     notes = ["Croissance proportionnelle à l'état courant.", "Usage: population, clients, ventes ou biomasse en phase non contrainte."]
                 elif model == "Décroissance exponentielle":
-                    y0 = param_box.slider("État initial", 10.0, 1000.0, 500.0, 10.0, key="phys_exp_decay_y0")
-                    lam = param_box.slider("Taux lambda", 0.005, 0.20, 0.035, 0.005, key="phys_exp_decay_lambda")
+                    p1, p2 = param_box.columns(2)
+                    y0 = p1.slider("État initial", 10.0, 1000.0, 500.0, 10.0, key="phys_exp_decay_y0")
+                    lam = p2.slider("Taux lambda", 0.005, 0.20, 0.035, 0.005, key="phys_exp_decay_lambda")
                     t = np.linspace(0, t_max, 420)
                     y = y0 * np.exp(-lam * t)
                     dy = -lam * y
@@ -49104,9 +49137,10 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     sols = [r"N(t)=N_0e^{-\lambda t}"]
                     notes = ["Décroissance proportionnelle au stock restant.", "Usage: décroissance radioactive, churn stylisé, amortissement simple, cinétique d'ordre 1."]
                 elif model == "Croissance logistique":
-                    y0 = param_box.slider("Population initiale", 1.0, 250.0, 20.0, 1.0, key="phys_log_y0")
-                    r = param_box.slider("Taux r", 0.01, 0.40, 0.10, 0.01, key="phys_log_r")
-                    cap = param_box.slider("Capacité K", 50.0, 1000.0, 250.0, 10.0, key="phys_log_k")
+                    p1, p2, p3 = param_box.columns(3)
+                    y0 = p1.slider("Population initiale", 1.0, 250.0, 20.0, 1.0, key="phys_log_y0")
+                    r = p2.slider("Taux r", 0.01, 0.40, 0.10, 0.01, key="phys_log_r")
+                    cap = p3.slider("Capacité K", 50.0, 1000.0, 250.0, 10.0, key="phys_log_k")
                     t = np.linspace(0, t_max, 420)
                     y = cap / (1.0 + ((cap - y0) / max(y0, 1e-9)) * np.exp(-r * t))
                     dy = r * y * (1.0 - y / cap)
@@ -49116,9 +49150,10 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     sols = [r"N(t)=\frac{K}{1+\frac{K-N_0}{N_0}e^{-rt}}"]
                     notes = ["Ordre 1, non linéaire, saturation par capacité.", "Graphes pertinents: trajectoire, diagramme d'équilibre, vitesse de croissance."]
                 elif model == "Croissance de Gompertz":
-                    y0 = param_box.slider("État initial", 1.0, 500.0, 18.0, 1.0, key="phys_gomp_y0")
-                    cap = param_box.slider("Capacité asymptotique K", 50.0, 2000.0, 450.0, 10.0, key="phys_gomp_k")
-                    r = param_box.slider("Vitesse r", 0.005, 0.30, 0.055, 0.005, key="phys_gomp_r")
+                    p1, p2, p3 = param_box.columns(3)
+                    y0 = p1.slider("État initial", 1.0, 500.0, 18.0, 1.0, key="phys_gomp_y0")
+                    cap = p2.slider("Capacité asymptotique K", 50.0, 2000.0, 450.0, 10.0, key="phys_gomp_k")
+                    r = p3.slider("Vitesse r", 0.005, 0.30, 0.055, 0.005, key="phys_gomp_r")
                     t = np.linspace(0, t_max, 420)
                     safe_y0 = max(float(y0), 1e-9)
                     y = cap * np.exp(np.log(safe_y0 / cap) * np.exp(-r * t))
@@ -49129,10 +49164,11 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     sols = [r"N(t)=K\exp\left(\ln\left(\frac{N_0}{K}\right)e^{-rt}\right)"]
                     notes = ["Croissance sigmoïde asymétrique: accélération rapide puis ralentissement progressif.", "Usage: biomasse, adoption client, croissance tumorale ou diffusion commerciale."]
                 elif model == "Modèle de Richards":
-                    y0 = param_box.slider("État initial", 1.0, 500.0, 25.0, 1.0, key="phys_richards_y0")
-                    cap = param_box.slider("Capacité K", 50.0, 2000.0, 500.0, 10.0, key="phys_richards_k")
-                    r = param_box.slider("Taux r", 0.005, 0.40, 0.08, 0.005, key="phys_richards_r")
-                    nu = param_box.slider("Forme ν", 0.10, 5.0, 1.30, 0.05, key="phys_richards_nu")
+                    p1, p2, p3, p4 = param_box.columns(4)
+                    y0 = p1.slider("État initial", 1.0, 500.0, 25.0, 1.0, key="phys_richards_y0")
+                    cap = p2.slider("Capacité K", 50.0, 2000.0, 500.0, 10.0, key="phys_richards_k")
+                    r = p3.slider("Taux r", 0.005, 0.40, 0.08, 0.005, key="phys_richards_r")
+                    nu = p4.slider("Forme ν", 0.10, 5.0, 1.30, 0.05, key="phys_richards_nu")
                     t = np.linspace(0, t_max, 420)
                     ratio = max((cap / max(y0, 1e-9)) ** nu - 1.0, 0.0)
                     y = cap / (1.0 + ratio * np.exp(-r * nu * t)) ** (1.0 / nu)
@@ -49143,9 +49179,10 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     sols = [r"N(t)=\frac{K}{\left(1+\left[\left(\frac{K}{N_0}\right)^\nu-1\right]e^{-r\nu t}\right)^{1/\nu}}"]
                     notes = ["Généralisation flexible de la logistique.", "Le paramètre ν contrôle l'asymétrie de la courbe et la position du point d'inflexion."]
                 elif model == "Modèle de Von Bertalanffy":
-                    y0 = param_box.slider("Taille initiale", 0.1, 200.0, 18.0, 0.5, key="phys_vb_y0")
-                    linf = param_box.slider("Taille asymptotique L∞", 10.0, 500.0, 120.0, 5.0, key="phys_vb_linf")
-                    k = param_box.slider("Coefficient k", 0.005, 0.30, 0.045, 0.005, key="phys_vb_k")
+                    p1, p2, p3 = param_box.columns(3)
+                    y0 = p1.slider("Taille initiale", 0.1, 200.0, 18.0, 0.5, key="phys_vb_y0")
+                    linf = p2.slider("Taille asymptotique L∞", 10.0, 500.0, 120.0, 5.0, key="phys_vb_linf")
+                    k = p3.slider("Coefficient k", 0.005, 0.30, 0.045, 0.005, key="phys_vb_k")
                     t = np.linspace(0, t_max, 420)
                     y = linf - (linf - y0) * np.exp(-k * t)
                     dy = k * (linf - y)
@@ -49155,8 +49192,9 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     sols = [r"L(t)=L_\infty-(L_\infty-L_0)e^{-kt}"]
                     notes = ["Modèle de croissance vers une taille asymptotique.", "Usage: biomasse, croissance biologique, maturité progressive d'un actif ou d'un portefeuille."]
                 elif model == "Cinétique ordre 1":
-                    c0 = param_box.slider("Concentration initiale C0", 0.1, 1000.0, 100.0, 1.0, key="phys_kin1_c0")
-                    k = param_box.slider("Constante k", 0.001, 0.50, 0.055, 0.001, key="phys_kin1_k")
+                    p1, p2 = param_box.columns(2)
+                    c0 = p1.slider("Concentration initiale C0", 0.1, 1000.0, 100.0, 1.0, key="phys_kin1_c0")
+                    k = p2.slider("Constante k", 0.001, 0.50, 0.055, 0.001, key="phys_kin1_k")
                     t = np.linspace(0, t_max, 420)
                     y = c0 * np.exp(-k * t)
                     dy = -k * y
@@ -49166,8 +49204,9 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     sols = [r"C(t)=C_0e^{-kt}"]
                     notes = ["La vitesse est proportionnelle à la concentration restante.", "Usage: dégradation, élimination pharmacologique, réaction unimoléculaire."]
                 elif model == "Cinétique ordre 2":
-                    c0 = param_box.slider("Concentration initiale C0", 0.1, 1000.0, 100.0, 1.0, key="phys_kin2_c0")
-                    k = param_box.slider("Constante k", 0.0001, 0.0500, 0.0025, 0.0001, key="phys_kin2_k")
+                    p1, p2 = param_box.columns(2)
+                    c0 = p1.slider("Concentration initiale C0", 0.1, 1000.0, 100.0, 1.0, key="phys_kin2_c0")
+                    k = p2.slider("Constante k", 0.0001, 0.0500, 0.0025, 0.0001, key="phys_kin2_k")
                     t = np.linspace(0, t_max, 420)
                     y = c0 / (1.0 + k * c0 * t)
                     dy = -k * y**2
@@ -49177,10 +49216,11 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     sols = [r"C(t)=\frac{C_0}{1+kC_0t}"]
                     notes = ["La vitesse dépend du carré de la concentration.", "Usage: réactions bimoléculaires ou interactions dépendantes de la rencontre de deux entités."]
                 elif model == "Réaction réversible":
-                    a0 = param_box.slider("A initial", 0.1, 1000.0, 100.0, 1.0, key="phys_rev_a0")
-                    b0_init = param_box.slider("B initial", 0.0, 1000.0, 10.0, 1.0, key="phys_rev_b0")
-                    k_forward = param_box.slider("k avant", 0.001, 0.30, 0.045, 0.001, key="phys_rev_kf")
-                    k_backward = param_box.slider("k arrière", 0.001, 0.30, 0.020, 0.001, key="phys_rev_kr")
+                    p1, p2, p3, p4 = param_box.columns(4)
+                    a0 = p1.slider("A initial", 0.1, 1000.0, 100.0, 1.0, key="phys_rev_a0")
+                    b0_init = p2.slider("B initial", 0.0, 1000.0, 10.0, 1.0, key="phys_rev_b0")
+                    k_forward = p3.slider("k avant", 0.001, 0.30, 0.045, 0.001, key="phys_rev_kf")
+                    k_backward = p4.slider("k arrière", 0.001, 0.30, 0.020, 0.001, key="phys_rev_kr")
                     total = a0 + b0_init
                     t = np.linspace(0, t_max, 420)
                     b_eq = total * k_forward / max(k_forward + k_backward, 1e-9)
@@ -49192,9 +49232,10 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     sols = [r"B(t)=B^*+(B_0-B^*)e^{-(k_f+k_r)t},\quad B^*=M\frac{k_f}{k_f+k_r}"]
                     notes = ["La réaction converge vers un équilibre dépendant des constantes directe et inverse.", "Le graphe d'équilibre permet de voir le point où la vitesse nette devient nulle."]
                 elif model == "Michaelis-Menten":
-                    s0 = param_box.slider("Substrat initial S0", 0.1, 1000.0, 120.0, 1.0, key="phys_mm_s0")
-                    vmax = param_box.slider("Vmax", 0.1, 200.0, 16.0, 0.5, key="phys_mm_vmax")
-                    km = param_box.slider("Km", 0.1, 500.0, 45.0, 1.0, key="phys_mm_km")
+                    p1, p2, p3 = param_box.columns(3)
+                    s0 = p1.slider("Substrat initial S0", 0.1, 1000.0, 120.0, 1.0, key="phys_mm_s0")
+                    vmax = p2.slider("Vmax", 0.1, 200.0, 16.0, 0.5, key="phys_mm_vmax")
+                    km = p3.slider("Km", 0.1, 500.0, 45.0, 1.0, key="phys_mm_km")
                     t = np.linspace(0, t_max, 420)
 
                     def rhs_mm(_ti: float, state: np.ndarray) -> list[float]:
@@ -49210,9 +49251,10 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     sols = [r"S(t)\ \mathrm{est\ calculé\ numériquement;\ la\ vitesse\ sature\ quand}\ S\gg K_m."]
                     notes = ["Cinétique enzymatique saturante.", "Usage: biologie, pharmacologie, consommation de substrat, processus à capacité maximale."]
                 elif model == "Refroidissement de Newton":
-                    t_env = param_box.slider("Température environnement", -10.0, 40.0, 18.0, 0.5, key="phys_newton_env")
-                    y0 = param_box.slider("Température initiale", 0.0, 120.0, 80.0, 1.0, key="phys_newton_y0")
-                    k = param_box.slider("Coefficient k", 0.005, 0.20, 0.045, 0.005, key="phys_newton_k")
+                    p1, p2, p3 = param_box.columns(3)
+                    t_env = p1.slider("Température environnement", -10.0, 40.0, 18.0, 0.5, key="phys_newton_env")
+                    y0 = p2.slider("Température initiale", 0.0, 120.0, 80.0, 1.0, key="phys_newton_y0")
+                    k = p3.slider("Coefficient k", 0.005, 0.20, 0.045, 0.005, key="phys_newton_k")
                     t = np.linspace(0, t_max, 420)
                     y = t_env + (y0 - t_env) * np.exp(-k * t)
                     dy = -k * (y - t_env)
@@ -49222,9 +49264,10 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     sols = [r"T(t)=T_e+(T_0-T_e)e^{-kt}"]
                     notes = ["Ordre 1, linéaire, solution fermée.", "Graphes pertinents: trajectoire, vitesse de refroidissement, temps de demi-retour."]
                 elif model == "Chauffage exponentiel":
-                    t_env = param_box.slider("Température cible / source", 20.0, 180.0, 85.0, 1.0, key="phys_heat_env")
-                    y0 = param_box.slider("Température initiale", -10.0, 120.0, 20.0, 1.0, key="phys_heat_y0")
-                    k = param_box.slider("Coefficient k", 0.005, 0.20, 0.050, 0.005, key="phys_heat_k")
+                    p1, p2, p3 = param_box.columns(3)
+                    t_env = p1.slider("Température cible / source", 20.0, 180.0, 85.0, 1.0, key="phys_heat_env")
+                    y0 = p2.slider("Température initiale", -10.0, 120.0, 20.0, 1.0, key="phys_heat_y0")
+                    k = p3.slider("Coefficient k", 0.005, 0.20, 0.050, 0.005, key="phys_heat_k")
                     t = np.linspace(0, t_max, 420)
                     y = t_env - (t_env - y0) * np.exp(-k * t)
                     dy = k * (t_env - y)
@@ -49234,9 +49277,10 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     sols = [r"T(t)=T_s-(T_s-T_0)e^{-kt}"]
                     notes = ["Approche exponentielle vers une température de source.", "Usage: bâtiments, batteries, montée en température d'un système thermique."]
                 elif model == "Intérêt composé continu":
-                    capital0 = param_box.slider("Capital initial", 100.0, 500000.0, 10000.0, 100.0, key="phys_interest_c0")
-                    rate = param_box.slider("Taux annuel continu", -0.10, 0.30, 0.045, 0.005, key="phys_interest_r")
-                    contribution = param_box.slider("Flux net continu / période", -1000.0, 5000.0, 0.0, 50.0, key="phys_interest_flow")
+                    p1, p2, p3 = param_box.columns(3)
+                    capital0 = p1.slider("Capital initial", 100.0, 500000.0, 10000.0, 100.0, key="phys_interest_c0")
+                    rate = p2.slider("Taux annuel continu", -0.10, 0.30, 0.045, 0.005, key="phys_interest_r")
+                    contribution = p3.slider("Flux net continu / période", -1000.0, 5000.0, 0.0, 50.0, key="phys_interest_flow")
                     t = np.linspace(0, t_max, 420)
                     if abs(rate) < 1e-9:
                         y = capital0 + contribution * t
@@ -49249,10 +49293,11 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     sols = [r"C(t)=C_0e^{rt}+u\frac{e^{rt}-1}{r}\quad (r\ne0)"]
                     notes = ["Croissance financière continue avec versement ou retrait constant.", "Usage: capitalisation, encours, dépôt, actif financier stylisé."]
                 else:
-                    price0 = param_box.slider("Prix / actif initial", 1.0, 10000.0, 100.0, 1.0, key="phys_asset_p0")
-                    drift = param_box.slider("Drift μ", -0.20, 0.40, 0.070, 0.005, key="phys_asset_mu")
-                    season_amp = param_box.slider("Amplitude cycle", 0.0, 0.30, 0.055, 0.005, key="phys_asset_amp")
-                    omega = param_box.slider("Fréquence cycle", 0.0, 2.0, 0.30, 0.05, key="phys_asset_omega")
+                    p1, p2, p3, p4 = param_box.columns(4)
+                    price0 = p1.slider("Prix / actif initial", 1.0, 10000.0, 100.0, 1.0, key="phys_asset_p0")
+                    drift = p2.slider("Drift μ", -0.20, 0.40, 0.070, 0.005, key="phys_asset_mu")
+                    season_amp = p3.slider("Amplitude cycle", 0.0, 0.30, 0.055, 0.005, key="phys_asset_amp")
+                    omega = p4.slider("Fréquence cycle", 0.0, 2.0, 0.30, 0.05, key="phys_asset_omega")
                     t = np.linspace(0, t_max, 420)
                     y = price0 * np.exp(drift * t + (season_amp / max(omega, 1e-9)) * (1.0 - np.cos(omega * t)) if omega > 1e-9 else drift * t)
                     instantaneous = drift + season_amp * np.sin(omega * t)
@@ -49338,7 +49383,8 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                 system_extra: dict[str, Any] = {}
                 if model == "Système EDO d’ordre 1 général":
                     is_nonlinear = dynamic_type == "Non linéaire"
-                    dim = int(param_box.slider("Nombre d'équations", 1, 8, 3, 1, key="phys_sys1_dim"))
+                    top_cols = param_box.columns(2)
+                    dim = int(top_cols[0].slider("Nombre d'équations", 1, 8, 3, 1, key="phys_sys1_dim"))
                     param_box.caption(
                         "Forme linéaire: x' = A x + b + F sin(ωt)."
                         if not is_nonlinear
@@ -49352,13 +49398,13 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                         b_vec = _render_physical_vector_inputs("b", dim, "phys_sys1_b", default=0.0, step=0.1)
                     with v2:
                         force_vec = _render_physical_vector_inputs("F", dim, "phys_sys1_force", default=0.25, step=0.05)
-                        force_freq = param_box.slider("Fréquence ω", 0.0, 5.0, 0.45, 0.05, key="phys_sys1_freq")
+                        force_freq = st.slider("Fréquence ω", 0.0, 5.0, 0.45, 0.05, key="phys_sys1_freq")
                     if is_nonlinear:
                         nl1, nl2 = param_box.columns(2)
                         with nl1:
-                            nl_strength = param_box.number_input("Intensité quadratique", value=0.025, step=0.005, key="phys_sys1_nl_strength")
+                            nl_strength = st.number_input("Intensité quadratique", value=0.025, step=0.005, key="phys_sys1_nl_strength")
                         with nl2:
-                            sat_strength = param_box.number_input("Saturation tanh", value=0.08, step=0.01, key="phys_sys1_sat_strength")
+                            sat_strength = st.number_input("Saturation tanh", value=0.08, step=0.01, key="phys_sys1_sat_strength")
                         sim = _solve_nonlinear_general_system(
                             order=1,
                             dim=dim,
@@ -49413,7 +49459,8 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     phase_x, phase_y = "x1", "x1" if dim == 1 else "x2"
                 elif model == "Système EDO d’ordre 2 général":
                     is_nonlinear = dynamic_type == "Non linéaire"
-                    dim = int(param_box.slider("Nombre d'équations", 1, 6, 2, 1, key="phys_sys2_dim"))
+                    top_cols = param_box.columns(2)
+                    dim = int(top_cols[0].slider("Nombre d'équations", 1, 6, 2, 1, key="phys_sys2_dim"))
                     param_box.caption(
                         "Forme linéaire: M x'' + C x' + K x = b + F sin(ωt)."
                         if not is_nonlinear
@@ -49432,13 +49479,13 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     with v2:
                         b_vec = _render_physical_vector_inputs("b", dim, "phys_sys2_b", default=0.0, step=0.1)
                         force_vec = _render_physical_vector_inputs("F", dim, "phys_sys2_force", default=0.35, step=0.05)
-                        force_freq = param_box.slider("Fréquence ω", 0.0, 5.0, 0.70, 0.05, key="phys_sys2_freq")
+                        force_freq = st.slider("Fréquence ω", 0.0, 5.0, 0.70, 0.05, key="phys_sys2_freq")
                     if is_nonlinear:
                         nl1, nl2 = param_box.columns(2)
                         with nl1:
-                            nl_strength = param_box.number_input("Intensité quadratique", value=0.030, step=0.005, key="phys_sys2_nl_strength")
+                            nl_strength = st.number_input("Intensité quadratique", value=0.030, step=0.005, key="phys_sys2_nl_strength")
                         with nl2:
-                            sat_strength = param_box.number_input("Saturation tanh", value=0.10, step=0.01, key="phys_sys2_sat_strength")
+                            sat_strength = st.number_input("Saturation tanh", value=0.10, step=0.01, key="phys_sys2_sat_strength")
                         sim = _solve_nonlinear_general_system(
                             order=2,
                             dim=dim,
@@ -49495,8 +49542,9 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     phase_y = "D1_x1" if dim == 1 else "x2"
                 elif model == "Système d’ordre n général à coefficients constants":
                     is_nonlinear = dynamic_type == "Non linéaire"
-                    order_n = int(param_box.slider("Ordre n", 3, 5, 3, 1, key="phys_sysn_order"))
-                    dim = int(param_box.slider("Nombre d'équations", 1, 5, 2, 1, key="phys_sysn_dim"))
+                    top_cols = param_box.columns(2)
+                    order_n = int(top_cols[0].slider("Ordre n", 3, 5, 3, 1, key="phys_sysn_order"))
+                    dim = int(top_cols[1].slider("Nombre d'équations", 1, 5, 2, 1, key="phys_sysn_dim"))
                     param_box.caption(
                         "Forme linéaire: A_n x⁽ⁿ⁾ + A_{n-1} x⁽ⁿ⁻¹⁾ + ... + A_0 x = b + F sin(ωt)."
                         if not is_nonlinear
@@ -49537,13 +49585,13 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     with v2:
                         force_vec = _render_physical_vector_inputs("F", dim, "phys_sysn_force", default=0.20, step=0.05)
                     with v3:
-                        force_freq = param_box.slider("Fréquence ω", 0.0, 5.0, 0.50, 0.05, key="phys_sysn_freq")
+                        force_freq = st.slider("Fréquence ω", 0.0, 5.0, 0.50, 0.05, key="phys_sysn_freq")
                     if is_nonlinear:
                         nl1, nl2 = param_box.columns(2)
                         with nl1:
-                            nl_strength = param_box.number_input("Intensité quadratique", value=0.025, step=0.005, key="phys_sysn_nl_strength")
+                            nl_strength = st.number_input("Intensité quadratique", value=0.025, step=0.005, key="phys_sysn_nl_strength")
                         with nl2:
-                            sat_strength = param_box.number_input("Saturation tanh", value=0.10, step=0.01, key="phys_sysn_sat_strength")
+                            sat_strength = st.number_input("Saturation tanh", value=0.10, step=0.01, key="phys_sysn_sat_strength")
                         sim = _solve_nonlinear_general_system(
                             order=order_n,
                             dim=dim,
