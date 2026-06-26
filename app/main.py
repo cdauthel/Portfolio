@@ -3749,11 +3749,15 @@ Ce sommaire couvre l'ensemble du portfolio. Cliquez sur une section pour y être
 
               const summaryEl = exp.querySelector(':scope > summary');
               if (summaryEl) {{
+                summaryEl.addEventListener("pointerdown", () => {{
+                  closeOthers(exp, getSummaryExpanders());
+                }});
                 summaryEl.addEventListener("click", () => {{
+                  closeOthers(exp, getSummaryExpanders());
                   // Execute after Streamlit toggles current expander.
                   setTimeout(() => {{
                     const all = getSummaryExpanders();
-                    if (exp.open) closeOthers(exp, all);
+                    closeOthers(exp, all);
                   }}, 0);
                 }});
               }}
@@ -18595,36 +18599,49 @@ div[data-testid="stChatInput"] {
     position: sticky;
     bottom: .35rem;
     z-index: 40;
-    padding: .35rem 0 0 0;
-    background: rgba(248, 250, 252, .96) !important;
-    border-radius: 12px !important;
+    padding: .25rem 0 0 0 !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
 }
 div[data-testid="stChatInput"] > div,
 div[data-testid="stChatInput"] section,
 div[data-testid="stChatInput"] form {
-    background: rgba(248, 250, 252, .96) !important;
+    background: transparent !important;
     padding-bottom: 0 !important;
     margin-bottom: 0 !important;
-    border-radius: 12px !important;
+    border: 0 !important;
+    border-radius: 0 !important;
     box-shadow: none !important;
+}
+div[data-testid="stChatInput"] [data-baseweb="textarea"],
+div[data-testid="stChatInput"] [data-baseweb="base-input"] {
+    background: #111827 !important;
+    border: 1px solid rgba(0,0,0,.92) !important;
+    border-radius: 14px !important;
+    box-shadow: 0 10px 28px rgba(15,23,42,.16) !important;
 }
 div[data-testid="stChatInput"] textarea {
     min-height: 46px !important;
-    background: #f3f4f6 !important;
-    border: 1px solid rgba(107,114,128,.22) !important;
+    background: #111827 !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    border: 0 !important;
+    border-radius: 14px !important;
     box-shadow: none !important;
 }
-div[data-testid="stChatInput"] [data-baseweb="textarea"] {
-    background: #f3f4f6 !important;
+div[data-testid="stChatInput"] textarea::placeholder {
+    color: rgba(255,255,255,.72) !important;
+    -webkit-text-fill-color: rgba(255,255,255,.72) !important;
 }
 div[data-testid="stChatInput"] button {
     border-radius: 999px !important;
     width: 2.05rem !important;
     height: 2.05rem !important;
     min-width: 2.05rem !important;
-    background: #f3f4f6 !important;
-    border: 1px solid rgba(107,114,128,.28) !important;
-    color: #6b7280 !important;
+    background: #374151 !important;
+    border: 1px solid rgba(255,255,255,.26) !important;
+    color: #ffffff !important;
 }
 div[data-testid="stChatInput"] button svg {
     display: none !important;
@@ -18633,7 +18650,7 @@ div[data-testid="stChatInput"] button::before {
     content: "→";
     font-size: 1.05rem;
     line-height: 1;
-    color: #6b7280;
+    color: #ffffff;
 }
 </style>
         """,
@@ -46311,9 +46328,14 @@ def _render_client_sampling(ctx: dict[str, pd.DataFrame], embedded: bool = False
                 key="sampling_window",
             )
         )
-    case_cols[1].metric(
-        f"Population observée (fenêtre {target_window_days} jours)",
-        f"{observed_population:,}",
+    case_cols[1].markdown(
+        f"""
+<div style="padding:.58rem .72rem;border:1px solid rgba(148,163,184,.35);border-radius:8px;background:rgba(248,250,252,.72);">
+  <div style="font-size:.82rem;color:#475569;line-height:1.2;">Population observée (fenêtre {target_window_days} jours)</div>
+  <div style="font-size:1.28rem;font-weight:650;color:#0f172a;line-height:1.25;margin-top:.18rem;">{observed_population:,}</div>
+</div>
+""",
+        unsafe_allow_html=True,
     )
 
     alloc_options = [c for c in ["segment_valeur", "acquisition_channel", "customer_status", "loyalty_tier"] if c in eligible.columns]
