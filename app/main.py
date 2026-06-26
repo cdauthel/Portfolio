@@ -18775,9 +18775,14 @@ def _render_ai_assistant_overview() -> None:
 
 
 def _render_ai_chatbot_rag(data: dict[str, pd.DataFrame]) -> None:
+    _render_construction_state(
+        "Chatbot",
+        "Interface conversationnelle en amélioration continue: connexions LLM cloud/proxy, fluidité du dialogue et contrôles RAG.",
+    )
     st.caption("Assistant capable d'interroger les pages de l'app, les schémas de données et les documents projet via un LLM local, cloud ou proxy sécurisé.")
     config = _read_assistant_local_config()
     provider_df = _assistant_provider_profiles()
+    provider_df = provider_df[provider_df["Fournisseur"] != "Ollama"].reset_index(drop=True)
     try:
         cfg = st.container(border=True)
     except TypeError:
@@ -18968,6 +18973,10 @@ def _render_ai_chatbot_rag(data: dict[str, pd.DataFrame]) -> None:
 
 
 def _render_ai_rag(data: dict[str, pd.DataFrame]) -> None:
+    _render_construction_state(
+        "RAG",
+        "Index documentaire en cours d'enrichissement: sources métier, code applicatif, schémas, dictionnaire et documentation projet.",
+    )
     docs = _build_assistant_rag_documents(data)
     mode = str(st.session_state.get("ai_mode", "Chatbot"))
     st.markdown(
@@ -19006,6 +19015,10 @@ Le RAG construit une base documentaire interne au portfolio: pages de navigation
 
 
 def _render_ai_architecture() -> None:
+    _render_construction_state(
+        "Architecture IA",
+        "Architecture applicative en consolidation: fournisseur cloud, RAG contrôlé, ChatMD, sécurité des secrets et supervision.",
+    )
     st.caption("Architecture cible pour un assistant sobre, contrôlé, utilisable en local et déployable via endpoint cloud/proxy sécurisé.")
     flow = st.container(border=True)
     flow.markdown("#### Pipeline cible")
@@ -19093,59 +19106,6 @@ def _render_ai_architecture() -> None:
     )
     st.dataframe(automation_df, width="stretch", hide_index=True, height=_table_height(len(automation_df), max_height=300))
 
-    setup = st.container(border=True)
-    setup.markdown("#### Étapes à mettre en oeuvre localement")
-    setup.markdown(
-        """
-1. En local seulement: lancer **Ollama**, **Jan.ai** ou **LM Studio** si tu veux tester un runtime sur ta machine.
-2. Pour Streamlit Cloud: configurer un fournisseur cloud/proxy et placer les clés dans les secrets de l'app.
-3. Ouvrir **Assistant IA → Chatbot**: l'app détecte automatiquement endpoints, modèles et connexion.
-4. Choisir `Chatbot` ou `LLM + RAG` selon le besoin.
-5. Pour une version recruteur publique, préférer **Ollama Cloud**, un **endpoint compatible** ou un **serveur intermédiaire** qui garde les clés côté serveur et applique quotas, logs et filtrage.
-        """
-    )
-    st.markdown("#### Commandes de démarrage possibles")
-    cmd_cols = st.columns(3)
-    cmd_cols[0].code("ollama pull llama3.2\nollama serve\n# API locale: http://localhost:11434/api/chat\n# Cloud: export OLLAMA_API_KEY=...", language="bash")
-    cmd_cols[1].code("# Jan Desktop\n# Settings > Local API Server > Start Server\n# API: http://127.0.0.1:1337/v1/chat/completions", language="bash")
-    cmd_cols[2].code("lms server start --port 1234\n# ou serveur local depuis l'interface LM Studio\n# API: http://localhost:1234/v1/chat/completions", language="bash")
-    st.markdown("#### Script d'amorçage local")
-    st.code(
-        "python scripts/setup_assistant_ia.py --provider Ollama --model llama3.2 --test\n"
-        "python scripts/setup_assistant_ia.py --provider Ollama --model llama3.2 --pull-ollama --test",
-        language="bash",
-    )
-
-    st.markdown("#### Sécurité et publication")
-    st.markdown(
-        """
-- Ne jamais publier de clé API dans le repo, même pour un test.
-- Garder `secrets/assistant_ia.local.txt` hors Git et révoquer toute clé exposée accidentellement.
-- Pour ChatMD, le chiffrement ou le mot de passe améliore la friction, mais ne remplace pas un backend proxy si l'app devient publique.
-- En production, journaliser seulement les métadonnées utiles, éviter les données personnelles dans les prompts, et documenter les sources utilisées par le RAG.
-        """
-    )
-    st.markdown("#### Partage avec recruteurs")
-    share_df = pd.DataFrame(
-        [
-            {
-                "Scénario": "App hébergée + endpoint cloud/proxy",
-                "Téléchargement recruteur": "Aucun",
-                "Principe": "Le serveur de l'app appelle un LLM distant ou proxy sécurisé. C'est le meilleur choix pour un QR code public.",
-            },
-            {
-                "Scénario": "App locale sur ta machine",
-                "Téléchargement recruteur": "Aucun",
-                "Principe": "Tu présentes l'app depuis ton environnement; les modèles restent sur ta machine.",
-            },
-            {
-                "Scénario": "Repo cloné par un recruteur",
-                "Téléchargement recruteur": "Oui, si runtime local",
-                "Principe": "Les poids LLM ne sont pas publiés dans Git; l'app peut lancer Ollama et télécharger le modèle localement.",
-            },
-        ]
-    )
-    st.dataframe(share_df, width="stretch", hide_index=True, height=_table_height(len(share_df), max_height=220))
     st.markdown("#### Références techniques")
     st.markdown(
         """
@@ -49491,6 +49451,10 @@ def _render_pde_model(model: str) -> dict[str, Any]:
 
 
 def _render_physical_models_page(data: dict[str, pd.DataFrame], features: dict[str, pd.DataFrame]) -> None:
+    _render_construction_state(
+        "Mécanique",
+        "Simulateur physique en cours d'extension: familles d'équations, graphes dynamiques, modèles compartimentaux et scénarios métier.",
+    )
     st.markdown(
         """
 La modélisation physique décrit un système par ses **mécanismes**: bilans, flux, stocks, forces, diffusion, rétroactions et contraintes.
@@ -51935,7 +51899,7 @@ def main() -> None:
     if st.sidebar.button(_t("settings_button_open"), key="ui_settings_btn", width="stretch"):
         _init_settings_draft_from_active()
         st.session_state["ui_settings_open"] = True
-    if st.sidebar.button("Contact", key="contact_dialog_btn", width="stretch"):
+    if st.sidebar.button("📅 Contact", key="contact_dialog_btn", width="stretch"):
         st.session_state["contact_dialog_open"] = True
     st.sidebar.title(_t("navigation_title"))
 
