@@ -21,6 +21,7 @@ import traceback
 import uuid
 from email.message import EmailMessage
 from time import perf_counter
+from urllib.parse import quote
 import zipfile
 from xml.sax.saxutils import escape as xml_escape
 from zoneinfo import ZoneInfo
@@ -1857,6 +1858,149 @@ def _render_settings_dialog() -> None:
 
 
 CONTACT_OWNER_EMAIL = "cyriaknation@gmail.com"
+CONTACT_DIAL_CODES_RAW = """
+France|+33
+Belgique|+32
+Suisse|+41
+Luxembourg|+352
+Canada|+1
+États-Unis|+1
+Allemagne|+49
+Espagne|+34
+Italie|+39
+Royaume-Uni|+44
+Irlande|+353
+Portugal|+351
+Pays-Bas|+31
+Autriche|+43
+Danemark|+45
+Norvège|+47
+Suède|+46
+Finlande|+358
+Islande|+354
+Pologne|+48
+Tchéquie|+420
+Slovaquie|+421
+Hongrie|+36
+Roumanie|+40
+Bulgarie|+359
+Grèce|+30
+Croatie|+385
+Slovénie|+386
+Serbie|+381
+Bosnie-Herzégovine|+387
+Monténégro|+382
+Macédoine du Nord|+389
+Albanie|+355
+Kosovo|+383
+Estonie|+372
+Lettonie|+371
+Lituanie|+370
+Ukraine|+380
+Moldavie|+373
+Biélorussie|+375
+Russie|+7
+Turquie|+90
+Maroc|+212
+Algérie|+213
+Tunisie|+216
+Égypte|+20
+Sénégal|+221
+Côte d'Ivoire|+225
+Cameroun|+237
+Gabon|+241
+Congo|+242
+République démocratique du Congo|+243
+Madagascar|+261
+Maurice|+230
+Afrique du Sud|+27
+Nigeria|+234
+Ghana|+233
+Kenya|+254
+Éthiopie|+251
+Tanzanie|+255
+Ouganda|+256
+Rwanda|+250
+Burundi|+257
+Mali|+223
+Burkina Faso|+226
+Niger|+227
+Bénin|+229
+Togo|+228
+Guinée|+224
+Mauritanie|+222
+Tchad|+235
+Centrafrique|+236
+Angola|+244
+Mozambique|+258
+Zambie|+260
+Zimbabwe|+263
+Botswana|+267
+Namibie|+264
+Inde|+91
+Chine|+86
+Japon|+81
+Corée du Sud|+82
+Taïwan|+886
+Hong Kong|+852
+Singapour|+65
+Thaïlande|+66
+Vietnam|+84
+Malaisie|+60
+Indonésie|+62
+Philippines|+63
+Cambodge|+855
+Laos|+856
+Myanmar|+95
+Pakistan|+92
+Bangladesh|+880
+Sri Lanka|+94
+Népal|+977
+Australie|+61
+Nouvelle-Zélande|+64
+Brésil|+55
+Argentine|+54
+Chili|+56
+Colombie|+57
+Pérou|+51
+Mexique|+52
+Uruguay|+598
+Paraguay|+595
+Bolivie|+591
+Équateur|+593
+Venezuela|+58
+Costa Rica|+506
+Panama|+507
+Israël|+972
+Émirats arabes unis|+971
+Arabie saoudite|+966
+Qatar|+974
+Koweït|+965
+Oman|+968
+Jordanie|+962
+Liban|+961
+Autre pays|+
+""".strip()
+CONTACT_DIAL_CODES = [tuple(line.split("|", 1)) for line in CONTACT_DIAL_CODES_RAW.splitlines() if "|" in line]
+CONTACT_TIMEZONES = [
+    "Europe/Paris",
+    "UTC",
+    "Europe/London",
+    "Europe/Brussels",
+    "Europe/Zurich",
+    "Europe/Madrid",
+    "Europe/Rome",
+    "America/New_York",
+    "America/Toronto",
+    "America/Chicago",
+    "America/Denver",
+    "America/Los_Angeles",
+    "America/Sao_Paulo",
+    "Asia/Dubai",
+    "Asia/Singapore",
+    "Asia/Tokyo",
+    "Australia/Sydney",
+]
 
 
 def _close_contact_dialog() -> None:
@@ -2031,40 +2175,117 @@ def _create_google_calendar_event(contact: dict[str, Any]) -> tuple[str | None, 
     return str(meet_link) if meet_link else None, str(payload.get("htmlLink")) if payload.get("htmlLink") else None, None
 
 
+def _contact_time_slots(duration_min: int) -> list[dt.time]:
+    step = max(15, int(duration_min or 30))
+    start = dt.datetime.combine(dt.date.today(), dt.time(8, 0))
+    end = dt.datetime.combine(dt.date.today(), dt.time(19, 0))
+    slots: list[dt.time] = []
+    current = start
+    while current <= end:
+        slots.append(current.time())
+        current += dt.timedelta(minutes=step)
+    return slots
+
+
+def _contact_mailto_link(contact: dict[str, Any]) -> str:
+    subject = f"Demande {contact['meeting_kind']} portfolio - {contact['name']}"
+    body = _build_contact_email_body(contact)
+    return f"mailto:{CONTACT_OWNER_EMAIL}?subject={quote(subject)}&body={quote(body)}"
+
+
+def _render_contact_integration_help() -> None:
+    calendar_ok = _contact_calendar_configured()
+    smtp_ok = _contact_smtp_configured()
+    status_parts = [
+        "Google Calendar OK" if calendar_ok else "Google Calendar à configurer",
+        "SMTP optionnel OK" if smtp_ok else "SMTP optionnel non configuré",
+    ]
+    st.caption("Statut intégration: " + " · ".join(status_parts))
+    with st.expander("Configurer les envois", expanded=False):
+        st.markdown(
+            """
+**Google Calendar** sert à créer automatiquement l'évènement, inviter les deux adresses et générer le lien Meet pour les visios.
+
+Secrets Streamlit Cloud à renseigner:
+- `GOOGLE_CALENDAR_CLIENT_ID`
+- `GOOGLE_CALENDAR_CLIENT_SECRET`
+- `GOOGLE_CALENDAR_REFRESH_TOKEN`
+- `GOOGLE_CALENDAR_ID` optionnel, sinon `primary`
+- `CONTACT_TO_EMAIL` optionnel, sinon `cyriaknation@gmail.com`
+
+**SMTP** est seulement utile pour envoyer une copie email ou permettre un message seul depuis le serveur.
+
+Secrets SMTP optionnels:
+- `CONTACT_SMTP_HOST`
+- `CONTACT_SMTP_PORT`
+- `CONTACT_SMTP_USER`
+- `CONTACT_SMTP_PASSWORD`
+- `CONTACT_FROM_EMAIL`
+"""
+        )
+
+
 def _render_contact_fields() -> None:
-    st.markdown(
-        "<div style='font-size:.88rem;color:#6b7280;margin-bottom:.6rem;'>"
-        "Demande de prise de contact depuis le portfolio. Les secrets restent côté serveur: rien n'est saisi ni affiché dans l'interface."
-        "</div>",
-        unsafe_allow_html=True,
-    )
+    st.caption("Demande de prise de contact depuis le portfolio.")
     with st.form("portfolio_contact_form", clear_on_submit=False):
-        kind_col, duration_col = st.columns([1.1, 0.9])
+        kind_col, duration_col, tz_col = st.columns([1.05, 0.58, 1.0])
         with kind_col:
             meeting_kind = st.segmented_control(
                 "Type de contact",
-                ["Appel", "Visio Google Meet"],
+                ["Visio Google Meet", "Appel", "Message"],
                 default="Visio Google Meet",
                 key="contact_meeting_kind",
             )
         with duration_col:
-            duration_min = int(st.selectbox("Durée", [15, 30, 45, 60], index=1, key="contact_duration_min"))
+            duration_min = int(st.selectbox("Durée", [15, 30, 45, 60], index=1, key="contact_duration_min", disabled=meeting_kind == "Message"))
+        with tz_col:
+            timezone_name = st.selectbox("Fuseau horaire", CONTACT_TIMEZONES, key="contact_timezone")
+            st.caption("Utilisé pour l'invitation et le créneau.")
 
-        p1, p2 = st.columns(2)
-        with p1:
+        n_col, date_col = st.columns([1.15, 0.85])
+        with n_col:
             name = st.text_input("Nom / prénom", key="contact_name")
-            email = st.text_input("Email", key="contact_email")
-        with p2:
-            organization = st.text_input("Organisation", key="contact_organization")
-            phone = st.text_input("Téléphone", key="contact_phone")
+        with date_col:
+            requested_date = st.date_input(
+                "Date souhaitée",
+                value=dt.date.today() + dt.timedelta(days=1),
+                min_value=dt.date.today(),
+                key="contact_date",
+                disabled=meeting_kind == "Message",
+            )
 
-        d1, d2, d3 = st.columns([1.05, 0.9, 1.1])
-        with d1:
-            requested_date = st.date_input("Date souhaitée", value=dt.date.today() + dt.timedelta(days=1), min_value=dt.date.today(), key="contact_date")
-        with d2:
-            requested_time = st.time_input("Heure souhaitée", value=dt.time(10, 0), step=dt.timedelta(minutes=15), key="contact_time")
-        with d3:
-            timezone_name = st.selectbox("Fuseau horaire", ["Europe/Paris", "UTC"], key="contact_timezone")
+        e_col, org_col = st.columns(2)
+        with e_col:
+            email = st.text_input("Email", key="contact_email")
+        with org_col:
+            organization = st.text_input("Organisation", key="contact_organization")
+
+        phone_country_col, phone_col, time_col = st.columns([1.05, 1.0, 0.85])
+        with phone_country_col:
+            phone_country = st.selectbox(
+                "Pays / indicatif",
+                CONTACT_DIAL_CODES,
+                index=0,
+                format_func=lambda item: f"{item[0]} ({item[1]})",
+                key="contact_phone_country",
+                help="Liste recherchable: tapez un pays ou un indicatif.",
+            )
+            custom_dial_code = ""
+            if isinstance(phone_country, tuple) and phone_country[0] == "Autre pays":
+                custom_dial_code = st.text_input("Indicatif", placeholder="+...", key="contact_custom_dial_code")
+        with phone_col:
+            phone = st.text_input("Téléphone", key="contact_phone")
+        with time_col:
+            slots = _contact_time_slots(duration_min)
+            default_slot = dt.time(10, 0)
+            requested_time = st.selectbox(
+                "Heure souhaitée",
+                slots,
+                index=slots.index(default_slot) if default_slot in slots else 0,
+                format_func=lambda value: value.strftime("%H:%M"),
+                key="contact_time_slot",
+                disabled=meeting_kind == "Message",
+            )
 
         message = st.text_area(
             "Message",
@@ -2075,30 +2296,38 @@ def _render_contact_fields() -> None:
         submitted = st.form_submit_button("Envoyer la demande", width="stretch")
 
     if not submitted:
-        status_parts = []
-        status_parts.append("Google Calendar OK" if _contact_calendar_configured() else "Google Calendar à configurer")
-        status_parts.append("SMTP optionnel OK" if _contact_smtp_configured() else "SMTP optionnel non configuré")
-        st.caption("Statut intégration: " + " · ".join(status_parts))
+        _render_contact_integration_help()
         return
 
+    missing_fields: list[str] = []
     if not str(name).strip():
-        st.error("Le nom est obligatoire.")
-        return
+        missing_fields.append("nom / prénom")
     if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", str(email).strip()):
-        st.error("Un email valide est obligatoire.")
-        return
+        missing_fields.append("email valide")
     if str(meeting_kind) == "Appel" and not str(phone).strip():
-        st.error("Pour un appel, renseignez un numéro de téléphone.")
+        missing_fields.append("téléphone pour l'appel")
+    if str(phone).strip() and isinstance(phone_country, tuple) and phone_country[0] == "Autre pays" and not str(custom_dial_code).strip():
+        missing_fields.append("indicatif du pays")
+    if str(meeting_kind) == "Message" and not str(message).strip():
+        missing_fields.append("message")
+    if missing_fields:
+        st.warning("Merci de renseigner: " + ", ".join(missing_fields) + ".")
         return
 
     tz = ZoneInfo(str(timezone_name))
     start_at = dt.datetime.combine(requested_date, requested_time).replace(tzinfo=tz)
+    dial_code = str(phone_country[1]) if isinstance(phone_country, tuple) and len(phone_country) > 1 else ""
+    if isinstance(phone_country, tuple) and phone_country[0] == "Autre pays":
+        dial_code = str(custom_dial_code).strip()
+    phone_clean = str(phone).strip()
+    full_phone = f"{dial_code} {phone_clean}".strip() if phone_clean else ""
     contact = {
         "meeting_kind": str(meeting_kind),
         "duration_min": int(duration_min),
         "name": str(name).strip(),
         "email": str(email).strip(),
-        "phone": str(phone).strip(),
+        "phone": full_phone,
+        "phone_country": str(phone_country[0]) if isinstance(phone_country, tuple) and phone_country else "",
         "organization": str(organization).strip(),
         "message": str(message).strip(),
         "timezone": str(timezone_name),
@@ -2108,11 +2337,11 @@ def _render_contact_fields() -> None:
     meet_link = None
     calendar_link = None
     calendar_error = None
-    if _contact_calendar_configured():
+    if contact["meeting_kind"] != "Message" and _contact_calendar_configured():
         spinner_label = "Création de l'invitation Google Meet..." if contact["meeting_kind"] == "Visio Google Meet" else "Création de l'invitation Calendar..."
         with st.spinner(spinner_label):
             meet_link, calendar_link, calendar_error = _create_google_calendar_event(contact)
-    else:
+    elif contact["meeting_kind"] != "Message":
         calendar_error = "Google Calendar non configuré. Sans SMTP, aucune invitation automatique ne peut être envoyée."
 
     mail_status = ""
@@ -2129,13 +2358,18 @@ def _render_contact_fields() -> None:
             st.markdown(f"**Évènement Calendar :** [{calendar_link}]({calendar_link})")
         if mail_status:
             st.caption(mail_status if mail_ok else f"Copie SMTP non envoyée: {mail_status}")
+    elif mail_ok:
+        st.success(mail_status or "Message envoyé.")
     else:
         if calendar_error:
             st.error(calendar_error)
         elif mail_status:
             st.error(mail_status)
         else:
-            st.error("Aucun canal d'envoi n'est configuré. Ajoutez les secrets Google Calendar ou SMTP.")
+            st.error("Aucun canal d'envoi serveur n'est configuré pour ce type de demande.")
+        if contact["meeting_kind"] == "Message":
+            st.markdown(f"[Ouvrir un email prérempli]({_contact_mailto_link(contact)})")
+            st.caption("Fallback sans SMTP: le mail s'ouvre dans votre client email, puis vous l'envoyez manuellement.")
 
     if st.button("Fermer", key="contact_close_after_submit", width="stretch"):
         _close_contact_dialog()
