@@ -2121,6 +2121,14 @@ def _google_calendar_access_token() -> tuple[str | None, str | None]:
         )
         response.raise_for_status()
         return str(response.json().get("access_token")), None
+    except requests.HTTPError as exc:
+        detail = ""
+        try:
+            detail = response.text[:700]
+        except Exception:
+            detail = ""
+        suffix = f" · Réponse Google: {detail}" if detail else ""
+        return None, f"Impossible d'obtenir un token Google Calendar: {exc}{suffix}"
     except Exception as exc:
         return None, f"Impossible d'obtenir un token Google Calendar: {exc}"
 
@@ -2233,93 +2241,104 @@ Secrets SMTP optionnels:
 
 def _render_contact_fields() -> None:
     st.caption("Demande de prise de contact depuis le portfolio.")
-    top_kind_col, top_name_col = st.columns([1.0, 1.08])
-    with top_kind_col:
-        meeting_kind = st.segmented_control(
-            "Type de contact",
-            ["Visio Google Meet", "Appel", "Message"],
-            default="Visio Google Meet",
-            key="contact_meeting_kind",
-        )
-    with top_name_col:
-        name = st.text_input("Nom / prénom", key="contact_name")
-
-    details_col, schedule_col = st.columns([0.9, 1.18])
-    with details_col:
-        e_col, org_col = st.columns(2)
-        with e_col:
-            email = st.text_input("Email", key="contact_email")
-        with org_col:
-            organization = st.text_input("Organisation", key="contact_organization")
-
-        phone_country_col, phone_col = st.columns([0.58, 1.42])
-        with phone_country_col:
-            phone_country = st.selectbox(
-                "Pays / indicatif",
-                CONTACT_DIAL_CODES,
-                index=0,
-                format_func=lambda item: f"{item[0]} ({item[1]})",
-                key="contact_phone_country",
-                help="Liste recherchable: tapez un pays ou un indicatif.",
+    try:
+        contact_card = st.container(border=True)
+    except TypeError:
+        contact_card = st.container()
+    with contact_card:
+        top_kind_col, top_name_col = st.columns([1.0, 1.18])
+        with top_kind_col:
+            meeting_kind = st.segmented_control(
+                "Type de contact",
+                ["Visio Google Meet", "Appel", "Message"],
+                default="Visio Google Meet",
+                key="contact_meeting_kind",
             )
-            custom_dial_code = ""
-            if isinstance(phone_country, tuple) and phone_country[0] == "Autre pays":
-                custom_dial_code = st.text_input("Indicatif", placeholder="+...", key="contact_custom_dial_code")
-        with phone_col:
-            phone = st.text_input("Téléphone", key="contact_phone")
-    with schedule_col:
-        try:
-            schedule_box = st.container(border=True)
-        except TypeError:
-            schedule_box = st.container()
-        with schedule_box:
-            st.markdown("**Date et heure**")
-            s1, s2, s3, s4 = st.columns([1.05, 1.0, 0.72, 0.72])
-            with s1:
-                timezone_name = st.selectbox(
-                    "Fuseau",
-                    CONTACT_TIMEZONES,
-                    key="contact_timezone",
-                    disabled=meeting_kind == "Message",
+        with top_name_col:
+            name = st.text_input("Nom / prénom", key="contact_name")
+
+        details_col, schedule_col = st.columns([0.92, 1.16])
+        with details_col:
+            e_col, org_col = st.columns(2)
+            with e_col:
+                email = st.text_input("Email", key="contact_email")
+            with org_col:
+                organization = st.text_input("Organisation", key="contact_organization")
+
+            phone_country_col, phone_col = st.columns([0.54, 1.46])
+            with phone_country_col:
+                phone_country = st.selectbox(
+                    "Pays / indicatif",
+                    CONTACT_DIAL_CODES,
+                    index=0,
+                    format_func=lambda item: f"{item[0]} ({item[1]})",
+                    key="contact_phone_country",
+                    help="Liste recherchable: tapez un pays ou un indicatif.",
                 )
-            with s2:
-                requested_date = st.date_input(
-                    "Date",
-                    value=dt.date.today() + dt.timedelta(days=1),
-                    min_value=dt.date.today(),
-                    key="contact_date",
-                    disabled=meeting_kind == "Message",
-                )
-            with s3:
-                duration_min = int(
-                    st.selectbox(
-                        "Durée",
-                        [15, 30, 45, 60],
-                        index=1,
-                        key="contact_duration_min",
+                custom_dial_code = ""
+                if isinstance(phone_country, tuple) and phone_country[0] == "Autre pays":
+                    custom_dial_code = st.text_input("Indicatif", placeholder="+...", key="contact_custom_dial_code")
+            with phone_col:
+                phone = st.text_input("Téléphone", key="contact_phone")
+
+            message = st.text_area(
+                "Message",
+                placeholder="Contexte, sujet à aborder, poste / mission, disponibilités complémentaires...",
+                height=130,
+                key="contact_message",
+            )
+        with schedule_col:
+            try:
+                schedule_box = st.container(border=True)
+            except TypeError:
+                schedule_box = st.container()
+            with schedule_box:
+                st.markdown("**Date et heure**")
+                s1, s2, s3, s4 = st.columns([1.05, 1.0, 0.78, 0.72])
+                with s1:
+                    timezone_name = st.selectbox(
+                        "Fuseau",
+                        CONTACT_TIMEZONES,
+                        key="contact_timezone",
                         disabled=meeting_kind == "Message",
                     )
-                )
-            with s4:
-                slots = _contact_time_slots(duration_min)
-                default_slot = dt.time(10, 0)
-                current_time = st.session_state.get("contact_time_slot", default_slot)
-                if current_time not in slots:
-                    st.session_state["contact_time_slot"] = slots[0]
-                requested_time = st.selectbox(
-                    "Heure",
-                    slots,
-                    format_func=lambda value: value.strftime("%H:%M"),
-                    key="contact_time_slot",
-                    disabled=meeting_kind == "Message",
-                )
+                with s2:
+                    requested_date = st.date_input(
+                        "Date",
+                        value=dt.date.today() + dt.timedelta(days=1),
+                        min_value=dt.date.today(),
+                        key="contact_date",
+                        disabled=meeting_kind == "Message",
+                    )
+                with s3:
+                    duration_min = int(
+                        st.selectbox(
+                            "Durée (min)",
+                            [15, 30, 45, 60],
+                            index=1,
+                            key="contact_duration_min",
+                            disabled=meeting_kind == "Message",
+                        )
+                    )
+                with s4:
+                    slots = _contact_time_slots(duration_min)
+                    default_slot = dt.time(10, 0)
+                    current_time = st.session_state.get("contact_time_slot", default_slot)
+                    if current_time not in slots:
+                        st.session_state["contact_time_slot"] = slots[0]
+                    requested_time = st.selectbox(
+                        "Heure",
+                        slots,
+                        format_func=lambda value: value.strftime("%H:%M"),
+                        key="contact_time_slot",
+                        disabled=meeting_kind == "Message",
+                    )
+            st.markdown(
+                "<div style='height:162px;'></div>",
+                unsafe_allow_html=True,
+            )
 
-    message = st.text_area(
-        "Message",
-        placeholder="Contexte, sujet à aborder, poste / mission, disponibilités complémentaires...",
-        height=130,
-        key="contact_message",
-    )
+    message = str(st.session_state.get("contact_message", ""))
     submitted = st.button("Envoyer la demande", width="stretch", key="contact_submit_request")
 
     if not submitted:
