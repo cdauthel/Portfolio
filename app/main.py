@@ -2330,9 +2330,9 @@ def _render_contact_fields() -> None:
     with contact_card:
         availability_error = None
         no_available_slots = False
-        details_col, schedule_col = st.columns([0.92, 1.16])
+        details_col, schedule_col = st.columns([1.08, 0.92])
         with details_col:
-            kind_col, name_col = st.columns([0.96, 1.04])
+            kind_col, name_col = st.columns([0.88, 1.12])
             with kind_col:
                 meeting_kind = st.segmented_control(
                     "Type de contact",
@@ -2343,13 +2343,13 @@ def _render_contact_fields() -> None:
             with name_col:
                 name = st.text_input("Nom / prénom", key="contact_name")
 
-            e_col, org_col = st.columns(2)
+            e_col, org_col = st.columns([1.12, 0.88])
             with e_col:
                 email = st.text_input("Email", key="contact_email")
             with org_col:
                 organization = st.text_input("Organisation", key="contact_organization")
 
-            phone_country_col, phone_col = st.columns([0.54, 1.46])
+            phone_country_col, phone_col = st.columns([0.48, 1.52])
             with phone_country_col:
                 phone_country = st.selectbox(
                     "Pays / indicatif",
@@ -2371,7 +2371,7 @@ def _render_contact_fields() -> None:
                 schedule_box = st.container()
             with schedule_box:
                 st.markdown("**Date et heure**")
-                s1, s2, s3, s4 = st.columns([1.05, 1.0, 0.78, 0.72])
+                s1, s2 = st.columns([1.0, 1.0])
                 with s1:
                     timezone_name = st.selectbox(
                         "Fuseau",
@@ -2387,6 +2387,7 @@ def _render_contact_fields() -> None:
                         key="contact_date",
                         disabled=meeting_kind == "Message",
                     )
+                s3, s4 = st.columns([1.0, 1.0])
                 with s3:
                     duration_min = int(
                         st.selectbox(
@@ -2422,7 +2423,6 @@ def _render_contact_fields() -> None:
                         st.warning("Aucun créneau libre disponible sur cette date pour la durée choisie.")
                     else:
                         st.caption("Agenda vérifié: seuls les créneaux libres sont proposés.")
-                st.markdown("<div style='height:84px;'></div>", unsafe_allow_html=True)
 
         message = st.text_area(
             "Message",
@@ -2435,7 +2435,6 @@ def _render_contact_fields() -> None:
     submitted = st.button("Envoyer la demande", width="stretch", key="contact_submit_request")
 
     if not submitted:
-        _render_contact_integration_help()
         return
 
     missing_fields: list[str] = []
