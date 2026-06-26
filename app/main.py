@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime as dt
 from io import BytesIO
 from itertools import combinations
 from pathlib import Path
@@ -9,15 +10,20 @@ import html
 import os
 import platform
 import shutil
+import smtplib
+import ssl
 import sys
 import json
 import re
 import requests
 import subprocess
 import traceback
+import uuid
+from email.message import EmailMessage
 from time import perf_counter
 import zipfile
 from xml.sax.saxutils import escape as xml_escape
+from zoneinfo import ZoneInfo
 from typing import Any, Callable
 
 # Cloud runtimes often restrict writes to the home directory. Keep library caches in /tmp.
@@ -1848,6 +1854,295 @@ def _render_settings_dialog() -> None:
                 _apply_settings_draft()
                 _close_settings_dialog()
                 st.rerun()
+
+
+CONTACT_OWNER_EMAIL = "cyriaknation@gmail.com"
+
+
+def _close_contact_dialog() -> None:
+    st.session_state["contact_dialog_open"] = False
+
+
+def _secret_value(*names: str, default: str | None = None) -> str | None:
+    for name in names:
+        env_value = os.getenv(name)
+        if env_value:
+            return str(env_value)
+        try:
+            value = st.secrets.get(name)  # type: ignore[attr-defined]
+        except Exception:
+            value = None
+        if value not in (None, ""):
+            return str(value)
+    return default
+
+
+def _contact_smtp_configured() -> bool:
+    return bool(_secret_value("CONTACT_SMTP_HOST", "SMTP_HOST")) and bool(_secret_value("CONTACT_SMTP_PASSWORD", "SMTP_PASSWORD"))
+
+
+def _contact_calendar_configured() -> bool:
+    required = [
+        "GOOGLE_CALENDAR_CLIENT_ID",
+        "GOOGLE_CALENDAR_CLIENT_SECRET",
+        "GOOGLE_CALENDAR_REFRESH_TOKEN",
+    ]
+    return all(bool(_secret_value(name)) for name in required)
+
+
+def _format_contact_datetime(start_at: dt.datetime, duration_min: int) -> tuple[str, str]:
+    end_at = start_at + dt.timedelta(minutes=duration_min)
+    return (
+        start_at.strftime("%d/%m/%Y %H:%M %Z"),
+        end_at.strftime("%d/%m/%Y %H:%M %Z"),
+    )
+
+
+def _build_contact_email_body(contact: dict[str, Any], *, meet_link: str | None = None, calendar_link: str | None = None, calendar_error: str | None = None) -> str:
+    start_txt, end_txt = _format_contact_datetime(contact["start_at"], int(contact["duration_min"]))
+    lines = [
+        "Nouvelle demande de contact depuis le portfolio Streamlit.",
+        "",
+        f"Type de rendez-vous: {contact['meeting_kind']}",
+        f"Créneau demandé: {start_txt} -> {end_txt}",
+        f"Fuseau horaire: {contact['timezone']}",
+        "",
+        f"Nom: {contact['name']}",
+        f"Email: {contact['email']}",
+        f"Téléphone: {contact.get('phone') or 'Non renseigné'}",
+        f"Organisation: {contact.get('organization') or 'Non renseignée'}",
+        "",
+        "Message:",
+        str(contact.get("message") or "Aucun message"),
+    ]
+    if meet_link:
+        lines.extend(["", f"Lien Google Meet: {meet_link}"])
+    if calendar_link:
+        lines.extend(["", f"Évènement Calendar: {calendar_link}"])
+    if calendar_error:
+        lines.extend(["", f"Création Google Meet non effectuée: {calendar_error}"])
+    return "\n".join(lines)
+
+
+def _send_contact_email(contact: dict[str, Any], *, meet_link: str | None = None, calendar_link: str | None = None, calendar_error: str | None = None) -> tuple[bool, str]:
+    host = _secret_value("CONTACT_SMTP_HOST", "SMTP_HOST")
+    password = _secret_value("CONTACT_SMTP_PASSWORD", "SMTP_PASSWORD")
+    if not host or not password:
+        return False, "SMTP non configuré. Ajoutez CONTACT_SMTP_HOST et CONTACT_SMTP_PASSWORD dans les secrets Streamlit."
+    port = int(_secret_value("CONTACT_SMTP_PORT", "SMTP_PORT", default="587") or "587")
+    user = _secret_value("CONTACT_SMTP_USER", "SMTP_USER")
+    from_email = _secret_value("CONTACT_FROM_EMAIL", "SMTP_FROM_EMAIL", default=user or CONTACT_OWNER_EMAIL) or CONTACT_OWNER_EMAIL
+    to_email = _secret_value("CONTACT_TO_EMAIL", "SMTP_TO_EMAIL", default=CONTACT_OWNER_EMAIL) or CONTACT_OWNER_EMAIL
+
+    msg = EmailMessage()
+    msg["Subject"] = f"Demande {contact['meeting_kind']} portfolio - {contact['name']}"
+    msg["From"] = from_email
+    msg["To"] = to_email
+    msg["Reply-To"] = str(contact["email"])
+    msg.set_content(_build_contact_email_body(contact, meet_link=meet_link, calendar_link=calendar_link, calendar_error=calendar_error))
+
+    try:
+        if port == 465:
+            with smtplib.SMTP_SSL(host, port, context=ssl.create_default_context(), timeout=20) as smtp:
+                if user:
+                    smtp.login(user, password)
+                smtp.send_message(msg)
+        else:
+            with smtplib.SMTP(host, port, timeout=20) as smtp:
+                smtp.starttls(context=ssl.create_default_context())
+                if user:
+                    smtp.login(user, password)
+                smtp.send_message(msg)
+    except Exception as exc:
+        return False, f"Échec d'envoi SMTP: {exc}"
+    return True, f"Demande envoyée à {to_email}."
+
+
+def _google_calendar_access_token() -> tuple[str | None, str | None]:
+    client_id = _secret_value("GOOGLE_CALENDAR_CLIENT_ID")
+    client_secret = _secret_value("GOOGLE_CALENDAR_CLIENT_SECRET")
+    refresh_token = _secret_value("GOOGLE_CALENDAR_REFRESH_TOKEN")
+    if not client_id or not client_secret or not refresh_token:
+        return None, "Secrets Google Calendar incomplets."
+    try:
+        response = requests.post(
+            "https://oauth2.googleapis.com/token",
+            data={
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "refresh_token": refresh_token,
+                "grant_type": "refresh_token",
+            },
+            timeout=20,
+        )
+        response.raise_for_status()
+        return str(response.json().get("access_token")), None
+    except Exception as exc:
+        return None, f"Impossible d'obtenir un token Google Calendar: {exc}"
+
+
+def _create_google_meet_event(contact: dict[str, Any]) -> tuple[str | None, str | None, str | None]:
+    access_token, token_error = _google_calendar_access_token()
+    if token_error or not access_token:
+        return None, None, token_error or "Token Google Calendar indisponible."
+
+    calendar_id = _secret_value("GOOGLE_CALENDAR_ID", default="primary") or "primary"
+    owner_email = _secret_value("CONTACT_TO_EMAIL", "SMTP_TO_EMAIL", default=CONTACT_OWNER_EMAIL) or CONTACT_OWNER_EMAIL
+    start_at: dt.datetime = contact["start_at"]
+    end_at = start_at + dt.timedelta(minutes=int(contact["duration_min"]))
+    body = _build_contact_email_body(contact)
+    event = {
+        "summary": f"Visio portfolio - {contact['name']}",
+        "description": body,
+        "start": {"dateTime": start_at.isoformat(), "timeZone": contact["timezone"]},
+        "end": {"dateTime": end_at.isoformat(), "timeZone": contact["timezone"]},
+        "attendees": [{"email": owner_email}, {"email": str(contact["email"])}],
+        "conferenceData": {
+            "createRequest": {
+                "requestId": f"portfolio-{uuid.uuid4().hex[:24]}",
+                "conferenceSolutionKey": {"type": "hangoutsMeet"},
+            }
+        },
+        "reminders": {"useDefault": True},
+    }
+    try:
+        response = requests.post(
+            f"https://www.googleapis.com/calendar/v3/calendars/{calendar_id}/events",
+            params={"conferenceDataVersion": 1, "sendUpdates": "all"},
+            headers={"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"},
+            data=json.dumps(event),
+            timeout=25,
+        )
+        response.raise_for_status()
+        payload = response.json()
+    except Exception as exc:
+        return None, None, f"Création de l'évènement Google Calendar impossible: {exc}"
+
+    meet_link = payload.get("hangoutLink")
+    for entry in payload.get("conferenceData", {}).get("entryPoints", []) or []:
+        if entry.get("entryPointType") == "video" and entry.get("uri"):
+            meet_link = entry["uri"]
+            break
+    return str(meet_link) if meet_link else None, str(payload.get("htmlLink")) if payload.get("htmlLink") else None, None
+
+
+def _render_contact_fields() -> None:
+    st.markdown(
+        "<div style='font-size:.88rem;color:#6b7280;margin-bottom:.6rem;'>"
+        "Demande de prise de contact depuis le portfolio. Les secrets restent côté serveur: rien n'est saisi ni affiché dans l'interface."
+        "</div>",
+        unsafe_allow_html=True,
+    )
+    with st.form("portfolio_contact_form", clear_on_submit=False):
+        kind_col, duration_col = st.columns([1.1, 0.9])
+        with kind_col:
+            meeting_kind = st.segmented_control(
+                "Type de contact",
+                ["Appel", "Visio Google Meet"],
+                default="Visio Google Meet",
+                key="contact_meeting_kind",
+            )
+        with duration_col:
+            duration_min = int(st.selectbox("Durée", [15, 30, 45, 60], index=1, key="contact_duration_min"))
+
+        p1, p2 = st.columns(2)
+        with p1:
+            name = st.text_input("Nom / prénom", key="contact_name")
+            email = st.text_input("Email", key="contact_email")
+        with p2:
+            organization = st.text_input("Organisation", key="contact_organization")
+            phone = st.text_input("Téléphone", key="contact_phone")
+
+        d1, d2, d3 = st.columns([1.05, 0.9, 1.1])
+        with d1:
+            requested_date = st.date_input("Date souhaitée", value=dt.date.today() + dt.timedelta(days=1), min_value=dt.date.today(), key="contact_date")
+        with d2:
+            requested_time = st.time_input("Heure souhaitée", value=dt.time(10, 0), step=dt.timedelta(minutes=15), key="contact_time")
+        with d3:
+            timezone_name = st.selectbox("Fuseau horaire", ["Europe/Paris", "UTC"], key="contact_timezone")
+
+        message = st.text_area(
+            "Message",
+            placeholder="Contexte, sujet à aborder, poste / mission, disponibilités complémentaires...",
+            height=130,
+            key="contact_message",
+        )
+        submitted = st.form_submit_button("Envoyer la demande", width="stretch")
+
+    if not submitted:
+        status_parts = []
+        status_parts.append("SMTP OK" if _contact_smtp_configured() else "SMTP à configurer")
+        status_parts.append("Google Calendar OK" if _contact_calendar_configured() else "Google Calendar à configurer")
+        st.caption("Statut intégration: " + " · ".join(status_parts))
+        return
+
+    if not str(name).strip():
+        st.error("Le nom est obligatoire.")
+        return
+    if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", str(email).strip()):
+        st.error("Un email valide est obligatoire.")
+        return
+    if str(meeting_kind) == "Appel" and not str(phone).strip():
+        st.error("Pour un appel, renseignez un numéro de téléphone.")
+        return
+
+    tz = ZoneInfo(str(timezone_name))
+    start_at = dt.datetime.combine(requested_date, requested_time).replace(tzinfo=tz)
+    contact = {
+        "meeting_kind": str(meeting_kind),
+        "duration_min": int(duration_min),
+        "name": str(name).strip(),
+        "email": str(email).strip(),
+        "phone": str(phone).strip(),
+        "organization": str(organization).strip(),
+        "message": str(message).strip(),
+        "timezone": str(timezone_name),
+        "start_at": start_at,
+    }
+
+    meet_link = None
+    calendar_link = None
+    calendar_error = None
+    if contact["meeting_kind"] == "Visio Google Meet":
+        with st.spinner("Création de l'évènement Google Meet..."):
+            meet_link, calendar_link, calendar_error = _create_google_meet_event(contact)
+
+    with st.spinner("Envoi du mail de demande..."):
+        ok, mail_status = _send_contact_email(contact, meet_link=meet_link, calendar_link=calendar_link, calendar_error=calendar_error)
+
+    if ok:
+        st.success(mail_status)
+        if meet_link:
+            st.markdown(f"**Google Meet créé :** [{meet_link}]({meet_link})")
+        elif calendar_error:
+            st.warning(calendar_error)
+    else:
+        st.error(mail_status)
+        if calendar_error:
+            st.warning(calendar_error)
+
+    if st.button("Fermer", key="contact_close_after_submit", width="stretch"):
+        _close_contact_dialog()
+        st.rerun()
+
+
+def _render_contact_dialog() -> None:
+    if not bool(st.session_state.get("contact_dialog_open", False)):
+        return
+    if hasattr(st, "dialog"):
+        @st.dialog("Contact", width="large", dismissible=True, on_dismiss=_close_contact_dialog)
+        def _contact_modal() -> None:
+            _render_contact_fields()
+
+        _contact_modal()
+    else:
+        try:
+            fallback_box = st.container(border=True)
+        except TypeError:
+            fallback_box = st.container()
+        with fallback_box:
+            st.markdown("**Contact**")
+            _render_contact_fields()
 
 PRIMARY_KEYS: dict[str, set[str]] = {
     "stores": {"store_id"},
@@ -51142,6 +51437,8 @@ def main() -> None:
         st.session_state["ui_dark_mode"] = False
     if "ui_settings_open" not in st.session_state:
         st.session_state["ui_settings_open"] = False
+    if "contact_dialog_open" not in st.session_state:
+        st.session_state["contact_dialog_open"] = False
     section_aliases = {
         "Données": "Tableau de bord",
         "Originales": "Tableau de bord",
@@ -51177,11 +51474,14 @@ def main() -> None:
     if st.sidebar.button(_t("settings_button_open"), key="ui_settings_btn", width="stretch"):
         _init_settings_draft_from_active()
         st.session_state["ui_settings_open"] = True
+    if st.sidebar.button("Contact", key="contact_dialog_btn", width="stretch"):
+        st.session_state["contact_dialog_open"] = True
     st.sidebar.title(_t("navigation_title"))
 
     _apply_runtime_theme(bool(st.session_state.get("ui_dark_mode", False)))
     _apply_ui_layout_preferences()
     _render_settings_dialog()
+    _render_contact_dialog()
 
     pending_nav = st.session_state.pop("pending_navigation", None)
     query_nav = _consume_navigation_query_param()
