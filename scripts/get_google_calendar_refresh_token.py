@@ -23,7 +23,11 @@ import requests
 HOST = "localhost"
 PORT = 8765
 REDIRECT_URI = f"http://{HOST}:{PORT}/oauth2callback"
-SCOPE = "https://www.googleapis.com/auth/calendar.events"
+SCOPES = [
+    "https://www.googleapis.com/auth/calendar.events",
+    "https://www.googleapis.com/auth/calendar.freebusy",
+]
+SCOPE = " ".join(SCOPES)
 
 
 class OAuthCallbackHandler(BaseHTTPRequestHandler):

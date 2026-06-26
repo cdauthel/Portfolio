@@ -2183,6 +2183,86 @@ def _create_google_calendar_event(contact: dict[str, Any]) -> tuple[str | None, 
     return str(meet_link) if meet_link else None, str(payload.get("htmlLink")) if payload.get("htmlLink") else None, None
 
 
+def _parse_google_calendar_datetime(value: str, timezone_name: str) -> dt.datetime:
+    tz = ZoneInfo(str(timezone_name))
+    parsed = dt.datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=tz)
+    return parsed.astimezone(tz)
+
+
+def _contact_calendar_busy_periods(selected_date: dt.date, timezone_name: str) -> tuple[list[tuple[dt.datetime, dt.datetime]], str | None]:
+    if not _contact_calendar_configured():
+        return [], "Google Calendar non configuré."
+    access_token, token_error = _google_calendar_access_token()
+    if token_error or not access_token:
+        return [], token_error or "Token Google Calendar indisponible."
+
+    tz = ZoneInfo(str(timezone_name))
+    start_at = dt.datetime.combine(selected_date, dt.time(0, 0)).replace(tzinfo=tz)
+    end_at = start_at + dt.timedelta(days=1)
+    calendar_id = _secret_value("GOOGLE_CALENDAR_ID", default="primary") or "primary"
+    try:
+        response = requests.post(
+            "https://www.googleapis.com/calendar/v3/freeBusy",
+            headers={"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"},
+            data=json.dumps(
+                {
+                    "timeMin": start_at.isoformat(),
+                    "timeMax": end_at.isoformat(),
+                    "timeZone": timezone_name,
+                    "items": [{"id": calendar_id}],
+                }
+            ),
+            timeout=20,
+        )
+        response.raise_for_status()
+        payload = response.json()
+    except requests.HTTPError as exc:
+        detail = ""
+        try:
+            detail = response.text[:700]
+        except Exception:
+            detail = ""
+        suffix = f" · Réponse Google: {detail}" if detail else ""
+        return [], f"Lecture des disponibilités Google Calendar impossible: {exc}{suffix}"
+    except Exception as exc:
+        return [], f"Lecture des disponibilités Google Calendar impossible: {exc}"
+
+    calendar_payload = (payload.get("calendars") or {}).get(calendar_id, {})
+    if calendar_payload.get("errors"):
+        return [], "Lecture des disponibilités Google Calendar impossible: " + json.dumps(calendar_payload.get("errors"), ensure_ascii=False)
+    busy_periods: list[tuple[dt.datetime, dt.datetime]] = []
+    for item in calendar_payload.get("busy", []) or []:
+        try:
+            busy_start = _parse_google_calendar_datetime(str(item["start"]), timezone_name)
+            busy_end = _parse_google_calendar_datetime(str(item["end"]), timezone_name)
+        except Exception:
+            continue
+        busy_periods.append((busy_start, busy_end))
+    return busy_periods, None
+
+
+def _filter_contact_available_slots(
+    selected_date: dt.date,
+    duration_min: int,
+    timezone_name: str,
+    slots: list[dt.time],
+) -> tuple[list[dt.time], str | None]:
+    busy_periods, busy_error = _contact_calendar_busy_periods(selected_date, timezone_name)
+    if busy_error:
+        return slots, busy_error
+    tz = ZoneInfo(str(timezone_name))
+    available: list[dt.time] = []
+    for slot in slots:
+        slot_start = dt.datetime.combine(selected_date, slot).replace(tzinfo=tz)
+        slot_end = slot_start + dt.timedelta(minutes=int(duration_min))
+        overlaps_busy = any(slot_start < busy_end and slot_end > busy_start for busy_start, busy_end in busy_periods)
+        if not overlaps_busy:
+            available.append(slot)
+    return available, None
+
+
 def _contact_time_slots(duration_min: int) -> list[dt.time]:
     step = max(15, int(duration_min or 30))
     start = dt.datetime.combine(dt.date.today(), dt.time(8, 0))
@@ -2224,6 +2304,8 @@ Secrets Streamlit Cloud à renseigner:
 Pour générer `GOOGLE_CALENDAR_REFRESH_TOKEN`, lancez localement:
 `python scripts/get_google_calendar_refresh_token.py`
 
+Le token doit autoriser `calendar.events` et `calendar.freebusy` pour créer les invitations et filtrer les créneaux déjà occupés.
+
 Dans Google Cloud, ajoutez avant le lancement cette URI de redirection autorisée:
 `http://localhost:8765/oauth2callback`
 
@@ -2246,6 +2328,8 @@ def _render_contact_fields() -> None:
     except TypeError:
         contact_card = st.container()
     with contact_card:
+        availability_error = None
+        no_available_slots = False
         details_col, schedule_col = st.columns([0.92, 1.16])
         with details_col:
             kind_col, name_col = st.columns([0.96, 1.04])
@@ -2315,8 +2399,13 @@ def _render_contact_fields() -> None:
                     )
                 with s4:
                     slots = _contact_time_slots(duration_min)
+                    if meeting_kind != "Message":
+                        slots, availability_error = _filter_contact_available_slots(requested_date, duration_min, timezone_name, slots)
+                    no_available_slots = meeting_kind != "Message" and not availability_error and not slots
                     default_slot = dt.time(10, 0)
                     current_time = st.session_state.get("contact_time_slot", default_slot)
+                    if not slots:
+                        slots = [default_slot]
                     if current_time not in slots:
                         st.session_state["contact_time_slot"] = slots[0]
                     requested_time = st.selectbox(
@@ -2324,8 +2413,15 @@ def _render_contact_fields() -> None:
                         slots,
                         format_func=lambda value: value.strftime("%H:%M"),
                         key="contact_time_slot",
-                        disabled=meeting_kind == "Message",
+                        disabled=meeting_kind == "Message" or bool(availability_error) or no_available_slots,
                     )
+                if meeting_kind != "Message":
+                    if availability_error:
+                        st.warning(availability_error)
+                    elif no_available_slots:
+                        st.warning("Aucun créneau libre disponible sur cette date pour la durée choisie.")
+                    else:
+                        st.caption("Agenda vérifié: seuls les créneaux libres sont proposés.")
                 st.markdown("<div style='height:84px;'></div>", unsafe_allow_html=True)
 
         message = st.text_area(
@@ -2353,6 +2449,10 @@ def _render_contact_fields() -> None:
         missing_fields.append("indicatif du pays")
     if str(meeting_kind) == "Message" and not str(message).strip():
         missing_fields.append("message")
+    if str(meeting_kind) != "Message" and availability_error:
+        missing_fields.append("vérification des disponibilités Google Calendar")
+    if str(meeting_kind) != "Message" and no_available_slots:
+        missing_fields.append("créneau disponible")
     if missing_fields:
         st.warning("Merci de renseigner: " + ", ".join(missing_fields) + ".")
         return
