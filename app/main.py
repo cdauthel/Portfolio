@@ -17989,12 +17989,12 @@ def _assistant_provider_profiles() -> pd.DataFrame:
             },
             {
                 "Fournisseur": "LM Studio",
-                "Mode": "Local",
+                "Mode": "Local / serveur distant",
                 "Endpoint défaut": "http://localhost:1234/v1/chat/completions",
                 "Endpoints alternatifs": "http://localhost:1234/v1/chat/completions | http://127.0.0.1:1234/v1/chat/completions",
-                "Modèles suggérés": "modèle chargé dans LM Studio, llama, qwen, mistral, gemma, gpt-oss selon disponibilité locale",
-                "Compatibilité": "REST + OpenAI-compatible",
-                "Usage recommandé": "Serveur local ergonomique, sélection visuelle des modèles.",
+                "Modèles suggérés": "modèles LLM téléchargés ou chargés dans LM Studio",
+                "Compatibilité": "REST v1 + OpenAI-compatible",
+                "Usage recommandé": "Local pour les tests; serveur HTTPS distant authentifié pour Streamlit Cloud.",
             },
             {
                 "Fournisseur": "Endpoint compatible",
@@ -18011,7 +18011,20 @@ def _assistant_provider_profiles() -> pd.DataFrame:
 
 def _read_assistant_local_config() -> dict[str, str]:
     config: dict[str, str] = {}
-    for key in ["AI_PROVIDER", "AI_BASE_URL", "AI_MODEL", "AI_API_KEY", "AI_PASSWORD", "AI_TIMEOUT", "AI_TEMPERATURE"]:
+    config_keys = [
+        "AI_PROVIDER",
+        "AI_BASE_URL",
+        "AI_MODEL",
+        "AI_API_KEY",
+        "AI_PASSWORD",
+        "AI_TIMEOUT",
+        "AI_TEMPERATURE",
+        "OLLAMA_API_KEY",
+        "LM_STUDIO_API_TOKEN",
+        "JAN_API_KEY",
+        "OPENAI_COMPATIBLE_API_KEY",
+    ]
+    for key in config_keys:
         if os.getenv(key):
             config[key] = str(os.getenv(key))
     try:
@@ -18024,11 +18037,15 @@ def _read_assistant_local_config() -> dict[str, str]:
             "password": "AI_PASSWORD",
             "timeout": "AI_TIMEOUT",
             "temperature": "AI_TEMPERATURE",
+            "ollama_api_key": "OLLAMA_API_KEY",
+            "lm_studio_api_token": "LM_STUDIO_API_TOKEN",
+            "jan_api_key": "JAN_API_KEY",
+            "openai_compatible_api_key": "OPENAI_COMPATIBLE_API_KEY",
         }
         for secret_key, config_key in secret_key_map.items():
             if secret_key in secrets_section and str(secrets_section[secret_key]).strip():
                 config[config_key] = str(secrets_section[secret_key])
-        for config_key in ["AI_PROVIDER", "AI_BASE_URL", "AI_MODEL", "AI_API_KEY", "AI_PASSWORD", "AI_TIMEOUT", "AI_TEMPERATURE"]:
+        for config_key in config_keys:
             if config_key in st.secrets and str(st.secrets[config_key]).strip():  # type: ignore[operator]
                 config[config_key] = str(st.secrets[config_key])  # type: ignore[index]
     except Exception:
@@ -18041,6 +18058,21 @@ def _read_assistant_local_config() -> dict[str, str]:
             key, value = line.split("=", 1)
             config[key.strip()] = value.strip().strip('"').strip("'")
     return config
+
+
+def _assistant_api_key(provider: str, config: dict[str, str]) -> str:
+    provider_key_names = {
+        "Ollama Cloud": "OLLAMA_API_KEY",
+        "LM Studio": "LM_STUDIO_API_TOKEN",
+        "Jan.ai": "JAN_API_KEY",
+        "Endpoint compatible": "OPENAI_COMPATIBLE_API_KEY",
+    }
+    dedicated_key = str(config.get(provider_key_names.get(provider, ""), "")).strip()
+    if dedicated_key:
+        return dedicated_key
+    if config.get("AI_PROVIDER") == provider:
+        return str(config.get("AI_API_KEY", "")).strip()
+    return ""
 
 
 def _assistant_endpoint_candidates(provider: str, config: dict[str, str]) -> list[str]:
@@ -18084,6 +18116,59 @@ def _openai_models_url(base_url: str) -> str:
     return clean + "/v1/models"
 
 
+def _lm_studio_api_root(base_url: str) -> str:
+    clean = base_url.rstrip("/")
+    for suffix in [
+        "/v1/chat/completions",
+        "/v1/models",
+        "/api/v1/chat",
+        "/api/v1/models",
+        "/api/v0/chat/completions",
+        "/api/v0/models",
+    ]:
+        if clean.endswith(suffix):
+            return clean[: -len(suffix)]
+    return clean
+
+
+def _assistant_models_urls(provider: str, base_url: str) -> list[str]:
+    if provider == "LM Studio":
+        root = _lm_studio_api_root(base_url)
+        return [root + "/api/v1/models", root + "/v1/models"]
+    if _assistant_uses_ollama_native_api(provider, base_url):
+        return [_ollama_api_root(base_url) + "/tags"]
+    return [_openai_models_url(base_url)]
+
+
+def _parse_assistant_models(provider: str, url: str, body: dict[str, object]) -> list[str]:
+    if provider == "LM Studio" and url.endswith("/api/v1/models"):
+        native_models = body.get("models", [])
+        if not isinstance(native_models, list):
+            return []
+        return [
+            str(item.get("key"))
+            for item in native_models
+            if isinstance(item, dict) and item.get("type") == "llm" and item.get("key")
+        ]
+    if _assistant_uses_ollama_native_api(provider, url):
+        ollama_models = body.get("models", [])
+        if not isinstance(ollama_models, list):
+            return []
+        return [
+            str(item.get("name") or item.get("model"))
+            for item in ollama_models
+            if isinstance(item, dict) and (item.get("name") or item.get("model"))
+        ]
+    openai_models = body.get("data", [])
+    if not isinstance(openai_models, list):
+        return []
+    return [
+        str(item.get("id"))
+        for item in openai_models
+        if isinstance(item, dict) and item.get("id")
+    ]
+
+
 def _assistant_uses_ollama_native_api(provider: str, base_url: str) -> bool:
     return provider in {"Ollama", "Ollama Cloud"} and "/v1/" not in base_url.rstrip("/")
 
@@ -18092,23 +18177,17 @@ def _assistant_uses_ollama_native_api(provider: str, base_url: str) -> bool:
 def _discover_assistant_models_cached(provider: str, base_url: str, api_key_fingerprint: str, timeout: int) -> tuple[list[str], str, float]:
     del api_key_fingerprint
     start = perf_counter()
-    try:
-        if _assistant_uses_ollama_native_api(provider, base_url):
-            url = _ollama_api_root(base_url) + "/tags"
+    errors: list[str] = []
+    for url in _assistant_models_urls(provider, base_url):
+        try:
             response = requests.get(url, timeout=max(2, min(int(timeout), 10)))
             response.raise_for_status()
             body = response.json()
-            models = [str(item.get("name") or item.get("model")) for item in body.get("models", []) if item.get("name") or item.get("model")]
+            models = _parse_assistant_models(provider, url, body)
             return models, f"OK - {url}", (perf_counter() - start) * 1000
-        headers = {"Content-Type": "application/json"}
-        url = _openai_models_url(base_url)
-        response = requests.get(url, headers=headers, timeout=max(2, min(int(timeout), 10)))
-        response.raise_for_status()
-        body = response.json()
-        models = [str(item.get("id")) for item in body.get("data", []) if item.get("id")]
-        return models, f"OK - {url}", (perf_counter() - start) * 1000
-    except Exception as exc:
-        return [], f"Indisponible - {exc}", (perf_counter() - start) * 1000
+        except Exception as exc:
+            errors.append(f"{url}: {exc}")
+    return [], f"Indisponible - {' | '.join(errors)}", (perf_counter() - start) * 1000
 
 
 def _discover_assistant_models(provider: str, base_url: str, api_key: str, timeout: int) -> tuple[list[str], str, float]:
@@ -18117,21 +18196,17 @@ def _discover_assistant_models(provider: str, base_url: str, api_key: str, timeo
     if api_key:
         headers = {"Authorization": f"Bearer {api_key}"}
         start = perf_counter()
-        try:
-            if _assistant_uses_ollama_native_api(provider, base_url):
-                url = _ollama_api_root(base_url) + "/tags"
-            else:
-                url = _openai_models_url(base_url)
-            response = requests.get(url, headers=headers, timeout=max(2, min(int(timeout), 10)))
-            response.raise_for_status()
-            body = response.json()
-            if provider in {"Ollama", "Ollama Cloud"} and "/api/" in url:
-                models = [str(item.get("name") or item.get("model")) for item in body.get("models", []) if item.get("name") or item.get("model")]
-            else:
-                models = [str(item.get("id")) for item in body.get("data", []) if item.get("id")]
-            return models, f"OK - {url}", (perf_counter() - start) * 1000
-        except Exception as exc:
-            return [], f"Indisponible - {exc}", (perf_counter() - start) * 1000
+        errors: list[str] = []
+        for url in _assistant_models_urls(provider, base_url):
+            try:
+                response = requests.get(url, headers=headers, timeout=max(2, min(int(timeout), 10)))
+                response.raise_for_status()
+                body = response.json()
+                models = _parse_assistant_models(provider, url, body)
+                return models, f"OK - {url}", (perf_counter() - start) * 1000
+            except Exception as exc:
+                errors.append(f"{url}: {exc}")
+        return [], f"Indisponible - {' | '.join(errors)}", (perf_counter() - start) * 1000
     return _discover_assistant_models_cached(provider, base_url, fingerprint, timeout)
 
 
@@ -18616,6 +18691,9 @@ div[data-testid="stChatInput"] form {
 }
 div[data-testid="stChatInput"] [data-baseweb="textarea"],
 div[data-testid="stChatInput"] [data-baseweb="base-input"] {
+    position: relative !important;
+    display: flex !important;
+    align-items: center !important;
     background: #111827 !important;
     border: 1px solid rgba(0,0,0,.92) !important;
     border-radius: 14px !important;
@@ -18623,6 +18701,9 @@ div[data-testid="stChatInput"] [data-baseweb="base-input"] {
 }
 div[data-testid="stChatInput"] textarea {
     min-height: 46px !important;
+    padding-left: 1rem !important;
+    padding-right: 3.25rem !important;
+    line-height: 1.35 !important;
     background: #111827 !important;
     color: #ffffff !important;
     -webkit-text-fill-color: #ffffff !important;
@@ -18635,6 +18716,11 @@ div[data-testid="stChatInput"] textarea::placeholder {
     -webkit-text-fill-color: rgba(255,255,255,.72) !important;
 }
 div[data-testid="stChatInput"] button {
+    position: absolute !important;
+    right: .55rem !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    z-index: 2 !important;
     border-radius: 999px !important;
     width: 2.05rem !important;
     height: 2.05rem !important;
@@ -18795,7 +18881,7 @@ def _render_ai_chatbot_rag(data: dict[str, pd.DataFrame]) -> None:
         default_provider = "Endpoint compatible"
     with c1:
         provider = st.selectbox("Fournisseur LLM", provider_options, index=provider_options.index(default_provider), key="ai_provider")
-    api_key = config.get("AI_API_KEY", "")
+    api_key = _assistant_api_key(provider, config)
     endpoint_options = _assistant_endpoint_candidates(provider, config)
     provider_slug = re.sub(r"\W+", "_", provider.lower()).strip("_")
     configured_for_provider = config.get("AI_PROVIDER", provider) == provider
@@ -18920,6 +19006,13 @@ def _render_ai_chatbot_rag(data: dict[str, pd.DataFrame]) -> None:
     if provider == "Ollama Cloud" and model != preferred_cloud_model:
         cfg.info(
             "Conseil: privilégier `gpt-oss:120b` avec Ollama Cloud pour cette app. C'est l'un des meilleurs compromis disponibles ici entre vitesse d'exécution, temps de calcul et d'affichage du résultat, et qualité de réponse."
+        )
+    if provider == "LM Studio":
+        cfg.caption(
+            "LM Studio est interrogé via ses API officielles: découverte native `/api/v1/models`, "
+            "puis repli `/v1/models`, et génération OpenAI-compatible `/v1/chat/completions`. "
+            "Sur Streamlit Cloud, l'endpoint doit être un serveur HTTPS distant; `localhost` désigne "
+            "la machine cloud et ne peut pas joindre LM Studio installé sur un ordinateur personnel."
         )
     probe_signature = "|".join(
         [
