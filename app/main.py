@@ -4635,7 +4635,7 @@ def render_generation_controls(
         categorical_missing_strategy,
         missing_model_dims,
     )
-    st.dataframe(params, width="stretch")
+    st.dataframe(_arrow_safe_dataframe(params), width="stretch")
     st.caption("Les paramètres se configurent dans la barre latérale puis sont appliqués après clic sur « Regénérer les données ».")
 
 
@@ -4646,7 +4646,7 @@ def render_quality(
 ) -> None:
     if generation_params is not None and not generation_params.empty:
         st.markdown("#### Paramètres de génération")
-        st.dataframe(generation_params.dropna(how="all"), width="stretch", height=_table_height(len(generation_params), max_height=420))
+        st.dataframe(_arrow_safe_dataframe(generation_params.dropna(how="all")), width="stretch", height=_table_height(len(generation_params), max_height=420))
         st.caption("Les paramètres se configurent dans la barre latérale puis sont appliqués après clic sur « Regénérer les données ».")
 
     try:
@@ -4902,7 +4902,7 @@ def _diagnose_missingness(df: pd.DataFrame, target: str) -> pd.DataFrame:
                     stat, p = ttest_ind(a, b, equal_var=False, nan_policy="omit")
                     rows.append({"Test": "Welch: indicatrice NA ~ quanti", "Variable": col, "Statistique": stat, "p-value": p, "Lecture": "MAR possible" if p < 0.05 else "Compatible MCAR"})
             else:
-                tab = pd.crosstab(miss, df[col].astype("object").fillna("NA"))
+                tab = pd.crosstab(miss, df[col].astype("string").fillna("NA"))
                 if tab.shape[0] == 2 and tab.shape[1] >= 2:
                     stat, p, _, _ = chi2_contingency(tab)
                     rows.append({"Test": "Chi²: indicatrice NA ~ quali", "Variable": col, "Statistique": stat, "p-value": p, "Lecture": "MAR possible" if p < 0.05 else "Compatible MCAR"})
@@ -5085,7 +5085,7 @@ def _impute_series(
             return _impute_series(tmp, target, "Interpolation linéaire", nature, time_col=time_col, seed=seed)
         return y.fillna(fallback)
 
-    out = s.astype("object").copy()
+    out = s.astype("string").copy()
     mode = out.dropna().mode()
     fallback_obj = mode.iloc[0] if not mode.empty else "Inconnu"
     if method == "Mode":
@@ -7488,6 +7488,27 @@ def _table_height(n_rows: int, min_height: int = 120, max_height: int = 520, row
     return int(min(max(min_height, row_height * (max(n_rows, 1) + 1)), max_height))
 
 
+def _arrow_safe_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    if not isinstance(df, pd.DataFrame) or df.empty:
+        return df
+    safe = df.copy()
+    for col in safe.columns:
+        if pd.api.types.is_object_dtype(safe[col]) or pd.api.types.is_string_dtype(safe[col]):
+            def _format_cell(value: object) -> str:
+                if value is None:
+                    return ""
+                try:
+                    is_missing = pd.isna(value)
+                    if isinstance(is_missing, (bool, np.bool_)) and bool(is_missing):
+                        return ""
+                except Exception:
+                    pass
+                return str(value)
+
+            safe[col] = safe[col].map(_format_cell)
+    return safe
+
+
 def _render_dataset_construction_stats(
     parent: Any,
     stats: list[tuple[str, object]],
@@ -7526,6 +7547,7 @@ def _render_collapsible_dataframe(
     clean_df = df.dropna(how="all") if isinstance(df, pd.DataFrame) else df
     if clean_df is None or clean_df.empty:
         return
+    clean_df = _arrow_safe_dataframe(clean_df)
     expander = parent.expander(title, expanded=False)
     with expander:
         st.dataframe(
@@ -24180,7 +24202,7 @@ def _render_temporal_quick_forecasting_panel(store_daily: pd.DataFrame) -> None:
         info["Points test"] = len(test_df)
         info_df = pd.DataFrame({"Paramètre": list(info.keys()), "Valeur": list(info.values())})
         st.markdown("##### Paramètres et contexte du modèle")
-        st.dataframe(info_df, width="stretch", height=_table_height(len(info_df), max_height=380))
+        st.dataframe(_arrow_safe_dataframe(info_df), width="stretch", height=_table_height(len(info_df), max_height=380))
         st.markdown("##### Données de backtest")
         st.dataframe(result_df, width="stretch", height=_table_height(len(result_df), max_height=420))
 
@@ -25592,7 +25614,7 @@ def _render_temporal_modeling_scope(data: dict[str, pd.DataFrame], model_scope: 
 
     with st.expander("Informations détaillées du modèle", expanded=False):
         info_df = pd.DataFrame({"Paramètre": list(model_info.keys()), "Valeur": list(model_info.values())})
-        st.dataframe(info_df, width="stretch", height=_table_height(len(info_df), max_height=360))
+        st.dataframe(_arrow_safe_dataframe(info_df), width="stretch", height=_table_height(len(info_df), max_height=360))
     with st.expander("Données de backtest", expanded=False):
         st.dataframe(result_df, width="stretch", height=_table_height(len(result_df), max_height=420))
 
@@ -41136,7 +41158,7 @@ def _render_dl_timeseries_modeling(data: dict[str, pd.DataFrame]) -> None:
                 ],
             }
         )
-        st.dataframe(info_df, width="stretch", hide_index=True, height=_table_height(len(info_df), max_height=320))
+        st.dataframe(_arrow_safe_dataframe(info_df), width="stretch", hide_index=True, height=_table_height(len(info_df), max_height=320))
         st.dataframe(result_df, width="stretch", height=_table_height(len(result_df), max_height=420))
 
     st.markdown("### Explications")
@@ -42044,7 +42066,7 @@ def _render_dl_model_mode(data: dict[str, pd.DataFrame], mode: str, prefix: str)
                 ],
                 ignore_index=True,
             )
-        st.dataframe(info_df, width="stretch", height=_table_height(len(info_df), max_height=360))
+        st.dataframe(_arrow_safe_dataframe(info_df), width="stretch", height=_table_height(len(info_df), max_height=360))
 
     with st.expander("Prédictions (test)", expanded=False):
         st.dataframe(result_df, width="stretch", height=_table_height(len(result_df), max_height=420))
@@ -44395,7 +44417,7 @@ def _render_client_churn_propensity(ctx: dict[str, pd.DataFrame]) -> None:
 
     if not model_info_df.empty:
         with st.expander("Informations détaillées du modèle", expanded=False):
-            st.dataframe(model_info_df, width="stretch", height=_table_height(len(model_info_df), max_height=420))
+            st.dataframe(_arrow_safe_dataframe(model_info_df), width="stretch", height=_table_height(len(model_info_df), max_height=420))
 
     if not importance_df.empty:
         top_imp = importance_df.head(20).copy()
