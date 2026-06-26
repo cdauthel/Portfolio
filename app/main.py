@@ -1920,7 +1920,7 @@ def _build_contact_email_body(contact: dict[str, Any], *, meet_link: str | None 
     if calendar_link:
         lines.extend(["", f"Évènement Calendar: {calendar_link}"])
     if calendar_error:
-        lines.extend(["", f"Création Google Meet non effectuée: {calendar_error}"])
+        lines.extend(["", f"Création de l'invitation Calendar non effectuée: {calendar_error}"])
     return "\n".join(lines)
 
 
@@ -1928,7 +1928,7 @@ def _send_contact_email(contact: dict[str, Any], *, meet_link: str | None = None
     host = _secret_value("CONTACT_SMTP_HOST", "SMTP_HOST")
     password = _secret_value("CONTACT_SMTP_PASSWORD", "SMTP_PASSWORD")
     if not host or not password:
-        return False, "SMTP non configuré. Ajoutez CONTACT_SMTP_HOST et CONTACT_SMTP_PASSWORD dans les secrets Streamlit."
+        return False, "SMTP optionnel non configuré."
     port = int(_secret_value("CONTACT_SMTP_PORT", "SMTP_PORT", default="587") or "587")
     user = _secret_value("CONTACT_SMTP_USER", "SMTP_USER")
     from_email = _secret_value("CONTACT_FROM_EMAIL", "SMTP_FROM_EMAIL", default=user or CONTACT_OWNER_EMAIL) or CONTACT_OWNER_EMAIL
@@ -1981,7 +1981,7 @@ def _google_calendar_access_token() -> tuple[str | None, str | None]:
         return None, f"Impossible d'obtenir un token Google Calendar: {exc}"
 
 
-def _create_google_meet_event(contact: dict[str, Any]) -> tuple[str | None, str | None, str | None]:
+def _create_google_calendar_event(contact: dict[str, Any]) -> tuple[str | None, str | None, str | None]:
     access_token, token_error = _google_calendar_access_token()
     if token_error or not access_token:
         return None, None, token_error or "Token Google Calendar indisponible."
@@ -1991,24 +1991,29 @@ def _create_google_meet_event(contact: dict[str, Any]) -> tuple[str | None, str 
     start_at: dt.datetime = contact["start_at"]
     end_at = start_at + dt.timedelta(minutes=int(contact["duration_min"]))
     body = _build_contact_email_body(contact)
+    is_video = contact["meeting_kind"] == "Visio Google Meet"
     event = {
-        "summary": f"Visio portfolio - {contact['name']}",
+        "summary": f"{contact['meeting_kind']} portfolio - {contact['name']}",
         "description": body,
+        "location": "Google Meet" if is_video else (str(contact.get("phone") or "Appel téléphonique")),
         "start": {"dateTime": start_at.isoformat(), "timeZone": contact["timezone"]},
         "end": {"dateTime": end_at.isoformat(), "timeZone": contact["timezone"]},
         "attendees": [{"email": owner_email}, {"email": str(contact["email"])}],
-        "conferenceData": {
+        "reminders": {"useDefault": True},
+    }
+    params: dict[str, Any] = {"sendUpdates": "all"}
+    if is_video:
+        event["conferenceData"] = {
             "createRequest": {
                 "requestId": f"portfolio-{uuid.uuid4().hex[:24]}",
                 "conferenceSolutionKey": {"type": "hangoutsMeet"},
             }
-        },
-        "reminders": {"useDefault": True},
-    }
+        }
+        params["conferenceDataVersion"] = 1
     try:
         response = requests.post(
             f"https://www.googleapis.com/calendar/v3/calendars/{calendar_id}/events",
-            params={"conferenceDataVersion": 1, "sendUpdates": "all"},
+            params=params,
             headers={"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"},
             data=json.dumps(event),
             timeout=25,
@@ -2016,7 +2021,7 @@ def _create_google_meet_event(contact: dict[str, Any]) -> tuple[str | None, str 
         response.raise_for_status()
         payload = response.json()
     except Exception as exc:
-        return None, None, f"Création de l'évènement Google Calendar impossible: {exc}"
+        return None, None, f"Création de l'invitation Google Calendar impossible: {exc}"
 
     meet_link = payload.get("hangoutLink")
     for entry in payload.get("conferenceData", {}).get("entryPoints", []) or []:
@@ -2071,8 +2076,8 @@ def _render_contact_fields() -> None:
 
     if not submitted:
         status_parts = []
-        status_parts.append("SMTP OK" if _contact_smtp_configured() else "SMTP à configurer")
         status_parts.append("Google Calendar OK" if _contact_calendar_configured() else "Google Calendar à configurer")
+        status_parts.append("SMTP optionnel OK" if _contact_smtp_configured() else "SMTP optionnel non configuré")
         st.caption("Statut intégration: " + " · ".join(status_parts))
         return
 
@@ -2103,23 +2108,34 @@ def _render_contact_fields() -> None:
     meet_link = None
     calendar_link = None
     calendar_error = None
-    if contact["meeting_kind"] == "Visio Google Meet":
-        with st.spinner("Création de l'évènement Google Meet..."):
-            meet_link, calendar_link, calendar_error = _create_google_meet_event(contact)
+    if _contact_calendar_configured():
+        spinner_label = "Création de l'invitation Google Meet..." if contact["meeting_kind"] == "Visio Google Meet" else "Création de l'invitation Calendar..."
+        with st.spinner(spinner_label):
+            meet_link, calendar_link, calendar_error = _create_google_calendar_event(contact)
+    else:
+        calendar_error = "Google Calendar non configuré. Sans SMTP, aucune invitation automatique ne peut être envoyée."
 
-    with st.spinner("Envoi du mail de demande..."):
-        ok, mail_status = _send_contact_email(contact, meet_link=meet_link, calendar_link=calendar_link, calendar_error=calendar_error)
+    mail_status = ""
+    mail_ok = False
+    if _contact_smtp_configured():
+        with st.spinner("Envoi du mail de copie..."):
+            mail_ok, mail_status = _send_contact_email(contact, meet_link=meet_link, calendar_link=calendar_link, calendar_error=calendar_error)
 
-    if ok:
-        st.success(mail_status)
+    if calendar_link or meet_link:
+        st.success("Invitation envoyée à vous deux via Google Calendar.")
         if meet_link:
             st.markdown(f"**Google Meet créé :** [{meet_link}]({meet_link})")
-        elif calendar_error:
-            st.warning(calendar_error)
+        if calendar_link:
+            st.markdown(f"**Évènement Calendar :** [{calendar_link}]({calendar_link})")
+        if mail_status:
+            st.caption(mail_status if mail_ok else f"Copie SMTP non envoyée: {mail_status}")
     else:
-        st.error(mail_status)
         if calendar_error:
-            st.warning(calendar_error)
+            st.error(calendar_error)
+        elif mail_status:
+            st.error(mail_status)
+        else:
+            st.error("Aucun canal d'envoi n'est configuré. Ajoutez les secrets Google Calendar ou SMTP.")
 
     if st.button("Fermer", key="contact_close_after_submit", width="stretch"):
         _close_contact_dialog()
