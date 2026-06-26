@@ -2246,19 +2246,19 @@ def _render_contact_fields() -> None:
     except TypeError:
         contact_card = st.container()
     with contact_card:
-        top_kind_col, top_name_col = st.columns([1.0, 1.18])
-        with top_kind_col:
-            meeting_kind = st.segmented_control(
-                "Type de contact",
-                ["Visio Google Meet", "Appel", "Message"],
-                default="Visio Google Meet",
-                key="contact_meeting_kind",
-            )
-        with top_name_col:
-            name = st.text_input("Nom / prénom", key="contact_name")
-
         details_col, schedule_col = st.columns([0.92, 1.16])
         with details_col:
+            kind_col, name_col = st.columns([0.96, 1.04])
+            with kind_col:
+                meeting_kind = st.segmented_control(
+                    "Type de contact",
+                    ["Visio Google Meet", "Appel", "Message"],
+                    default="Visio Google Meet",
+                    key="contact_meeting_kind",
+                )
+            with name_col:
+                name = st.text_input("Nom / prénom", key="contact_name")
+
             e_col, org_col = st.columns(2)
             with e_col:
                 email = st.text_input("Email", key="contact_email")
@@ -2280,13 +2280,6 @@ def _render_contact_fields() -> None:
                     custom_dial_code = st.text_input("Indicatif", placeholder="+...", key="contact_custom_dial_code")
             with phone_col:
                 phone = st.text_input("Téléphone", key="contact_phone")
-
-            message = st.text_area(
-                "Message",
-                placeholder="Contexte, sujet à aborder, poste / mission, disponibilités complémentaires...",
-                height=130,
-                key="contact_message",
-            )
         with schedule_col:
             try:
                 schedule_box = st.container(border=True)
@@ -2333,10 +2326,14 @@ def _render_contact_fields() -> None:
                         key="contact_time_slot",
                         disabled=meeting_kind == "Message",
                     )
-            st.markdown(
-                "<div style='height:162px;'></div>",
-                unsafe_allow_html=True,
-            )
+                st.markdown("<div style='height:84px;'></div>", unsafe_allow_html=True)
+
+        message = st.text_area(
+            "Message",
+            placeholder="Contexte, sujet à aborder, poste / mission, disponibilités complémentaires...",
+            height=130,
+            key="contact_message",
+        )
 
     message = str(st.session_state.get("contact_message", ""))
     submitted = st.button("Envoyer la demande", width="stretch", key="contact_submit_request")
