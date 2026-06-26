@@ -2043,14 +2043,10 @@ def _format_contact_datetime(start_at: dt.datetime, duration_min: int) -> tuple[
 
 
 def _build_contact_email_body(contact: dict[str, Any], *, meet_link: str | None = None, calendar_link: str | None = None, calendar_error: str | None = None) -> str:
-    start_txt, end_txt = _format_contact_datetime(contact["start_at"], int(contact["duration_min"]))
     lines = [
         "Nouvelle demande de contact depuis le portfolio Streamlit.",
         "",
         f"Type de rendez-vous: {contact['meeting_kind']}",
-        f"Créneau demandé: {start_txt} -> {end_txt}",
-        f"Fuseau horaire: {contact['timezone']}",
-        "",
         f"Nom: {contact['name']}",
         f"Email: {contact['email']}",
         f"Téléphone: {contact.get('phone') or 'Non renseigné'}",
@@ -2059,6 +2055,13 @@ def _build_contact_email_body(contact: dict[str, Any], *, meet_link: str | None 
         "Message:",
         str(contact.get("message") or "Aucun message"),
     ]
+    if contact["meeting_kind"] != "Mail":
+        start_txt, end_txt = _format_contact_datetime(contact["start_at"], int(contact["duration_min"]))
+        lines[3:3] = [
+            f"Créneau demandé: {start_txt} -> {end_txt}",
+            f"Fuseau horaire: {contact['timezone']}",
+            "",
+        ]
     if meet_link:
         lines.extend(["", f"Lien Google Meet: {meet_link}"])
     if calendar_link:
@@ -2084,7 +2087,11 @@ def _send_contact_email(contact: dict[str, Any], *, meet_link: str | None = None
     else:
         msg["Subject"] = f"Demande {contact['meeting_kind']} portfolio - {contact['name']}"
     msg["From"] = from_email
-    msg["To"] = to_email
+    requester_email = str(contact["email"]).strip()
+    recipients = [to_email]
+    if requester_email and requester_email.lower() != str(to_email).lower():
+        recipients.append(requester_email)
+    msg["To"] = ", ".join(recipients)
     msg["Reply-To"] = str(contact["email"])
     msg.set_content(_build_contact_email_body(contact, meet_link=meet_link, calendar_link=calendar_link, calendar_error=calendar_error))
 
@@ -2093,16 +2100,16 @@ def _send_contact_email(contact: dict[str, Any], *, meet_link: str | None = None
             with smtplib.SMTP_SSL(host, port, context=ssl.create_default_context(), timeout=20) as smtp:
                 if user:
                     smtp.login(user, password)
-                smtp.send_message(msg)
+                smtp.send_message(msg, to_addrs=recipients)
         else:
             with smtplib.SMTP(host, port, timeout=20) as smtp:
                 smtp.starttls(context=ssl.create_default_context())
                 if user:
                     smtp.login(user, password)
-                smtp.send_message(msg)
+                smtp.send_message(msg, to_addrs=recipients)
     except Exception as exc:
         return False, f"Échec d'envoi SMTP: {exc}"
-    return True, f"Demande envoyée à {to_email}."
+    return True, "Demande envoyée à " + ", ".join(recipients) + "."
 
 
 def _google_calendar_access_token() -> tuple[str | None, str | None]:
@@ -2147,7 +2154,8 @@ def _create_google_calendar_event(contact: dict[str, Any]) -> tuple[str | None, 
     end_at = start_at + dt.timedelta(minutes=int(contact["duration_min"]))
     body = _build_contact_email_body(contact)
     is_video = contact["meeting_kind"] == "Visio Google Meet"
-    event_summary = "Rencontre/Entretien Cyriack Dauthel" if is_video else f"{contact['meeting_kind']} portfolio - {contact['name']}"
+    requester_name = str(contact.get("name") or "").strip()
+    event_summary = f"cyriack dauthel x {requester_name.lower()}" if is_video and requester_name else "Rencontre/Entretien Cyriack Dauthel"
     event = {
         "summary": event_summary,
         "description": body,
@@ -2427,8 +2435,6 @@ def _render_contact_fields() -> None:
                         st.warning(availability_error)
                     elif no_available_slots:
                         st.warning("Aucun créneau libre disponible sur cette date pour la durée choisie.")
-                    else:
-                        st.caption("Agenda vérifié: seuls les créneaux libres sont proposés.")
 
         message = st.text_area(
             "Message",
