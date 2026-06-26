@@ -2079,7 +2079,10 @@ def _send_contact_email(contact: dict[str, Any], *, meet_link: str | None = None
     to_email = _secret_value("CONTACT_TO_EMAIL", "SMTP_TO_EMAIL", default=CONTACT_OWNER_EMAIL) or CONTACT_OWNER_EMAIL
 
     msg = EmailMessage()
-    msg["Subject"] = f"Demande {contact['meeting_kind']} portfolio - {contact['name']}"
+    if contact["meeting_kind"] == "Visio Google Meet":
+        msg["Subject"] = "Invitation: Visio Google Meet"
+    else:
+        msg["Subject"] = f"Demande {contact['meeting_kind']} portfolio - {contact['name']}"
     msg["From"] = from_email
     msg["To"] = to_email
     msg["Reply-To"] = str(contact["email"])
@@ -2144,8 +2147,9 @@ def _create_google_calendar_event(contact: dict[str, Any]) -> tuple[str | None, 
     end_at = start_at + dt.timedelta(minutes=int(contact["duration_min"]))
     body = _build_contact_email_body(contact)
     is_video = contact["meeting_kind"] == "Visio Google Meet"
+    event_summary = "Rencontre/Entretien Cyriack Dauthel" if is_video else f"{contact['meeting_kind']} portfolio - {contact['name']}"
     event = {
-        "summary": f"{contact['meeting_kind']} portfolio - {contact['name']}",
+        "summary": event_summary,
         "description": body,
         "location": "Google Meet" if is_video else (str(contact.get("phone") or "Appel téléphonique")),
         "start": {"dateTime": start_at.isoformat(), "timeZone": contact["timezone"]},
@@ -2332,11 +2336,13 @@ def _render_contact_fields() -> None:
         no_available_slots = False
         details_col, schedule_col = st.columns([1.08, 0.92])
         with details_col:
-            kind_col, name_col = st.columns([0.88, 1.12])
+            kind_col, name_col = st.columns([1.12, 0.88])
             with kind_col:
+                if st.session_state.get("contact_meeting_kind") == "Message":
+                    st.session_state["contact_meeting_kind"] = "Mail"
                 meeting_kind = st.segmented_control(
                     "Type de contact",
-                    ["Visio Google Meet", "Appel", "Message"],
+                    ["Visio Google Meet", "Appel", "Mail"],
                     default="Visio Google Meet",
                     key="contact_meeting_kind",
                 )
@@ -2377,7 +2383,7 @@ def _render_contact_fields() -> None:
                         "Fuseau",
                         CONTACT_TIMEZONES,
                         key="contact_timezone",
-                        disabled=meeting_kind == "Message",
+                        disabled=meeting_kind == "Mail",
                     )
                 with s2:
                     requested_date = st.date_input(
@@ -2385,7 +2391,7 @@ def _render_contact_fields() -> None:
                         value=dt.date.today() + dt.timedelta(days=1),
                         min_value=dt.date.today(),
                         key="contact_date",
-                        disabled=meeting_kind == "Message",
+                        disabled=meeting_kind == "Mail",
                     )
                 s3, s4 = st.columns([1.0, 1.0])
                 with s3:
@@ -2395,14 +2401,14 @@ def _render_contact_fields() -> None:
                             [15, 30, 45, 60],
                             index=1,
                             key="contact_duration_min",
-                            disabled=meeting_kind == "Message",
+                            disabled=meeting_kind == "Mail",
                         )
                     )
                 with s4:
                     slots = _contact_time_slots(duration_min)
-                    if meeting_kind != "Message":
+                    if meeting_kind != "Mail":
                         slots, availability_error = _filter_contact_available_slots(requested_date, duration_min, timezone_name, slots)
-                    no_available_slots = meeting_kind != "Message" and not availability_error and not slots
+                    no_available_slots = meeting_kind != "Mail" and not availability_error and not slots
                     default_slot = dt.time(10, 0)
                     current_time = st.session_state.get("contact_time_slot", default_slot)
                     if not slots:
@@ -2414,9 +2420,9 @@ def _render_contact_fields() -> None:
                         slots,
                         format_func=lambda value: value.strftime("%H:%M"),
                         key="contact_time_slot",
-                        disabled=meeting_kind == "Message" or bool(availability_error) or no_available_slots,
+                        disabled=meeting_kind == "Mail" or bool(availability_error) or no_available_slots,
                     )
-                if meeting_kind != "Message":
+                if meeting_kind != "Mail":
                     if availability_error:
                         st.warning(availability_error)
                     elif no_available_slots:
@@ -2446,11 +2452,11 @@ def _render_contact_fields() -> None:
         missing_fields.append("téléphone pour l'appel")
     if str(phone).strip() and isinstance(phone_country, tuple) and phone_country[0] == "Autre pays" and not str(custom_dial_code).strip():
         missing_fields.append("indicatif du pays")
-    if str(meeting_kind) == "Message" and not str(message).strip():
+    if str(meeting_kind) == "Mail" and not str(message).strip():
         missing_fields.append("message")
-    if str(meeting_kind) != "Message" and availability_error:
+    if str(meeting_kind) != "Mail" and availability_error:
         missing_fields.append("vérification des disponibilités Google Calendar")
-    if str(meeting_kind) != "Message" and no_available_slots:
+    if str(meeting_kind) != "Mail" and no_available_slots:
         missing_fields.append("créneau disponible")
     if missing_fields:
         st.warning("Merci de renseigner: " + ", ".join(missing_fields) + ".")
@@ -2479,11 +2485,11 @@ def _render_contact_fields() -> None:
     meet_link = None
     calendar_link = None
     calendar_error = None
-    if contact["meeting_kind"] != "Message" and _contact_calendar_configured():
+    if contact["meeting_kind"] != "Mail" and _contact_calendar_configured():
         spinner_label = "Création de l'invitation Google Meet..." if contact["meeting_kind"] == "Visio Google Meet" else "Création de l'invitation Calendar..."
         with st.spinner(spinner_label):
             meet_link, calendar_link, calendar_error = _create_google_calendar_event(contact)
-    elif contact["meeting_kind"] != "Message":
+    elif contact["meeting_kind"] != "Mail":
         calendar_error = "Google Calendar non configuré. Sans SMTP, aucune invitation automatique ne peut être envoyée."
 
     mail_status = ""
@@ -2493,13 +2499,16 @@ def _render_contact_fields() -> None:
             mail_ok, mail_status = _send_contact_email(contact, meet_link=meet_link, calendar_link=calendar_link, calendar_error=calendar_error)
 
     if calendar_link or meet_link:
-        st.success("Invitation envoyée à vous deux via Google Calendar.")
+        st.success("Invitation envoyée via Google Calendar.")
+        if mail_status:
+            if mail_ok:
+                st.caption(mail_status)
+            else:
+                st.caption(f"Copie SMTP non envoyée: {mail_status}")
         if meet_link:
             st.markdown(f"**Google Meet créé :** [{meet_link}]({meet_link})")
         if calendar_link:
             st.markdown(f"**Évènement Calendar :** [{calendar_link}]({calendar_link})")
-        if mail_status:
-            st.caption(mail_status if mail_ok else f"Copie SMTP non envoyée: {mail_status}")
     elif mail_ok:
         st.success(mail_status or "Message envoyé.")
     else:
@@ -2509,13 +2518,9 @@ def _render_contact_fields() -> None:
             st.error(mail_status)
         else:
             st.error("Aucun canal d'envoi serveur n'est configuré pour ce type de demande.")
-        if contact["meeting_kind"] == "Message":
+        if contact["meeting_kind"] == "Mail":
             st.markdown(f"[Ouvrir un email prérempli]({_contact_mailto_link(contact)})")
             st.caption("Fallback sans SMTP: le mail s'ouvre dans votre client email, puis vous l'envoyez manuellement.")
-
-    if st.button("Fermer", key="contact_close_after_submit", width="stretch"):
-        _close_contact_dialog()
-        st.rerun()
 
 
 def _render_contact_dialog() -> None:
