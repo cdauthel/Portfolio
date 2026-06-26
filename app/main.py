@@ -2946,12 +2946,9 @@ def render_qr_code_page() -> None:
     if not HAS_QRCODE or qrcode is None:
         st.warning("Le module `qrcode` n'est pas disponible dans cet environnement.")
         return
-    default_home_url = os.getenv("PORTFOLIO_APP_URL", "https://portfolio-cyriack.streamlit.app/")
-    home_url = st.text_input(
-        "URL de la page d'accueil de l'application (hébergement Streamlit Cloud public)",
-        value=default_home_url,
-        key="portfolio_home_url",
-    ).strip()
+    home_url = os.getenv("PORTFOLIO_APP_URL", "https://portfolio-cyriack.streamlit.app/").strip()
+    st.markdown("**URL de la page d'accueil de l'application (hébergement Streamlit Cloud public)**")
+    st.code(home_url, language=None)
 
     if not home_url:
         st.info("Renseignez une URL pour générer le QR code.")
@@ -2971,7 +2968,7 @@ def render_qr_code_page() -> None:
     img.save(png_bytes, format="PNG")
     png_data = png_bytes.getvalue()
 
-    _, qr_col, _ = st.columns([1, 1, 1])
+    _, qr_col, _ = st.columns([0.25, 0.92, 1.83])
     with qr_col:
         st.image(png_data, caption="QR code", width=280)
         st.download_button(
