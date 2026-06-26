@@ -1332,7 +1332,7 @@ def _render_sidebar_section_navigation(sections: list[str]) -> str:
                     _display_section_label(section_name),
                     key=_nav_button_key(section_name),
                     type="primary" if active_section == section_name else "secondary",
-                    use_container_width=True,
+                    width="stretch",
                     on_click=_activate_sidebar_section,
                     args=(section_name, None),
                 )
@@ -1344,7 +1344,7 @@ def _render_sidebar_section_navigation(sections: list[str]) -> str:
             f"{arrow} {_display_nav_group_label(group_title)}",
             key=_nav_group_button_key(group_title),
             type="secondary",
-            use_container_width=True,
+            width="stretch",
             on_click=_toggle_sidebar_nav_group,
             args=(str(group_title),),
         )
@@ -1355,7 +1355,7 @@ def _render_sidebar_section_navigation(sections: list[str]) -> str:
                     f"\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0{_display_section_label(section_name)}",
                     key=_nav_button_key(section_name),
                     type="primary" if active_section == section_name else "secondary",
-                    use_container_width=True,
+                    width="stretch",
                     on_click=_activate_sidebar_section,
                     args=(section_name, str(group_title)),
                 )
@@ -1833,7 +1833,7 @@ def _render_settings_dialog() -> None:
         def _settings_modal() -> None:
             _render_settings_fields()
             b1 = st.columns(1)[0]
-            if b1.button(_t("settings_save"), key="settings_save_btn", use_container_width=True):
+            if b1.button(_t("settings_save"), key="settings_save_btn", width="stretch"):
                 _apply_settings_draft()
                 _close_settings_dialog()
                 st.rerun()
@@ -1844,7 +1844,7 @@ def _render_settings_dialog() -> None:
             st.markdown(f"**{_t('settings_title')}**")
             _render_settings_fields()
             b1 = st.columns(1)[0]
-            if b1.button(_t("settings_save"), key="settings_save_btn_fallback", use_container_width=True):
+            if b1.button(_t("settings_save"), key="settings_save_btn_fallback", width="stretch"):
                 _apply_settings_draft()
                 _close_settings_dialog()
                 st.rerun()
@@ -2381,7 +2381,7 @@ def render_architecture() -> None:
         columns=["Couche", "Fichier / dossier", "Responsabilité"],
     )
     st.markdown("##### Architecture technique de l'application")
-    st.dataframe(component_df, use_container_width=True, height=_table_height(len(component_df), max_height=380))
+    st.dataframe(component_df, width="stretch", height=_table_height(len(component_df), max_height=380))
 
     st.markdown("##### Hébergement Streamlit Cloud")
     st.markdown(
@@ -2403,10 +2403,10 @@ Le cycle de publication est donc volontairement simple: GitHub sert de source de
         ],
         columns=["Étape", "Bloc", "Action"],
     )
-    st.dataframe(hosting_steps, use_container_width=True, height=_table_height(len(hosting_steps), max_height=260))
+    st.dataframe(hosting_steps, width="stretch", height=_table_height(len(hosting_steps), max_height=260))
     hosting_schema_path = PROJECT_ROOT / "Hebergement_App.jpg"
     if hosting_schema_path.exists():
-        st.image(str(hosting_schema_path), caption="Schéma d'hébergement de l'application", use_container_width=True)
+        st.image(str(hosting_schema_path), caption="Schéma d'hébergement de l'application", width="stretch")
 
     c1, c2 = st.columns([1.1, 1.0])
     with c1:
@@ -2483,7 +2483,7 @@ def render_profile_cv() -> None:
     col_left, col_right = st.columns([2.1, 1.0])
     with col_left:
         if cv_image:
-            st.image(str(cv_image), caption="CV - aperçu", use_container_width=True)
+            st.image(str(cv_image), caption="CV - aperçu", width="stretch")
         else:
             st.warning("Image du CV introuvable dans `assets/cv/`.")
         st.markdown("### Aujourd'hui je me forme à...")
@@ -2537,7 +2537,7 @@ def render_profile_cv() -> None:
                 data=cv_pdf.read_bytes(),
                 file_name=cv_pdf.name,
                 mime="application/pdf",
-                use_container_width=True,
+                width="stretch",
             )
         else:
             st.warning("PDF du CV introuvable dans `assets/cv/`.")
@@ -2979,7 +2979,7 @@ def render_qr_code_page() -> None:
             data=png_data,
             file_name="portfolio_home_qr.png",
             mime="image/png",
-            use_container_width=True,
+            width="stretch",
         )
 
 
@@ -3004,7 +3004,7 @@ Ce sommaire couvre l'ensemble du portfolio. Cliquez sur une section pour y être
                 if st.button(
                     subpage,
                     key=f"summary_{section}_{idx}",
-                    use_container_width=True,
+                    width="stretch",
                 ):
                     navigate_to(section, subpage)
 
@@ -3124,7 +3124,7 @@ def render_data_dictionary(data: dict[str, pd.DataFrame]) -> None:
         dictionary_block.info("Table générée par la section Scraping: catalogue de connecteurs, collecte raw, historique ou audit qualité.")
     dictionary_block.markdown(f"**Lignes : {len(df):,}**&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**Colonnes : {df.shape[1]}**", unsafe_allow_html=True)
     dict_height = min(max(120, 38 * len(dtypes) + 36), 560)
-    dictionary_block.dataframe(dtypes, use_container_width=True, height=dict_height)
+    dictionary_block.dataframe(dtypes, width="stretch", height=dict_height)
 
     try:
         raw_block = st.container(border=True)
@@ -3756,10 +3756,10 @@ def render_raw_data(
             data=payload,
             file_name=file_name,
             mime=mime,
-            use_container_width=True,
+            width="stretch",
         )
 
-    parent.dataframe(df.head(n_rows), use_container_width=True, height=440)
+    parent.dataframe(df.head(n_rows), width="stretch", height=440)
     parent.markdown(
         """
 <div style='font-size:.86rem;color:#6b7280;margin-top:.65rem;line-height:1.4;'>
@@ -4182,7 +4182,7 @@ def render_erd_schemas(data: dict[str, pd.DataFrame]) -> None:
         ],
     )
     local_fig = _build_local_erd_figure(entry["erd_model"])
-    st.plotly_chart(local_fig, use_container_width=True)
+    st.plotly_chart(local_fig, width="stretch")
 
     with st.expander("Détails du schéma détecté", expanded=False):
         schema_obj: DatabaseSchema = entry["db_schema"]
@@ -4201,7 +4201,7 @@ def render_erd_schemas(data: dict[str, pd.DataFrame]) -> None:
                 )
         details_df = pd.DataFrame(rows)
         details_height = min(max(180, 32 * (len(details_df) + 1)), 720)
-        st.dataframe(details_df, use_container_width=True, height=details_height)
+        st.dataframe(details_df, width="stretch", height=details_height)
         st.download_button(
             "Télécharger le schéma détecté (JSON)",
             data=json.dumps(
@@ -4240,7 +4240,7 @@ def render_erd_schemas(data: dict[str, pd.DataFrame]) -> None:
             ).encode("utf-8"),
             file_name=f"erd_schema_{re.sub(r'[^a-zA-Z0-9_-]+', '_', logical_db_name).strip('_').lower() or 'schema'}.json",
             mime="application/json",
-            use_container_width=True,
+            width="stretch",
         )
 
 
@@ -4327,7 +4327,7 @@ def render_generation_controls(
         categorical_missing_strategy,
         missing_model_dims,
     )
-    st.dataframe(params, use_container_width=True)
+    st.dataframe(params, width="stretch")
     st.caption("Les paramètres se configurent dans la barre latérale puis sont appliqués après clic sur « Regénérer les données ».")
 
 
@@ -4338,7 +4338,7 @@ def render_quality(
 ) -> None:
     if generation_params is not None and not generation_params.empty:
         st.markdown("#### Paramètres de génération")
-        st.dataframe(generation_params.dropna(how="all"), use_container_width=True, height=_table_height(len(generation_params), max_height=420))
+        st.dataframe(generation_params.dropna(how="all"), width="stretch", height=_table_height(len(generation_params), max_height=420))
         st.caption("Les paramètres se configurent dans la barre latérale puis sont appliqués après clic sur « Regénérer les données ».")
 
     try:
@@ -4418,7 +4418,7 @@ def render_quality(
         labels={"missing_count": "Nombre de valeurs manquantes", "table": "Table"},
     )
     bar_fig.update_layout(xaxis_tickangle=-30)
-    c1.plotly_chart(bar_fig, use_container_width=True)
+    c1.plotly_chart(bar_fig, width="stretch")
 
     if missing_rows:
         missing_detail = pd.DataFrame(missing_rows).sort_values("missing_count", ascending=False)
@@ -4431,7 +4431,7 @@ def render_quality(
             title="Répartition des valeurs manquantes (colonne)",
             hover_data={"missing_count": True, "missing_rate_pct": ":.2f"},
         )
-        c2.plotly_chart(treemap_fig, use_container_width=True)
+        c2.plotly_chart(treemap_fig, width="stretch")
 
         top_columns = (
             missing_detail.groupby("column", as_index=False)["missing_count"]
@@ -4457,7 +4457,7 @@ def render_quality(
                 title="Heatmap des valeurs manquantes (top colonnes)",
                 labels={"x": "Colonne", "y": "Table", "color": "Manquants"},
             )
-            missing_map_block.plotly_chart(heatmap_fig, use_container_width=True)
+            missing_map_block.plotly_chart(heatmap_fig, width="stretch")
     else:
         c2.success("Aucune valeur manquante détectée sur les tables chargées.")
 
@@ -4486,7 +4486,7 @@ def render_quality(
             "detail": "Détail",
         }
     )[["Indicateur", "Status", "Explication", "Détail"]]
-    st.dataframe(quality_display, use_container_width=True, height=340)
+    st.dataframe(quality_display, width="stretch", height=340)
 
     st.caption("PASS : indicateur validé. FAIL : anomalie détectée, nécessitant correction ou investigation.")
 
@@ -4884,7 +4884,7 @@ La méthode courante appliquée aux données simulées se configure dans la barr
         "Avec de grands volumes, un nombre non nul de cellules manquantes peut rester inférieur à 0.01%."
     )
     with top.expander("Synthèse des valeurs manquantes", expanded=False):
-        st.dataframe(summary.dropna(how="all"), use_container_width=True, hide_index=True, height=_table_height(len(summary), max_height=360))
+        st.dataframe(summary.dropna(how="all"), width="stretch", hide_index=True, height=_table_height(len(summary), max_height=360))
 
     controls = st.container(border=True)
     controls.markdown("**Assistant de sélection et backtest**")
@@ -5191,7 +5191,7 @@ La méthode courante appliquée aux données simulées se configure dans la barr
     )
     result_box.markdown("<div style='height:.75rem;'></div>", unsafe_allow_html=True)
     with result_box.expander("Table - Comparaison des méthodes", expanded=True):
-        st.dataframe(comparison, use_container_width=True, hide_index=True, height=_table_height(len(comparison), max_height=340))
+        st.dataframe(comparison, width="stretch", hide_index=True, height=_table_height(len(comparison), max_height=340))
 
     charts = st.columns(2)
     final_filled = None
@@ -5216,9 +5216,9 @@ La méthode courante appliquée aux données simulées se configure dans la barr
                 f"Imputé - {best}": pd.to_numeric(final_filled, errors="coerce"),
             }
         ).melt(var_name="Série", value_name="Valeur")
-        charts[0].plotly_chart(px.histogram(dist.dropna(), x="Valeur", color="Série", barmode="overlay", opacity=0.62, title="Distribution avant / après"), use_container_width=True)
+        charts[0].plotly_chart(px.histogram(dist.dropna(), x="Valeur", color="Série", barmode="overlay", opacity=0.62, title="Distribution avant / après"), width="stretch")
         if criterion in comparison.columns:
-            charts[1].plotly_chart(px.bar(comparison, x="Méthode", y=criterion, title=f"Comparaison des méthodes ({criterion})"), use_container_width=True)
+            charts[1].plotly_chart(px.bar(comparison, x="Méthode", y=criterion, title=f"Comparaison des méthodes ({criterion})"), width="stretch")
     elif final_filled is not None:
         original = df[target].astype("object")
         filled_obj = final_filled.astype("object")
@@ -5249,7 +5249,7 @@ La méthode courante appliquée aux données simulées se configure dans la barr
             title="Modalités avant / après",
         )
         modal_fig.update_layout(yaxis_title="Part (%)", xaxis_title="Modalité")
-        charts[0].plotly_chart(modal_fig, use_container_width=True)
+        charts[0].plotly_chart(modal_fig, width="stretch")
         imputed_only = filled_obj.loc[original.isna()].dropna().astype(str)
         if not imputed_only.empty:
             imputed_counts = imputed_only.value_counts().head(12).reset_index()
@@ -5264,7 +5264,7 @@ La méthode courante appliquée aux données simulées se configure dans la barr
                 title="Modalités attribuées aux valeurs manquantes",
             )
             imp_fig.update_layout(yaxis_title="Part des valeurs imputées (%)", xaxis_title="Modalité imputée")
-            charts[1].plotly_chart(imp_fig, use_container_width=True)
+            charts[1].plotly_chart(imp_fig, width="stretch")
             if concentration >= 60:
                 result_box.warning(
                     f"Imputation concentrée: {concentration:.1f}% des valeurs manquantes sont reconstruites avec la même modalité. "
@@ -5276,11 +5276,11 @@ La méthode courante appliquée aux données simulées se configure dans la barr
                     "Le graphique distingue désormais la distribution complète après imputation et les seules valeurs reconstruites."
                 )
         if criterion in comparison.columns:
-            st.plotly_chart(px.bar(comparison, x="Méthode", y=criterion, title=f"Comparaison des méthodes ({criterion})"), use_container_width=True)
+            st.plotly_chart(px.bar(comparison, x="Méthode", y=criterion, title=f"Comparaison des méthodes ({criterion})"), width="stretch")
 
     st.markdown("##### Référentiel mathématique et statistique")
     with st.expander("Catalogue des méthodes", expanded=False):
-        st.dataframe(MISSING_METHOD_CATALOG, use_container_width=True, hide_index=True)
+        st.dataframe(MISSING_METHOD_CATALOG, width="stretch", hide_index=True)
     st.markdown(
         """
 **Règles de lecture.** Si MCAR est plausible, une méthode simple peut constituer une baseline. Si MAR est suspecté, privilégier les méthodes conditionnelles ou multivariées. Si MNAR est plausible, l'imputation seule ne suffit pas: il faut documenter le mécanisme métier, conserver des indicateurs de manquants et tester la sensibilité.
@@ -5761,7 +5761,7 @@ def render_eda(data: dict[str, pd.DataFrame]) -> None:
         st.session_state["viz_table_slots"] = 1
 
     valid_examples = [ex for ex in _viz_examples_catalog() if _viz_example_is_valid(ex, data)]
-    if st.button("Générer un exemple", key="viz_generate_example", use_container_width=True):
+    if st.button("Générer un exemple", key="viz_generate_example", width="stretch"):
         if valid_examples:
             current_idx = int(st.session_state.get("viz_example_index", -1))
             next_idx = (current_idx + 1) % len(valid_examples)
@@ -5788,11 +5788,11 @@ def render_eda(data: dict[str, pd.DataFrame]) -> None:
 
     add_col, remove_col = eda_block.columns([1, 1])
     with add_col:
-        if st.button("+ Ajouter une table", key="viz_add_table", use_container_width=True):
+        if st.button("+ Ajouter une table", key="viz_add_table", width="stretch"):
             st.session_state["viz_table_slots"] = min(8, st.session_state["viz_table_slots"] + 1)
             st.rerun()
     with remove_col:
-        if st.button("Retirer la dernière table", key="viz_remove_table", use_container_width=True):
+        if st.button("Retirer la dernière table", key="viz_remove_table", width="stretch"):
             st.session_state["viz_table_slots"] = max(1, st.session_state["viz_table_slots"] - 1)
             st.rerun()
 
@@ -6310,7 +6310,7 @@ def render_eda(data: dict[str, pd.DataFrame]) -> None:
 
     _reduce_scatter_marker_size(fig, default_size=5.0)
     fig.update_layout(template="plotly_white", margin=dict(l=20, r=20, t=60, b=20))
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
     if table_view is not None and not table_view.empty:
         with st.expander("Données utilisées pour la visualisation", expanded=False):
@@ -6321,7 +6321,7 @@ def render_eda(data: dict[str, pd.DataFrame]) -> None:
                 display_table = display_table.rename(columns={"valeur_pct": table_metric_pct_label})
             preview = display_table.head(2000)
             table_height = min(max(140, 34 * (len(preview) + 1)), 520)
-            st.dataframe(preview, use_container_width=True, height=table_height)
+            st.dataframe(preview, width="stretch", height=table_height)
 
     if selected_method:
         st.markdown("---")
@@ -6765,7 +6765,7 @@ def render_correlations(data: dict[str, pd.DataFrame]) -> None:
 
     valid_examples = [ex for ex in _corr_examples_catalog() if _corr_example_is_valid(ex, data)]
     st.caption("Explorez rapidement les relations entre variables quantitatives et leurs niveaux de significativité.")
-    if st.button("Générer un exemple", key="corr_generate_example", use_container_width=True):
+    if st.button("Générer un exemple", key="corr_generate_example", width="stretch"):
         if valid_examples:
             current_idx = int(st.session_state.get("corr_example_index", -1))
             next_idx = (current_idx + 1) % len(valid_examples)
@@ -6792,11 +6792,11 @@ def render_correlations(data: dict[str, pd.DataFrame]) -> None:
 
     left_btn, right_btn = corr_block.columns([1, 1])
     with left_btn:
-        if st.button("+ Ajouter une table", key="corr_add_table", use_container_width=True):
+        if st.button("+ Ajouter une table", key="corr_add_table", width="stretch"):
             st.session_state["corr_table_slots"] = min(8, st.session_state["corr_table_slots"] + 1)
             st.rerun()
     with right_btn:
-        if st.button("Retirer la dernière table", key="corr_remove_table", use_container_width=True):
+        if st.button("Retirer la dernière table", key="corr_remove_table", width="stretch"):
             st.session_state["corr_table_slots"] = max(1, st.session_state["corr_table_slots"] - 1)
             st.rerun()
 
@@ -7071,7 +7071,7 @@ def render_correlations(data: dict[str, pd.DataFrame]) -> None:
         )
         text_matrix = corr_display.applymap(lambda v: "" if pd.isna(v) else f"{v:.3f}")
         heatmap_fig.update_traces(text=text_matrix.values, texttemplate="%{text}")
-        st.plotly_chart(heatmap_fig, use_container_width=True)
+        st.plotly_chart(heatmap_fig, width="stretch")
     else:
         tabs = st.tabs([f"{group_var} = {name}" for name, _ in group_blocks])
         for tab, (grp_name, grp_df) in zip(tabs, group_blocks):
@@ -7100,7 +7100,7 @@ def render_correlations(data: dict[str, pd.DataFrame]) -> None:
                 )
                 text_matrix = corr_display.applymap(lambda v: "" if pd.isna(v) else f"{v:.3f}")
                 heatmap_fig.update_traces(text=text_matrix.values, texttemplate="%{text}")
-                st.plotly_chart(heatmap_fig, use_container_width=True)
+                st.plotly_chart(heatmap_fig, width="stretch")
 
     pair_df = pd.concat(all_pairs, ignore_index=True) if all_pairs else pd.DataFrame()
     if pair_df.empty:
@@ -7134,7 +7134,7 @@ def render_correlations(data: dict[str, pd.DataFrame]) -> None:
         )
     table_height = min(max(120, 36 * (len(display_df) + 1)), 740)
     with st.expander("Table des corrélations (détail)", expanded=True):
-        st.dataframe(display_df, use_container_width=True, height=table_height)
+        st.dataframe(display_df, width="stretch", height=table_height)
 
     st.markdown("---")
     st.markdown("### Explications")
@@ -7222,7 +7222,7 @@ def _render_collapsible_dataframe(
     with expander:
         st.dataframe(
             clean_df,
-            use_container_width=True,
+            width="stretch",
             hide_index=hide_index,
             height=_table_height(len(clean_df), max_height=max_height),
         )
@@ -7505,7 +7505,7 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
 
     valid_examples = [ex for ex in _factor_examples_catalog() if _factor_example_is_valid(ex, data)]
     st.caption("Identifiez les dimensions latentes qui structurent les variables et les profils observés.")
-    if st.button("Générer un exemple", key="fa_generate_example", use_container_width=True):
+    if st.button("Générer un exemple", key="fa_generate_example", width="stretch"):
         if valid_examples:
             current_idx = int(st.session_state.get("fa_example_index", -1))
             next_idx = (current_idx + 1) % len(valid_examples)
@@ -7531,11 +7531,11 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
 
     a1, a2 = fa_block.columns([1, 1])
     with a1:
-        if st.button("+ Ajouter une table", key="fa_add_table", use_container_width=True):
+        if st.button("+ Ajouter une table", key="fa_add_table", width="stretch"):
             st.session_state["fa_table_slots"] = min(8, st.session_state["fa_table_slots"] + 1)
             st.rerun()
     with a2:
-        if st.button("Retirer la dernière table", key="fa_remove_table", use_container_width=True):
+        if st.button("Retirer la dernière table", key="fa_remove_table", width="stretch"):
             st.session_state["fa_table_slots"] = max(1, st.session_state["fa_table_slots"] - 1)
             st.rerun()
 
@@ -7849,7 +7849,7 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
                     )
         _add_factor_crosshair(individuals_fig)
         individuals_fig.update_layout(template="plotly_white")
-        st.plotly_chart(individuals_fig, use_container_width=True)
+        st.plotly_chart(individuals_fig, width="stretch")
 
         if color_mode == "cos² (Dim1+Dim2)":
             st.caption(
@@ -7949,7 +7949,7 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
             showlegend=False,
             height=760,
         )
-        st.plotly_chart(circle, use_container_width=True)
+        st.plotly_chart(circle, width="stretch")
 
         if len(explained) > 2:
             n_var_chart = int(
@@ -7979,7 +7979,7 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
                 color="Variance expliquée (%)",
                 color_continuous_scale="Tealgrn",
             ),
-            use_container_width=True,
+            width="stretch",
         )
 
         eig_df = pd.DataFrame(
@@ -7993,7 +7993,7 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
         eig_df["Kaiser (>1)"] = np.where(eig_df["Valeur propre"] > 1, "Oui", "Non")
         st.markdown("##### Table des valeurs propres (eigenvalues)")
         eig_height = min(max(120, 34 * (len(eig_df) + 1)), 420)
-        st.dataframe(eig_df, use_container_width=True, height=eig_height)
+        st.dataframe(eig_df, width="stretch", height=eig_height)
 
         active_contrib = circle_df[circle_df["Type"] == "Active"].copy()
         if not active_contrib.empty:
@@ -8011,7 +8011,7 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
                 dim1_height = min(max(120, 34 * (len(dim1_top) + 1)), 360)
                 st.dataframe(
                     dim1_top,
-                    use_container_width=True,
+                    width="stretch",
                     height=dim1_height,
                 )
             with cdim2:
@@ -8024,7 +8024,7 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
                 dim2_height = min(max(120, 34 * (len(dim2_top) + 1)), 360)
                 st.dataframe(
                     dim2_top,
-                    use_container_width=True,
+                    width="stretch",
                     height=dim2_height,
                 )
 
@@ -8036,7 +8036,7 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
                 .copy()
             )
             cos2_vars_height = min(max(120, 34 * (len(cos2_vars) + 1)), 420)
-            st.dataframe(cos2_vars, use_container_width=True, height=cos2_vars_height)
+            st.dataframe(cos2_vars, width="stretch", height=cos2_vars_height)
 
         with st.expander("cos² des individus (qualité de représentation)", expanded=False):
             individuals_cos2 = pca_df[["Dim1", "Dim2", "cos2_dim12"]].copy()
@@ -8044,7 +8044,7 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
                 individuals_cos2["Identifiant"] = pca_df["Identifiant"]
             individuals_cos2 = individuals_cos2.sort_values("cos2_dim12", ascending=False).head(15)
             cos2_height = min(max(120, 34 * (len(individuals_cos2) + 1)), 420)
-            st.dataframe(individuals_cos2, use_container_width=True, height=cos2_height)
+            st.dataframe(individuals_cos2, width="stretch", height=cos2_height)
 
         st.markdown("### Explication")
         st.markdown(
@@ -8169,7 +8169,7 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
             fig.update_traces(text=ca_plot["label"], textposition="top center")
         _add_factor_crosshair(fig)
         fig.update_layout(template="plotly_white")
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
         if contingency_mode == "% ligne":
             contingency_view = contingency.div(contingency.sum(axis=1).replace(0, np.nan), axis=0) * 100
@@ -8203,7 +8203,7 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
                 color_continuous_scale="Tealgrn",
             )
             heat.update_layout(template="plotly_white")
-            st.plotly_chart(heat, use_container_width=True)
+            st.plotly_chart(heat, width="stretch")
         with c2:
             inertia_df = pd.DataFrame(
                 {
@@ -8222,7 +8222,7 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
 
             for col in ["Inertie (%)", "Inertie cumulée (%)"]:
                 inertia_df[col] = inertia_df[col].map(_format_afc_inertia)
-            st.dataframe(inertia_df.head(8), use_container_width=True, height=_table_height(min(len(inertia_df), 8), max_height=320))
+            st.dataframe(inertia_df.head(8), width="stretch", height=_table_height(min(len(inertia_df), 8), max_height=320))
 
         contrib_tbl = (
             ca_plot[["label", "Type", "Contribution (Dim1+Dim2)", "Qualité (cos² approx)"]]
@@ -8231,7 +8231,7 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
             .rename(columns={"label": "Modalité"})
         )
         st.markdown("##### Modalités les plus contributives")
-        st.dataframe(contrib_tbl, use_container_width=True, height=_table_height(len(contrib_tbl), max_height=380))
+        st.dataframe(contrib_tbl, width="stretch", height=_table_height(len(contrib_tbl), max_height=380))
 
         st.markdown("### Explication")
         st.markdown(
@@ -8486,7 +8486,7 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
                 )
         _add_factor_crosshair(ind_fig)
         ind_fig.update_layout(template="plotly_white")
-        st.plotly_chart(ind_fig, use_container_width=True)
+        st.plotly_chart(ind_fig, width="stretch")
 
         modality_rows: list[dict[str, object]] = []
         coords_df = pd.DataFrame(coords, index=sample_idx, columns=[f"Dim{i+1}" for i in range(coords.shape[1])])
@@ -8567,7 +8567,7 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
                     )
             _add_factor_crosshair(mod_fig)
             mod_fig.update_layout(template="plotly_white")
-            st.plotly_chart(mod_fig, use_container_width=True)
+            st.plotly_chart(mod_fig, width="stretch")
 
         if "fa_mca_n_var_chart" not in st.session_state or not (2 <= int(st.session_state["fa_mca_n_var_chart"]) <= len(explained)):
             st.session_state["fa_mca_n_var_chart"] = min(6, len(explained))
@@ -8594,7 +8594,7 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
                 color="Variance expliquée (%)",
                 color_continuous_scale="Tealgrn",
             ),
-            use_container_width=True,
+            width="stretch",
         )
 
         eig_df = pd.DataFrame(
@@ -8605,13 +8605,13 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
                 "Inertie cumulée (%)": np.cumsum(explained) * 100,
             }
         )
-        st.dataframe(eig_df, use_container_width=True, height=_table_height(len(eig_df), max_height=420))
+        st.dataframe(eig_df, width="stretch", height=_table_height(len(eig_df), max_height=420))
 
         ind_cos2_df = ind_df[["Dim1", "Dim2", "cos2_dim12"]].copy().sort_values("cos2_dim12", ascending=False).head(15)
         if "Identifiant" in ind_df.columns:
             ind_cos2_df["Identifiant"] = ind_df["Identifiant"]
         with st.expander("cos² des individus (top 15)", expanded=False):
-            st.dataframe(ind_cos2_df, use_container_width=True, height=_table_height(len(ind_cos2_df), max_height=420))
+            st.dataframe(ind_cos2_df, width="stretch", height=_table_height(len(ind_cos2_df), max_height=420))
 
         if not mod_df.empty:
             active_mod = mod_df[mod_df["Type"] == "Active"].copy()
@@ -8633,7 +8633,7 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
                     .head(25)
                 )
                 with st.expander("Modalités actives les plus contributives", expanded=False):
-                    st.dataframe(contrib_tbl, use_container_width=True, height=_table_height(len(contrib_tbl), max_height=560))
+                    st.dataframe(contrib_tbl, width="stretch", height=_table_height(len(contrib_tbl), max_height=560))
 
         st.markdown("### Explication")
         st.markdown(
@@ -8837,7 +8837,7 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
                 )
         _add_factor_crosshair(cluster_fig)
         cluster_fig.update_layout(template="plotly_white")
-        st.plotly_chart(cluster_fig, use_container_width=True)
+        st.plotly_chart(cluster_fig, width="stretch")
 
         c1, c2 = st.columns([1.1, 1.2])
         with c1:
@@ -8846,7 +8846,7 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
             size_df = size_df.sort_values("Classe_int").drop(columns=["Classe_int"])
             size_fig = px.bar(size_df, x="Classe", y="Effectif", text="Effectif", title="Effectifs par classe", color="Classe")
             size_fig.update_layout(showlegend=False, template="plotly_white")
-            c1.plotly_chart(size_fig, use_container_width=True)
+            c1.plotly_chart(size_fig, width="stretch")
         with c2:
             profile_std = pd.DataFrame(x_model, columns=selected).assign(Classe=class_labels).groupby("Classe", as_index=True).mean()
             heat = px.imshow(
@@ -8856,11 +8856,11 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
                 color_continuous_scale="RdBu_r",
                 title="Profil moyen standardisé par classe",
             )
-            c2.plotly_chart(heat, use_container_width=True)
+            c2.plotly_chart(heat, width="stretch")
 
         profile_raw = x_raw.assign(Classe=class_labels).groupby("Classe", as_index=False).mean()
         st.markdown("##### Profils moyens (échelle d'origine)")
-        st.dataframe(profile_raw, use_container_width=True, height=_table_height(len(profile_raw), max_height=420))
+        st.dataframe(profile_raw, width="stretch", height=_table_height(len(profile_raw), max_height=420))
 
         eta_rows: list[dict[str, object]] = []
         for col in selected:
@@ -8881,7 +8881,7 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
         if eta_rows:
             eta_df = pd.DataFrame(eta_rows).sort_values("Pouvoir discriminant (eta²)", ascending=False)
             st.markdown("##### Variables les plus discriminantes")
-            st.dataframe(eta_df, use_container_width=True, height=_table_height(len(eta_df), max_height=420))
+            st.dataframe(eta_df, width="stretch", height=_table_height(len(eta_df), max_height=420))
 
         if show_dendrogram:
             dendro_n = min(320, len(x_model))
@@ -8901,7 +8901,7 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
                         link_matrix,
                         title=f"Dendrogramme ({len(dendro_source)} observations échantillonnées)",
                     ),
-                    use_container_width=True,
+                    width="stretch",
                 )
             except Exception as exc:
                 st.warning(f"Dendrogramme indisponible pour ce paramétrage: {exc}")
@@ -9230,7 +9230,7 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
                 )
         _add_factor_crosshair(afm_fig)
         afm_fig.update_layout(template="plotly_white")
-        st.plotly_chart(afm_fig, use_container_width=True)
+        st.plotly_chart(afm_fig, width="stretch")
 
         if "fa_mfa_n_var_chart" not in st.session_state or not (2 <= int(st.session_state["fa_mfa_n_var_chart"]) <= len(explained)):
             st.session_state["fa_mfa_n_var_chart"] = min(6, len(explained))
@@ -9257,7 +9257,7 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
                 color_continuous_scale="Tealgrn",
                 title=f"AFM - Variance expliquée ({n_var_chart} dimensions)",
             ),
-            use_container_width=True,
+            width="stretch",
         )
 
         eig_df = pd.DataFrame(
@@ -9268,7 +9268,7 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
                 "Variance cumulée (%)": np.cumsum(explained) * 100,
             }
         )
-        st.dataframe(eig_df, use_container_width=True, height=_table_height(len(eig_df), max_height=420))
+        st.dataframe(eig_df, width="stretch", height=_table_height(len(eig_df), max_height=420))
 
         loadings = pca_global.components_
         contrib_rows = []
@@ -9297,9 +9297,9 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
                 title="AFM - Contribution des groupes aux axes",
                 hover_data={"Variables encodées": True},
             ),
-            use_container_width=True,
+            width="stretch",
         )
-        st.dataframe(contrib_df, use_container_width=True, height=_table_height(len(contrib_df), max_height=360))
+        st.dataframe(contrib_df, width="stretch", height=_table_height(len(contrib_df), max_height=360))
 
         contrib_var_df = pd.DataFrame(
             {
@@ -9312,10 +9312,10 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
         contrib_var_df["Contribution cumulée (%)"] = contrib_var_df["Contribution Dim1 (%)"] + contrib_var_df["Contribution Dim2 (%)"]
         contrib_var_df = contrib_var_df.sort_values("Contribution cumulée (%)", ascending=False).head(30)
         st.markdown("##### Variables encodées les plus contributives (top 30)")
-        st.dataframe(contrib_var_df, use_container_width=True, height=_table_height(len(contrib_var_df), max_height=640))
+        st.dataframe(contrib_var_df, width="stretch", height=_table_height(len(contrib_var_df), max_height=640))
 
         st.markdown("##### Encodage AFM par groupe")
-        st.dataframe(pd.DataFrame(group_card_rows), use_container_width=True, height=_table_height(len(group_card_rows), max_height=280))
+        st.dataframe(pd.DataFrame(group_card_rows), width="stretch", height=_table_height(len(group_card_rows), max_height=280))
         st.markdown("### Explication")
         st.markdown(
             """
@@ -9616,7 +9616,7 @@ def _render_afmd_analysis(
             )
     _add_factor_crosshair(fig)
     fig.update_layout(template="plotly_white")
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
     if "fa_famd_n_var_chart" not in st.session_state or not (2 <= int(st.session_state["fa_famd_n_var_chart"]) <= len(explained)):
         st.session_state["fa_famd_n_var_chart"] = min(6, len(explained))
@@ -9643,7 +9643,7 @@ def _render_afmd_analysis(
             color_continuous_scale="Tealgrn",
             title=f"AFMD - Variance expliquee ({n_var_chart} dimensions)",
         ),
-        use_container_width=True,
+        width="stretch",
     )
 
     eig_df = pd.DataFrame(
@@ -9654,7 +9654,7 @@ def _render_afmd_analysis(
             "Variance cumulee (%)": np.cumsum(explained) * 100,
         }
     )
-    st.dataframe(eig_df, use_container_width=True, height=_table_height(len(eig_df), max_height=420))
+    st.dataframe(eig_df, width="stretch", height=_table_height(len(eig_df), max_height=420))
 
     loadings = pca.components_
     quant_end = quant_df.shape[1]
@@ -9683,7 +9683,7 @@ def _render_afmd_analysis(
             barmode="group",
             title="AFMD - Contribution quantitatif vs qualitatif",
         ),
-        use_container_width=True,
+        width="stretch",
     )
 
     encoded_names = quant_df.columns.tolist() + qual_df.columns.tolist()
@@ -9705,7 +9705,7 @@ def _render_afmd_analysis(
         .sort_values("Contribution cumulee (%)", ascending=False)
     )
     st.markdown("##### Variables sources les plus contributives")
-    st.dataframe(contrib_source_df.head(30), use_container_width=True, height=_table_height(min(len(contrib_source_df), 30), max_height=620))
+    st.dataframe(contrib_source_df.head(30), width="stretch", height=_table_height(min(len(contrib_source_df), 30), max_height=620))
 
     quant_corr_rows: list[dict[str, object]] = []
     for col in quant_df.columns:
@@ -9718,7 +9718,7 @@ def _render_afmd_analysis(
     if quant_corr_rows:
         quant_corr_df = pd.DataFrame(quant_corr_rows).sort_values("cos² (Dim1+Dim2)", ascending=False)
         st.markdown("##### Correlations des variables quantitatives avec les axes")
-        st.dataframe(quant_corr_df, use_container_width=True, height=_table_height(len(quant_corr_df), max_height=420))
+        st.dataframe(quant_corr_df, width="stretch", height=_table_height(len(quant_corr_df), max_height=420))
 
     def _eta2(y: np.ndarray, groups: pd.Series) -> float:
         if len(y) <= 2:
@@ -9752,11 +9752,11 @@ def _render_afmd_analysis(
         eta_df["eta² moyen (Dim1-2)"] = eta_df[["eta² Dim1", "eta² Dim2"]].mean(axis=1, skipna=True)
         eta_df = eta_df.sort_values("eta² moyen (Dim1-2)", ascending=False)
         st.markdown("##### Lien des variables qualitatives aux axes (eta²)")
-        st.dataframe(eta_df, use_container_width=True, height=_table_height(len(eta_df), max_height=420))
+        st.dataframe(eta_df, width="stretch", height=_table_height(len(eta_df), max_height=420))
 
     if modality_info_rows:
         st.markdown("##### Encodage qualitatif (controle)")
-        st.dataframe(pd.DataFrame(modality_info_rows), use_container_width=True, height=_table_height(len(modality_info_rows), max_height=320))
+        st.dataframe(pd.DataFrame(modality_info_rows), width="stretch", height=_table_height(len(modality_info_rows), max_height=320))
 
     st.markdown("### Explication")
     st.markdown(
@@ -10080,7 +10080,7 @@ def render_primary_tests(data: dict[str, pd.DataFrame]) -> None:
         if st.session_state.get("norm_alpha") not in {0.10, 0.05, 0.01, 0.005}:
             st.session_state["norm_alpha"] = 0.05
 
-        if st.button("Générer un exemple", key="norm_generate_example", use_container_width=True):
+        if st.button("Générer un exemple", key="norm_generate_example", width="stretch"):
             if valid_norm_examples:
                 current_idx = int(st.session_state.get("norm_example_index", -1))
                 next_idx = (current_idx + 1) % len(valid_norm_examples)
@@ -10106,11 +10106,11 @@ def render_primary_tests(data: dict[str, pd.DataFrame]) -> None:
 
         c1, c2 = norm_block.columns([1.0, 1.0])
         with c1:
-            if st.button("Ajouter une table", key="norm_join_add_table", use_container_width=True):
+            if st.button("Ajouter une table", key="norm_join_add_table", width="stretch"):
                 st.session_state["norm_join_table_slots"] = min(8, st.session_state["norm_join_table_slots"] + 1)
                 st.rerun()
         with c2:
-            if st.button("Retirer une table", key="norm_join_remove_table", use_container_width=True):
+            if st.button("Retirer une table", key="norm_join_remove_table", width="stretch"):
                 st.session_state["norm_join_table_slots"] = max(1, st.session_state["norm_join_table_slots"] - 1)
                 st.rerun()
 
@@ -10306,7 +10306,7 @@ def render_primary_tests(data: dict[str, pd.DataFrame]) -> None:
                             show_df["Statistique"] = show_df["Statistique"].map(lambda v: "" if pd.isna(v) else f"{float(v):.4f}")
                             show_df["p-value"] = show_df["p-value"].map(_format_p_norm)
                             show_df = _format_significant_columns(show_df)
-                            st.dataframe(show_df, use_container_width=True, height=_test_results_table_height(len(show_df), max_height=640))
+                            st.dataframe(show_df, width="stretch", height=_test_results_table_height(len(show_df), max_height=640))
 
                             p_df = res_df.dropna(subset=["p-value"]).copy()
                             if not p_df.empty:
@@ -10337,7 +10337,7 @@ def render_primary_tests(data: dict[str, pd.DataFrame]) -> None:
                                     ticktext=tick_text,
                                 )
                                 pfig.update_layout(xaxis_tickangle=-35, template="plotly_white")
-                                st.plotly_chart(pfig, use_container_width=True)
+                                st.plotly_chart(pfig, width="stretch")
 
                             if group_var == "Aucun":
                                 f_left, f_right = st.columns(2)
@@ -10358,10 +10358,10 @@ def render_primary_tests(data: dict[str, pd.DataFrame]) -> None:
                                         yline = norm.pdf(xline, loc=mu, scale=sigma) * len(series) * bin_width
                                         hfig.add_trace(go.Scatter(x=xline, y=yline, mode="lines", name="Normale ajustée", line=dict(color="#bb3e03")))
                                     hfig.update_layout(template="plotly_white")
-                                    st.plotly_chart(hfig, use_container_width=True)
+                                    st.plotly_chart(hfig, width="stretch")
                                 with g2:
                                     qq = _qq_plot_figure(series, title=f"QQ-plot - {preview_var}")
-                                    st.plotly_chart(qq, use_container_width=True)
+                                    st.plotly_chart(qq, width="stretch")
                             else:
                                 counts = prepared_df[group_var].astype(str).value_counts()
                                 shown_groups = counts[counts >= min_group_size].head(max_groups).index.tolist()
@@ -10392,14 +10392,14 @@ def render_primary_tests(data: dict[str, pd.DataFrame]) -> None:
                                             show_points=show_box_points,
                                         )
                                         box.update_layout(template="plotly_white", xaxis_tickangle=-20)
-                                        st.plotly_chart(box, use_container_width=True)
+                                        st.plotly_chart(box, width="stretch")
                                     with g2:
                                         grp_series = pd.to_numeric(
                                             plot_df[plot_df[group_var].astype(str) == preview_grp][preview_var],
                                             errors="coerce",
                                         ).dropna()
                                         qq = _qq_plot_figure(grp_series, title=f"QQ-plot - {preview_var} | {preview_grp}")
-                                        st.plotly_chart(qq, use_container_width=True)
+                                        st.plotly_chart(qq, width="stretch")
 
         st.markdown("### Explication")
         st.markdown(
@@ -10484,7 +10484,7 @@ def render_primary_tests(data: dict[str, pd.DataFrame]) -> None:
         if st.session_state.get("homo_alpha") not in {0.10, 0.05, 0.01, 0.005}:
             st.session_state["homo_alpha"] = 0.05
 
-        if st.button("Générer un exemple", key="homo_generate_example", use_container_width=True):
+        if st.button("Générer un exemple", key="homo_generate_example", width="stretch"):
             if valid_homo_examples:
                 current_idx = int(st.session_state.get("homo_example_index", -1))
                 next_idx = (current_idx + 1) % len(valid_homo_examples)
@@ -10510,11 +10510,11 @@ def render_primary_tests(data: dict[str, pd.DataFrame]) -> None:
 
         top1, top2 = homo_block.columns([1.0, 1.0])
         with top1:
-            if st.button("Ajouter une table", key="homo_join_add_table", use_container_width=True):
+            if st.button("Ajouter une table", key="homo_join_add_table", width="stretch"):
                 st.session_state["homo_join_table_slots"] = min(8, st.session_state["homo_join_table_slots"] + 1)
                 st.rerun()
         with top2:
-            if st.button("Retirer une table", key="homo_join_remove_table", use_container_width=True):
+            if st.button("Retirer une table", key="homo_join_remove_table", width="stretch"):
                 st.session_state["homo_join_table_slots"] = max(1, st.session_state["homo_join_table_slots"] - 1)
                 st.rerun()
 
@@ -10726,7 +10726,7 @@ def render_primary_tests(data: dict[str, pd.DataFrame]) -> None:
                                 disp["Statistique"] = disp["Statistique"].map(lambda v: "" if pd.isna(v) else f"{float(v):.4f}")
                                 disp["p-value"] = disp["p-value"].map(_format_p_homo)
                                 disp = _format_significant_columns(disp)
-                                st.dataframe(disp, use_container_width=True, height=_test_results_table_height(len(disp), max_height=620))
+                                st.dataframe(disp, width="stretch", height=_test_results_table_height(len(disp), max_height=620))
 
                                 if valid_plot_vars:
                                     plot_var = st.selectbox(
@@ -10751,7 +10751,7 @@ def render_primary_tests(data: dict[str, pd.DataFrame]) -> None:
                                             show_points=show_box_points,
                                         )
                                         box.update_layout(template="plotly_white", xaxis_tickangle=-20)
-                                        st.plotly_chart(box, use_container_width=True)
+                                        st.plotly_chart(box, width="stretch")
                                     with g2:
                                         var_df = (
                                             plot_df.groupby(group_col, as_index=False)[plot_var]
@@ -10761,7 +10761,7 @@ def render_primary_tests(data: dict[str, pd.DataFrame]) -> None:
                                         )
                                         bar = px.bar(var_df, x=group_col, y="variance", title=f"Variance par groupe - {plot_var}")
                                         bar.update_layout(template="plotly_white", xaxis_tickangle=-20)
-                                        st.plotly_chart(bar, use_container_width=True)
+                                        st.plotly_chart(bar, width="stretch")
 
         st.markdown("### Explication")
         st.markdown(
@@ -11147,7 +11147,7 @@ def render_kpi_dashboard(data: dict[str, pd.DataFrame], store_daily: pd.DataFram
     kpi_block.markdown("**Indicateurs et KPI**")
 
     row1 = kpi_block.columns([1.0, 1.7, 1.0])
-    row1[1].plotly_chart(gauge_fig, use_container_width=True)
+    row1[1].plotly_chart(gauge_fig, width="stretch")
 
     row2 = kpi_block.columns(3)
     _metric_with_month_trend(row2[0], "Transactions", f"{kpi_cur['txns']:,.0f}", monthly_metrics["txns"])
@@ -11194,7 +11194,7 @@ def render_kpi_dashboard(data: dict[str, pd.DataFrame], store_daily: pd.DataFram
                 margin=dict(l=8, r=8, t=48, b=8),
                 height=300,
             )
-            st.plotly_chart(fig_pie_channel, use_container_width=True)
+            st.plotly_chart(fig_pie_channel, width="stretch")
         else:
             st.info("Données insuffisantes pour le camembert CA canal.")
     with pie2:
@@ -11224,7 +11224,7 @@ def render_kpi_dashboard(data: dict[str, pd.DataFrame], store_daily: pd.DataFram
                 margin=dict(l=8, r=8, t=48, b=8),
                 height=300,
             )
-            st.plotly_chart(fig_pie_payment, use_container_width=True)
+            st.plotly_chart(fig_pie_payment, width="stretch")
         else:
             st.info("Données insuffisantes pour le camembert paiement.")
 
@@ -11273,14 +11273,14 @@ def render_kpi_dashboard(data: dict[str, pd.DataFrame], store_daily: pd.DataFram
         yaxis2=dict(title="Marge", overlaying="y", side="right"),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0.0),
     )
-    st.plotly_chart(fig_revenue, use_container_width=True)
+    st.plotly_chart(fig_revenue, width="stretch")
 
     b1, b2 = st.columns(2)
     with b1:
         region_ts = current.groupby(["period", "region"], as_index=False)["revenue"].sum().sort_values(["period", "region"])
         fig_region = px.area(region_ts, x="period", y="revenue", color="region", title="Contribution au CA par région")
         fig_region.update_layout(template="plotly_white")
-        st.plotly_chart(fig_region, use_container_width=True)
+        st.plotly_chart(fig_region, width="stretch")
     with b2:
         perf_agg = {"revenue": "sum", "txns": "sum"}
         if "margin" in current.columns:
@@ -11302,14 +11302,14 @@ def render_kpi_dashboard(data: dict[str, pd.DataFrame], store_daily: pd.DataFram
             title="Performance stores: transactions vs panier moyen",
         )
         fig_perf.update_layout(template="plotly_white")
-        st.plotly_chart(fig_perf, use_container_width=True)
+        st.plotly_chart(fig_perf, width="stretch")
 
     d1, d2 = st.columns(2)
     with d1:
         top = current.groupby(["store_id", "city"], as_index=False)["revenue"].sum().nlargest(12, "revenue").sort_values("revenue", ascending=True)
         fig_top = px.bar(top, y="store_id", x="revenue", color="city", orientation="h", title="Top 12 stores par CA")
         fig_top.update_layout(template="plotly_white", yaxis_title="Store", xaxis_title="CA")
-        st.plotly_chart(fig_top, use_container_width=True)
+        st.plotly_chart(fig_top, width="stretch")
     with d2:
         heat_df = current.copy()
         heat_df["weekday"] = heat_df["date"].dt.day_name()
@@ -11324,7 +11324,7 @@ def render_kpi_dashboard(data: dict[str, pd.DataFrame], store_daily: pd.DataFram
             title="Heatmap CA moyen (jour de semaine x mois)",
             labels={"x": "Mois", "y": "Jour", "color": "CA moyen"},
         )
-        st.plotly_chart(fig_heat, use_container_width=True)
+        st.plotly_chart(fig_heat, width="stretch")
 
     with st.expander("Table de pilotage (stores)", expanded=True):
         store_agg = {
@@ -11355,13 +11355,13 @@ def render_kpi_dashboard(data: dict[str, pd.DataFrame], store_daily: pd.DataFram
             store_rank["discount_rate"] = 0.0
         store_rank = store_rank.sort_values("revenue", ascending=False).reset_index(drop=True)
         store_rank.insert(0, "Rang CA", np.arange(1, len(store_rank) + 1))
-        st.dataframe(store_rank, use_container_width=True, height=_table_height(len(store_rank), max_height=620))
+        st.dataframe(store_rank, width="stretch", height=_table_height(len(store_rank), max_height=620))
         st.download_button(
             "Télécharger la table de pilotage (CSV)",
             data=store_rank.to_csv(index=False).encode("utf-8"),
             file_name="dashboard_kpi_store_pilotage.csv",
             mime="text/csv",
-            use_container_width=True,
+            width="stretch",
         )
     st.markdown("### Explications")
     st.markdown(
@@ -11484,7 +11484,7 @@ Chaque proposition précise l'audience, les objectifs, les KPI, les graphiques, 
             title="Valeur business vs complexité",
         )
         scatter.update_layout(height=430, margin=dict(l=10, r=10, t=45, b=10))
-        st.plotly_chart(scatter, use_container_width=True)
+        st.plotly_chart(scatter, width="stretch")
     with c2:
         bars = px.bar(
             view.sort_values("Score priorité", ascending=True),
@@ -11496,7 +11496,7 @@ Chaque proposition précise l'audience, les objectifs, les KPI, les graphiques, 
             title="Classement des propositions",
         )
         bars.update_layout(height=430, margin=dict(l=10, r=10, t=45, b=10), yaxis_title="")
-        st.plotly_chart(bars, use_container_width=True)
+        st.plotly_chart(bars, width="stretch")
 
     c3, c4 = st.columns([1, 1])
     with c3:
@@ -11513,7 +11513,7 @@ Chaque proposition précise l'audience, les objectifs, les KPI, les graphiques, 
             title="Couverture par domaine",
         )
         fig_domain.update_layout(height=360, margin=dict(l=10, r=10, t=45, b=10))
-        st.plotly_chart(fig_domain, use_container_width=True)
+        st.plotly_chart(fig_domain, width="stretch")
     with c4:
         roadmap = view.groupby(["Priorité", "Cadence"], as_index=False).size().rename(columns={"size": "Dashboards"})
         fig_roadmap = px.density_heatmap(
@@ -11525,7 +11525,7 @@ Chaque proposition précise l'audience, les objectifs, les KPI, les graphiques, 
             title="Roadmap cadence x priorité",
         )
         fig_roadmap.update_layout(height=360, margin=dict(l=10, r=10, t=45, b=10))
-        st.plotly_chart(fig_roadmap, use_container_width=True)
+        st.plotly_chart(fig_roadmap, width="stretch")
 
     st.markdown("#### Fiche dashboard")
     selected_options = view["Dashboard"].tolist() if not view.empty else catalog["Dashboard"].tolist()
@@ -11551,7 +11551,7 @@ Chaque proposition précise l'audience, les objectifs, les KPI, les graphiques, 
 
     with st.expander("Table - Catalogue des propositions", expanded=True):
         cols = ["Dashboard", "Domaine", "Audience", "Priorité", "Score priorité", "Valeur", "Complexité", "Maturité data", "Cadence", "Pages liées"]
-        st.dataframe(view[cols], use_container_width=True, hide_index=True, height=_table_height(len(view), max_height=480))
+        st.dataframe(view[cols], width="stretch", hide_index=True, height=_table_height(len(view), max_height=480))
 
     st.markdown("#### Lecture")
     st.markdown(
@@ -11908,7 +11908,7 @@ def render_basket(product_features: pd.DataFrame, affinity: pd.DataFrame, data: 
             color_discrete_sequence=["#386fa4"],
         )
         fig_products.update_layout(template="plotly_white")
-        st.plotly_chart(fig_products, use_container_width=True)
+        st.plotly_chart(fig_products, width="stretch")
     else:
         st.info("Aucune ligne de vente disponible pour tracer les produits vendus (jour).")
 
@@ -11965,7 +11965,7 @@ def render_basket(product_features: pd.DataFrame, affinity: pd.DataFrame, data: 
                 borderwidth=1,
             ),
         )
-        st.plotly_chart(fig_top_products, use_container_width=True)
+        st.plotly_chart(fig_top_products, width="stretch")
 
     c1, c2 = st.columns(2)
     with c1:
@@ -11984,7 +11984,7 @@ def render_basket(product_features: pd.DataFrame, affinity: pd.DataFrame, data: 
             hover_data=hover_cols,
         )
         fig_top_ca.update_layout(template="plotly_white", xaxis_title="Produit", yaxis_title="CA")
-        st.plotly_chart(fig_top_ca, use_container_width=True)
+        st.plotly_chart(fig_top_ca, width="stretch")
     with c2:
         cat_df = (
             product_df.groupby(["category", "subcategory"], as_index=False)
@@ -12000,7 +12000,7 @@ def render_basket(product_features: pd.DataFrame, affinity: pd.DataFrame, data: 
             title="Structure du CA par catégorie / sous-catégorie",
             hover_data={"units": True, "margin": ":.2f"},
         )
-        st.plotly_chart(fig_tree, use_container_width=True)
+        st.plotly_chart(fig_tree, width="stretch")
 
     p1, p2 = st.columns(2)
     with p1:
@@ -12026,7 +12026,7 @@ def render_basket(product_features: pd.DataFrame, affinity: pd.DataFrame, data: 
             yaxis=dict(title="CA"),
             yaxis2=dict(title="% cumulé", overlaying="y", side="right", range=[0, 105]),
         )
-        st.plotly_chart(fig_pareto, use_container_width=True)
+        st.plotly_chart(fig_pareto, width="stretch")
     with p2:
         product_mix = (
             product_df.groupby("category", as_index=False)
@@ -12042,7 +12042,7 @@ def render_basket(product_features: pd.DataFrame, affinity: pd.DataFrame, data: 
             title="Mix catégorie: unités vs CA (taille = marge)",
         )
         fig_mix.update_layout(template="plotly_white")
-        st.plotly_chart(fig_mix, use_container_width=True)
+        st.plotly_chart(fig_mix, width="stretch")
 
     st.markdown("### Explications")
     st.markdown(
@@ -12063,9 +12063,9 @@ def render_dashboard_cloud() -> None:
         "Espace prévu pour présenter des vues BI déployées: KPI exécutifs, monitoring cloud, coûts, fraîcheur et usage des dashboards.",
     )
     b1, b2 = st.columns(2)
-    if b1.button("Metabase", key="dashboard_cloud_metabase_btn", use_container_width=True):
+    if b1.button("Metabase", key="dashboard_cloud_metabase_btn", width="stretch"):
         st.session_state["dashboard_cloud_tool"] = "Metabase"
-    if b2.button("Power BI", key="dashboard_cloud_powerbi_btn", use_container_width=True):
+    if b2.button("Power BI", key="dashboard_cloud_powerbi_btn", width="stretch"):
         st.session_state["dashboard_cloud_tool"] = "Power BI"
     dashboard_tool = st.session_state.get("dashboard_cloud_tool", "Metabase")
     if dashboard_tool == "Power BI":
@@ -12090,7 +12090,7 @@ def render_dashboard_cloud() -> None:
 
     st.caption(f"{len(image_paths)} capture(s) détectée(s).")
     for img_path in image_paths:
-        st.image(str(img_path), caption=img_path.name, use_container_width=True)
+        st.image(str(img_path), caption=img_path.name, width="stretch")
 
 
 def render_notebook_analytics_cloud() -> None:
@@ -12099,9 +12099,9 @@ def render_notebook_analytics_cloud() -> None:
         "Carnets prévus pour analyses exploratoires reproductibles, requêtes SQL documentées et exports partageables.",
     )
     b1, b2 = st.columns(2)
-    if b1.button("Deepnote", key="notebook_deepnote_btn", use_container_width=True):
+    if b1.button("Deepnote", key="notebook_deepnote_btn", width="stretch"):
         st.session_state["notebook_analytics_tool"] = "Deepnote"
-    if b2.button("Jupyter Notebook", key="notebook_jupyter_btn", use_container_width=True):
+    if b2.button("Jupyter Notebook", key="notebook_jupyter_btn", width="stretch"):
         st.session_state["notebook_analytics_tool"] = "Jupyter Notebook"
     notebook_tool = st.session_state.get("notebook_analytics_tool", "Deepnote")
     if notebook_tool == "Jupyter Notebook":
@@ -13910,14 +13910,14 @@ def _scraping_raw_table_expander(api_name: str, df: pd.DataFrame, *, title: str 
             st.info("Aucune donnée brute disponible pour cette sélection.")
             return
         preview = df.head(200)
-        st.dataframe(preview, use_container_width=True, height=_table_height(min(len(df), 200), max_height=460))
+        st.dataframe(preview, width="stretch", height=_table_height(min(len(df), 200), max_height=460))
         file_stub = re.sub(r"[^a-z0-9]+", "_", str(api_name).lower()).strip("_") or "donnees_scrappees"
         st.download_button(
             "Export CSV",
             data=preview.to_csv(index=False).encode("utf-8"),
             file_name=f"{file_stub}.csv",
             mime="text/csv",
-            use_container_width=True,
+            width="stretch",
             key=f"export_scraped_{file_stub}",
         )
 
@@ -13926,11 +13926,11 @@ def _scraping_preview_dataset(api_name: str, df: pd.DataFrame) -> None:
     if df.empty:
         st.info("Aucune donnée à afficher.")
         return
-    st.dataframe(df.head(80), use_container_width=True, height=_table_height(min(len(df), 80), max_height=360))
+    st.dataframe(df.head(80), width="stretch", height=_table_height(min(len(df), 80), max_height=360))
     numeric_cols = [c for c in df.columns if pd.api.types.is_numeric_dtype(df[c])]
     if numeric_cols:
         st.markdown("##### Statistiques descriptives")
-        st.dataframe(df[numeric_cols].describe().T.reset_index().rename(columns={"index": "Variable"}), use_container_width=True, height=260)
+        st.dataframe(df[numeric_cols].describe().T.reset_index().rename(columns={"index": "Variable"}), width="stretch", height=260)
     c1, c2 = st.columns(2)
     if {"lat", "lon"}.issubset(df.columns):
         map_df = df.dropna(subset=["lat", "lon"]).head(1500)
@@ -13953,9 +13953,9 @@ def _scraping_preview_dataset(api_name: str, df: pd.DataFrame) -> None:
         val = numeric_cols[0]
         ts = df[[dt, val]].dropna().sort_values(dt)
         if not ts.empty:
-            c2.plotly_chart(px.line(ts, x=dt, y=val, title=f"Série temporelle - {api_name}"), use_container_width=True)
+            c2.plotly_chart(px.line(ts, x=dt, y=val, title=f"Série temporelle - {api_name}"), width="stretch")
     elif numeric_cols:
-        c2.plotly_chart(px.histogram(df, x=numeric_cols[0], title=f"Distribution - {numeric_cols[0]}"), use_container_width=True)
+        c2.plotly_chart(px.histogram(df, x=numeric_cols[0], title=f"Distribution - {numeric_cols[0]}"), width="stretch")
 
 
 def _scraping_catalog_with_runtime() -> pd.DataFrame:
@@ -14077,7 +14077,7 @@ def _render_scraping_sources_api() -> None:
         view = view[view["Mode ingestion"].eq(ingestion_filter)]
     catalog_block.dataframe(
         view[["connector_id", "API", "Famille", "Priorité portfolio", "Mode ingestion", "Formats attendus", "Authentification", "Couverture", "Table raw"]],
-        use_container_width=True,
+        width="stretch",
         height=_table_height(len(view), max_height=360),
     )
 
@@ -14188,13 +14188,13 @@ def _render_scraping_sources_api() -> None:
         )
         fiche_block.dataframe(
             comparison,
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
             height=_table_height(len(comparison), max_height=300),
         )
 
     action_cols = work_block.columns(2)
-    if action_cols[0].button("Collecter", key="scraping_collect_sources", use_container_width=True):
+    if action_cols[0].button("Collecter", key="scraping_collect_sources", width="stretch"):
         if not selected_table_rows.empty:
             for _, row in selected_table_rows.iterrows():
                 _scraping_collect(str(row["API"]), str(row["Table"]))
@@ -14202,7 +14202,7 @@ def _render_scraping_sources_api() -> None:
             for api_name in selected_apis:
                 _scraping_collect(str(api_name))
         st.rerun()
-    if action_cols[1].button("Tout collecter", key="scraping_collect_all_sources", use_container_width=True):
+    if action_cols[1].button("Tout collecter", key="scraping_collect_all_sources", width="stretch"):
         for api_name in catalog["API"].tolist():
             for _, row in _scraping_available_tables(str(api_name)).iterrows():
                 _scraping_collect(str(api_name), str(row["Table"]))
@@ -14577,7 +14577,7 @@ def _render_scraping_web() -> None:
         web_view = web_view[web_view["Source"].eq(web_source_filter)]
     catalog_block.dataframe(
         web_view[["Source", "Famille", "Donnée(s)", "Mode", "Qualité attendue", "Sélecteur CSS", "URL"]],
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
         height=_table_height(len(web_view), max_height=340),
     )
@@ -14665,8 +14665,8 @@ def _render_scraping_web() -> None:
     _web_source_card(fc4, "Qualité", source_quality.get(source, "Variable"))
     fiche.markdown("<div style='height:.55rem'></div>", unsafe_allow_html=True)
     action_cols = cfg.columns(2)
-    collect_current = action_cols[0].button("Collecter", key="scraping_web_collect_current", use_container_width=True)
-    collect_all = action_cols[1].button("Tout collecter", key="scraping_web_collect_all", use_container_width=True)
+    collect_current = action_cols[0].button("Collecter", key="scraping_web_collect_current", width="stretch")
+    collect_all = action_cols[1].button("Tout collecter", key="scraping_web_collect_all", width="stretch")
     cfg.caption("`Collecter`: connecteur(s) courant(s) sélectionné(s). `Tout collecter`: l'ensemble des connecteurs du catalogue.")
     if example_kind in {"quotes_quotes", "quotes_authors", "quotes_tags"}:
         quotes = [
@@ -15164,7 +15164,7 @@ def _render_scraping_web() -> None:
         }
     )
     cfg.markdown("##### Tests de vérification")
-    cfg.dataframe(tests, use_container_width=True, hide_index=True, height=_table_height(len(tests), max_height=240))
+    cfg.dataframe(tests, width="stretch", hide_index=True, height=_table_height(len(tests), max_height=240))
 
     cfg.markdown("##### HTML extrait")
     cfg.code(html, language="html")
@@ -15195,9 +15195,9 @@ def _render_scraping_web() -> None:
         raw_cfg = source_tables.get(raw_src, {}).get(raw_table, {"url": "", "css": ""})
         raw_df = _scraping_web_validation_sample(raw_src, raw_table, raw_cfg["url"], raw_cfg["css"])
     with cfg.expander("Données brutes collectées", expanded=False):
-        st.dataframe(raw_df, use_container_width=True, height=_table_height(len(raw_df), max_height=360))
+        st.dataframe(raw_df, width="stretch", height=_table_height(len(raw_df), max_height=360))
         file_stub = re.sub(r"[^a-z0-9]+", "_", str(raw_choice).lower()).strip("_") or "scraping_web_extract"
-        st.download_button("Export CSV", data=raw_df.to_csv(index=False).encode("utf-8"), file_name=f"{file_stub}.csv", mime="text/csv", use_container_width=True)
+        st.download_button("Export CSV", data=raw_df.to_csv(index=False).encode("utf-8"), file_name=f"{file_stub}.csv", mime="text/csv", width="stretch")
     cfg.caption("Les visualisations des données scrapées sont centralisées dans Exploitation → Description des Données après collecte.")
     st.markdown("##### Méthode de parsing")
     st.markdown(
@@ -15224,7 +15224,7 @@ def _render_scraping_open_data() -> None:
     theme = f1.selectbox("Thème", ["Économie", "Population", "Mobilité", "Énergie", "Entreprises"], key="open_data_theme")
     region = f2.selectbox("Région", ["Toutes", "Île-de-France", "PACA", "Occitanie", "Hauts-de-France"], key="open_data_region")
     source = f3.selectbox("Connecteur", apis, key="open_data_source")
-    if st.button("Collecter Open Data", key="open_data_collect", use_container_width=True):
+    if st.button("Collecter Open Data", key="open_data_collect", width="stretch"):
         _scraping_collect(source)
     df = st.session_state.get("scraping_data_lake", {}).get(source, _scraping_sample_dataset(source))
     st.caption(f"Recherche simulée: thème `{theme}`, région `{region}`.")
@@ -15243,7 +15243,7 @@ def _render_scraping_geospatial() -> None:
     c1.text_input("Adresse / zone", value="Paris, France", key="geo_query")
     c2.selectbox("Objet recherché", ["commerces", "restaurants", "écoles", "bornes de recharge", "parkings"], key="geo_object")
     c3.slider("Rayon (km)", 1, 50, 12, key="geo_radius")
-    if st.button("Collecter données géospatiales", key="geo_collect", use_container_width=True):
+    if st.button("Collecter données géospatiales", key="geo_collect", width="stretch"):
         _scraping_collect(source)
     df = st.session_state.get("scraping_data_lake", {}).get(source, _scraping_sample_dataset(source))
     _scraping_metric_row(_scraping_collection_metrics(source, df))
@@ -15253,7 +15253,7 @@ def _render_scraping_geospatial() -> None:
 def _render_scraping_finance() -> None:
     source = st.selectbox("Source financière / énergie", ["Yahoo Finance", "Alpha Vantage", "FRED", "EIA", "ENTSO-E"], key="finance_api_source")
     symbol = st.text_input("Ticker / série macro", value="AAPL" if source != "FRED" else "CPIAUCSL", key="finance_symbol")
-    if st.button("Collecter données financières", key="finance_collect", use_container_width=True):
+    if st.button("Collecter données financières", key="finance_collect", width="stretch"):
         _scraping_collect(source)
     df = st.session_state.get("scraping_data_lake", {}).get(source, _scraping_sample_dataset(source))
     _scraping_metric_row(_scraping_collection_metrics(source, df))
@@ -15264,7 +15264,7 @@ def _render_scraping_finance() -> None:
 def _render_scraping_social() -> None:
     source = st.selectbox("API sociale", ["Reddit API", "YouTube API"], key="social_api_source")
     query = st.text_input("Mot-clé / sujet", value="data science retail", key="social_query")
-    if st.button("Collecter réseaux sociaux", key="social_collect", use_container_width=True):
+    if st.button("Collecter réseaux sociaux", key="social_collect", width="stretch"):
         _scraping_collect(source)
     df = st.session_state.get("scraping_data_lake", {}).get(source, _scraping_sample_dataset(source))
     _scraping_metric_row(_scraping_collection_metrics(source, df))
@@ -15361,7 +15361,7 @@ def _render_scraping_business_sources() -> None:
             }
         )
 
-    if st.button(action_label, key="business_sources_collect", use_container_width=True):
+    if st.button(action_label, key="business_sources_collect", width="stretch"):
         if theme == "Veille concurrentielle":
             st.session_state.setdefault("scraping_data_lake", {})[source] = df
             metrics = _scraping_collection_metrics(source, df)
@@ -15393,7 +15393,7 @@ def _render_scraping_data_lake() -> None:
         "API",
         key="scraping_architecture_mode_api",
         type="primary" if st.session_state["scraping_architecture_mode"] == "API" else "secondary",
-        use_container_width=True,
+        width="stretch",
     ):
         st.session_state["scraping_architecture_mode"] = "API"
         st.rerun()
@@ -15401,7 +15401,7 @@ def _render_scraping_data_lake() -> None:
         "Scraping",
         key="scraping_architecture_mode_scraping",
         type="primary" if st.session_state["scraping_architecture_mode"] == "Scraping" else "secondary",
-        use_container_width=True,
+        width="stretch",
     ):
         st.session_state["scraping_architecture_mode"] = "Scraping"
         st.rerun()
@@ -15419,7 +15419,7 @@ def _render_scraping_data_lake() -> None:
         }
     )
     lake_zones = lake_zones.replace("", np.nan).dropna(how="all").fillna("")
-    st.dataframe(lake_zones, use_container_width=True, height=_table_height(len(lake_zones), max_height=300))
+    st.dataframe(lake_zones, width="stretch", height=_table_height(len(lake_zones), max_height=300))
 
     st.markdown("##### Architecture")
     nodes = pd.DataFrame(
@@ -15431,7 +15431,7 @@ def _render_scraping_data_lake() -> None:
     )
     nodes = nodes.replace("", np.nan).dropna(how="all").fillna("")
     st.markdown("`API` → `Extraction` → `Raw Zone` → `Nettoyage` → `Feature Engineering` → `Data Mart` → `Dashboard` → `Machine Learning`")
-    st.dataframe(nodes, use_container_width=True, height=_table_height(len(nodes), max_height=360))
+    st.dataframe(nodes, width="stretch", height=_table_height(len(nodes), max_height=360))
     _render_scraping_orchestrator()
 
 
@@ -15462,7 +15462,7 @@ def _render_scraping_web_architecture() -> None:
         }
     )
     zones = zones.replace("", np.nan).dropna(how="all").fillna("")
-    st.dataframe(zones, use_container_width=True, hide_index=True, height=_table_height(len(zones), max_height=360))
+    st.dataframe(zones, width="stretch", hide_index=True, height=_table_height(len(zones), max_height=360))
 
     st.markdown("##### Architecture")
     st.markdown("`HTML public` → `Requests/httpx` → `BeautifulSoup` → `Sélecteurs CSS/XPath` → `Table brute` → `Validation` → `Data Lake` → `Description des Données`")
@@ -15492,7 +15492,7 @@ def _render_scraping_web_architecture() -> None:
         }
     )
     nodes = nodes.replace("", np.nan).dropna(how="all").fillna("")
-    st.dataframe(nodes, use_container_width=True, hide_index=True, height=_table_height(len(nodes), max_height=420))
+    st.dataframe(nodes, width="stretch", hide_index=True, height=_table_height(len(nodes), max_height=420))
 
     st.markdown("##### Orchestrateur de scraping")
     st.markdown("`Source Web` → `Extraction HTML` → `Parsing` → `Validation` → `Stockage` → `Catalogue` → `Dashboard`")
@@ -15505,7 +15505,7 @@ def _render_scraping_web_architecture() -> None:
         }
     )
     tasks = tasks.replace("", np.nan).dropna(how="all").fillna("")
-    st.dataframe(tasks, use_container_width=True, hide_index=True, height=_table_height(len(tasks), max_height=360))
+    st.dataframe(tasks, width="stretch", hide_index=True, height=_table_height(len(tasks), max_height=360))
 
 
 def _scraping_web_validation_sample(source: str, data_name: str, url: str, css: str, n: int = 96) -> pd.DataFrame:
@@ -15684,7 +15684,7 @@ def _render_scraping_web_validation() -> None:
 
     with st.expander("Détail de la validité du scraping", expanded=False):
         detail = catalog[["Source", "Donnée(s)", "Famille", "Statut", "Code HTTP", "Sélecteurs trouvés", "Lignes", "Colonnes", "Qualité (%)", "Latence (ms)", "Collecté"]].copy()
-        st.dataframe(detail, use_container_width=True, hide_index=True, height=_table_height(len(detail), max_height=520))
+        st.dataframe(detail, width="stretch", hide_index=True, height=_table_height(len(detail), max_height=520))
 
     chart_left, chart_right = st.columns(2)
     latency_view = catalog.sort_values("Latence (ms)", ascending=False).copy()
@@ -15698,9 +15698,9 @@ def _render_scraping_web_validation() -> None:
             title="Latence par source scrapée",
             labels={"Cible": "source / table"},
         ),
-        use_container_width=True,
+        width="stretch",
     )
-    chart_right.plotly_chart(px.pie(catalog, names="Statut", title="Répartition des statuts scraping"), use_container_width=True)
+    chart_right.plotly_chart(px.pie(catalog, names="Statut", title="Répartition des statuts scraping"), width="stretch")
 
     audit_block = _scraping_block("Examen du fichier scrapé")
     f1, f2, f3, f4 = audit_block.columns([1.25, 1.0, 1.0, 1.0])
@@ -15794,9 +15794,9 @@ def _render_scraping_web_validation() -> None:
     a1, a2 = audit_block.columns([0.95, 1.25])
     audit_height = max(_table_height(len(audit_summary), max_height=460), _table_height(len(schema_df), max_height=460))
     a1.markdown("**Contrôles scraping**")
-    a1.dataframe(audit_summary, use_container_width=True, hide_index=True, height=audit_height)
+    a1.dataframe(audit_summary, width="stretch", hide_index=True, height=audit_height)
     a2.markdown("**Schéma des champs**")
-    a2.dataframe(schema_df, use_container_width=True, hide_index=True, height=audit_height)
+    a2.dataframe(schema_df, width="stretch", hide_index=True, height=audit_height)
 
     _scraping_raw_table_expander(lake_key, df, title="Table - Données scrapées", parent=audit_block)
     audit_block.caption(
@@ -15819,12 +15819,12 @@ def _render_scraping_validation() -> None:
     with st.expander("Détail de la validité des API", expanded=False):
         st.dataframe(
             catalog[["API", "Statut", "Temps de récupération (ms)", "Disponibilité (%)", "Code HTTP", "Quota restant", "Volume récupéré"]],
-            use_container_width=True,
+            width="stretch",
             height=_table_height(len(catalog), max_height=520),
         )
     c1, c2 = st.columns(2)
-    c1.plotly_chart(px.bar(catalog, x="API", y="Temps de récupération (ms)", color="Statut", title="Latence par endpoint"), use_container_width=True)
-    c2.plotly_chart(px.pie(catalog, names="Statut", title="Taux de succès / warning / erreur"), use_container_width=True)
+    c1.plotly_chart(px.bar(catalog, x="API", y="Temps de récupération (ms)", color="Statut", title="Latence par endpoint"), width="stretch")
+    c2.plotly_chart(px.pie(catalog, names="Statut", title="Taux de succès / warning / erreur"), width="stretch")
     audit_block = _scraping_block("Examen du fichier collecté")
     f1, f2, f3, f4 = audit_block.columns([1.25, 1.0, 1.0, 1.0])
     audit_query = f1.text_input(
@@ -15899,9 +15899,9 @@ def _render_scraping_validation() -> None:
         _table_height(len(schema_df), max_height=420),
     )
     a1.markdown("**Contrôles qualité**")
-    a1.dataframe(audit_summary, use_container_width=True, height=audit_table_height)
+    a1.dataframe(audit_summary, width="stretch", height=audit_table_height)
     a2.markdown("**Schéma des champs**")
-    a2.dataframe(schema_df, use_container_width=True, height=audit_table_height)
+    a2.dataframe(schema_df, width="stretch", height=audit_table_height)
 
 
 def _render_scraping_documentation() -> None:
@@ -15912,7 +15912,7 @@ def _render_scraping_documentation() -> None:
         "API",
         key="scraping_documentation_mode_api",
         type="primary" if st.session_state["scraping_documentation_mode"] == "API" else "secondary",
-        use_container_width=True,
+        width="stretch",
     ):
         st.session_state["scraping_active_tab_Gouvernance"] = "Documentation Technique"
         st.session_state["scraping_documentation_mode"] = "API"
@@ -15921,7 +15921,7 @@ def _render_scraping_documentation() -> None:
         "Scraping",
         key="scraping_documentation_mode_scraping",
         type="primary" if st.session_state["scraping_documentation_mode"] == "Scraping" else "secondary",
-        use_container_width=True,
+        width="stretch",
     ):
         st.session_state["scraping_active_tab_Gouvernance"] = "Documentation Technique"
         st.session_state["scraping_documentation_mode"] = "Scraping"
@@ -15971,7 +15971,7 @@ def _render_scraping_documentation() -> None:
         ],
         ignore_index=True,
     )
-    st.dataframe(fiche, use_container_width=True, height=360)
+    st.dataframe(fiche, width="stretch", height=360)
 
     sample_payload = df.head(1).to_dict(orient="records")
     if not sample_payload:
@@ -16008,7 +16008,7 @@ data = response.json()
         ]
     )
     st.markdown("##### Mapping des champs")
-    st.dataframe(mapping, use_container_width=True, height=_table_height(len(mapping), max_height=360))
+    st.dataframe(mapping, width="stretch", height=_table_height(len(mapping), max_height=360))
 
 
 def _render_scraping_web_documentation() -> None:
@@ -16056,7 +16056,7 @@ def _render_scraping_web_documentation() -> None:
             {"Information": "Clé Data Lake", "Valeur": lake_key},
         ]
     )
-    st.dataframe(fiche, use_container_width=True, hide_index=True, height=_table_height(len(fiche), max_height=420))
+    st.dataframe(fiche, width="stretch", hide_index=True, height=_table_height(len(fiche), max_height=420))
 
     request_code = f"""import requests
 from bs4 import BeautifulSoup
@@ -16097,7 +16097,7 @@ rows = [node.get_text(" ", strip=True) for node in nodes]
         ]
     )
     st.markdown("##### Mapping des champs")
-    st.dataframe(mapping, use_container_width=True, hide_index=True, height=_table_height(len(mapping), max_height=420))
+    st.dataframe(mapping, width="stretch", hide_index=True, height=_table_height(len(mapping), max_height=420))
 
     st.markdown("##### Contrats techniques")
     contracts = pd.DataFrame(
@@ -16110,7 +16110,7 @@ rows = [node.get_text(" ", strip=True) for node in nodes]
             {"Contrôle": "Schéma", "Règle": "types documentés et champs métiers nommés", "Criticité": "Moyenne"},
         ]
     )
-    st.dataframe(contracts, use_container_width=True, hide_index=True, height=_table_height(len(contracts), max_height=340))
+    st.dataframe(contracts, width="stretch", hide_index=True, height=_table_height(len(contracts), max_height=340))
 
 
 def _render_scraping_infrastructure() -> None:
@@ -16126,7 +16126,7 @@ def _render_scraping_infrastructure() -> None:
     st.markdown("##### Référentiel d'hébergement des APIs")
     with st.expander("Détails des hébergeurs", expanded=True):
         hosting_view = catalog[["API", "Propriétaire", "Hébergeur", "Localisation", "SLA", "Couverture"]]
-        st.dataframe(hosting_view, use_container_width=True, height=_table_height(len(hosting_view), max_height=520))
+        st.dataframe(hosting_view, width="stretch", height=_table_height(len(hosting_view), max_height=520))
 
     fmap = folium.Map(location=[35, 5], zoom_start=2, tiles="CartoDB positron")
     for _, row in locs.iterrows():
@@ -16364,7 +16364,7 @@ def _render_scraping_catalog() -> None:
     with st.expander("Catalogue des jeux de données", expanded=True):
         st.dataframe(
             catalog_view,
-            use_container_width=True,
+            width="stretch",
             height=_table_height(len(catalog_view), max_height=520),
         )
     if not view.empty:
@@ -16400,14 +16400,14 @@ def _render_scraping_catalog() -> None:
             return
         with preview_block.expander("Données brutes sélectionnées", expanded=False):
             preview = df.head(120)
-            st.dataframe(preview, use_container_width=True, height=_table_height(len(preview), max_height=420))
+            st.dataframe(preview, width="stretch", height=_table_height(len(preview), max_height=420))
             export_stub = re.sub(r"[^a-z0-9]+", "_", str(selected_table).lower()).strip("_") or "donnees_brutes_selectionnees"
             st.download_button(
                 "Exporter les données",
                 data=df.to_csv(index=False).encode("utf-8"),
                 file_name=f"{export_stub}.csv",
                 mime="text/csv",
-                use_container_width=True,
+                width="stretch",
                 key=f"catalog_export_{export_stub}",
             )
         quant_cols = [c for c in df.columns if pd.api.types.is_numeric_dtype(df[c])]
@@ -16416,7 +16416,7 @@ def _render_scraping_catalog() -> None:
         with preview_block.expander("Variables quantitatives", expanded=False):
             if quant_cols:
                 quant_stats = df[quant_cols].describe().T.reset_index().rename(columns={"index": "Variable"})
-                st.dataframe(quant_stats, use_container_width=True, height=_table_height(len(quant_stats), max_height=420))
+                st.dataframe(quant_stats, width="stretch", height=_table_height(len(quant_stats), max_height=420))
             else:
                 st.info("Aucune variable quantitative détectée.")
         with preview_block.expander("Variables qualitatives", expanded=False):
@@ -16438,7 +16438,7 @@ def _render_scraping_catalog() -> None:
                         }
                     )
                 qual_stats = pd.DataFrame(qual_rows)
-                st.dataframe(qual_stats, use_container_width=True, height=_table_height(len(qual_stats), max_height=420))
+                st.dataframe(qual_stats, width="stretch", height=_table_height(len(qual_stats), max_height=420))
             else:
                 st.info("Aucune variable qualitative détectée.")
 
@@ -16589,7 +16589,7 @@ def _render_scraping_history() -> None:
             markers=True,
             title="Évolution temporelle du volume récupéré par source",
         ),
-        use_container_width=True,
+        width="stretch",
     )
     lake = st.session_state.get("scraping_data_lake", {})
     scraping_volume_rows = []
@@ -16627,12 +16627,12 @@ def _render_scraping_history() -> None:
     hist_display = hist_view.sort_values("Timestamp", ascending=False).replace("", np.nan).dropna(how="all").fillna("")
     with st.expander("Détail de l'historique", expanded=False):
         st.markdown("**Volumes récupérés par data set**")
-        st.dataframe(volume_view, use_container_width=True, height=_table_height(len(volume_view), max_height=420))
+        st.dataframe(volume_view, width="stretch", height=_table_height(len(volume_view), max_height=420))
         st.markdown("**Journal des collectes**")
-        st.dataframe(hist_display, use_container_width=True, height=_table_height(len(hist_display), max_height=420))
+        st.dataframe(hist_display, width="stretch", height=_table_height(len(hist_display), max_height=420))
     c1, c2 = st.columns(2)
-    c1.plotly_chart(px.line(hist_sorted, x="Timestamp", y="Temps de récupération (ms)", color="Source", line_dash="Méthode de collecte", title="Évolution du temps de réponse"), use_container_width=True)
-    c2.plotly_chart(px.histogram(hist_view, x="Code HTTP", color="Statut", facet_col="Méthode de collecte", title="Répartition des codes HTTP"), use_container_width=True)
+    c1.plotly_chart(px.line(hist_sorted, x="Timestamp", y="Temps de récupération (ms)", color="Source", line_dash="Méthode de collecte", title="Évolution du temps de réponse"), width="stretch")
+    c2.plotly_chart(px.histogram(hist_view, x="Code HTTP", color="Statut", facet_col="Méthode de collecte", title="Répartition des codes HTTP"), width="stretch")
 
 
 def _render_scraping_lineage() -> None:
@@ -16644,13 +16644,13 @@ def _render_scraping_lineage() -> None:
         }
     )
     st.markdown("`API` ↓ `Extraction` ↓ `Raw Zone` ↓ `Nettoyage` ↓ `Feature Engineering` ↓ `Data Mart` ↓ `Dashboard` ↓ `Machine Learning`")
-    st.dataframe(nodes, use_container_width=True, height=360)
+    st.dataframe(nodes, width="stretch", height=360)
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=list(range(len(nodes))), y=[1] * len(nodes), mode="markers+text", text=nodes["Zone"], textposition="bottom center", marker=dict(size=28, color="#0a9396")))
     for i in range(len(nodes) - 1):
         fig.add_annotation(x=i + 0.5, y=1, ax=i, ay=1, xref="x", yref="y", axref="x", ayref="y", showarrow=True, arrowhead=2)
     fig.update_layout(template="plotly_white", title="Lineage interactif simplifié", yaxis=dict(visible=False), xaxis=dict(visible=False), height=300)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
 
 def _scraping_exploitation_inventory(catalog: pd.DataFrame) -> pd.DataFrame:
@@ -16833,7 +16833,7 @@ def _render_adaptive_collected_data_views(df: pd.DataFrame, dataset_key: str, ap
     st.markdown("##### Visualisations adaptatives")
     st.caption("Le moteur inspecte les rôles des colonnes et choisit automatiquement les représentations les plus utiles pour la table sélectionnée.")
     with st.expander("Lecture automatique du dataset", expanded=False):
-        st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True, height=_table_height(len(rows), max_height=320))
+        st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True, height=_table_height(len(rows), max_height=320))
 
     charts: list[tuple[str, object]] = []
     primary_measure = measures[0] if measures else None
@@ -16938,7 +16938,7 @@ def _render_adaptive_collected_data_views(df: pd.DataFrame, dataset_key: str, ap
                     st.markdown(f"##### {title}")
                     _render_html_fragment(chart._repr_html_(), height=390)
                 else:
-                    st.plotly_chart(chart, use_container_width=True)
+                    st.plotly_chart(chart, width="stretch")
 
 
 def _render_scraping_exploitation() -> None:
@@ -16996,7 +16996,7 @@ def _render_scraping_exploitation() -> None:
     api = df_api or api
     filter_block.dataframe(
         view[["Dataset", "API", "Famille", "Méthode de collecte", "Table", "Collecté"]],
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
         height=_table_height(len(view), max_height=300),
     )
@@ -17122,7 +17122,7 @@ def _render_scraping_orchestrator() -> None:
         }
     )
     tasks = tasks.replace("", np.nan).dropna(how="all").fillna("")
-    st.dataframe(tasks, use_container_width=True, height=_table_height(len(tasks), max_height=280))
+    st.dataframe(tasks, width="stretch", height=_table_height(len(tasks), max_height=280))
 
 
 SCRAPING_GROUPS: dict[str, list[str]] = {
@@ -17916,7 +17916,7 @@ div[data-testid="stChatInput"] button::before {
         "Quelle démarche proposer pour intégrer une variable météo dans un modèle de forecasting ?",
     ]
     for col, prompt in zip(examples, example_prompts, strict=False):
-        if col.button(prompt, key=f"ai_example_{hashlib.md5(prompt.encode()).hexdigest()[:8]}", use_container_width=True):
+        if col.button(prompt, key=f"ai_example_{hashlib.md5(prompt.encode()).hexdigest()[:8]}", width="stretch"):
             st.session_state["ai_pending_prompt"] = prompt
     submitted_question = st.chat_input(
         "Posez une question sur l'app, les données, les modèles ou l'architecture...",
@@ -17969,7 +17969,7 @@ div[data-testid="stChatInput"] button::before {
         last_user = next((m["content"] for m in reversed(st.session_state["ai_chat_messages"]) if m["role"] == "user"), "")
         if last_user and mode == "LLM + RAG":
             context_df = _retrieve_assistant_context(last_user, docs, top_k=top_k)
-            st.dataframe(context_df, use_container_width=True, hide_index=True, height=_table_height(len(context_df), max_height=360))
+            st.dataframe(context_df, width="stretch", hide_index=True, height=_table_height(len(context_df), max_height=360))
         elif last_user:
             st.info("Le mode `Chatbot` n'injecte pas de passages RAG.")
         else:
@@ -18024,7 +18024,7 @@ def _render_ai_assistant_overview() -> None:
         ]
     )
     with st.expander("Roadmap fonctionnelle", expanded=True):
-        st.dataframe(roadmap, use_container_width=True, hide_index=True, height=_table_height(len(roadmap), max_height=260))
+        st.dataframe(roadmap, width="stretch", hide_index=True, height=_table_height(len(roadmap), max_height=260))
 
 
 def _render_ai_chatbot_rag(data: dict[str, pd.DataFrame]) -> None:
@@ -18256,7 +18256,7 @@ Le RAG construit une base documentaire interne au portfolio: pages de navigation
             .agg(Documents=("title", "count"), Exemples=("title", lambda s: ", ".join(list(map(str, s.head(5))))))
             .sort_values("Documents", ascending=False)
         )
-        st.dataframe(rag_sources, use_container_width=True, hide_index=True, height=_table_height(len(rag_sources), max_height=260))
+        st.dataframe(rag_sources, width="stretch", hide_index=True, height=_table_height(len(rag_sources), max_height=260))
 
 
 def _render_ai_architecture() -> None:
@@ -18311,7 +18311,7 @@ def _render_ai_architecture() -> None:
         ]
     )
     sankey.update_layout(template="plotly_white", height=390, margin=dict(l=10, r=10, t=10, b=10))
-    flow.plotly_chart(sankey, use_container_width=True)
+    flow.plotly_chart(sankey, width="stretch")
     cols = flow.columns(4)
     cols[0].markdown("**Interface**\n\nChat Streamlit, boutons exemples, export ChatMD, historique contrôlé.")
     cols[1].markdown("**RAG**\n\nPages de l'app, dictionnaire, schémas, datasets, README, exigences techniques.")
@@ -18332,7 +18332,7 @@ def _render_ai_architecture() -> None:
 
     st.markdown("#### Fournisseurs LLM intégrables")
     providers = _assistant_provider_profiles()
-    st.dataframe(providers, use_container_width=True, hide_index=True, height=_table_height(len(providers), max_height=260))
+    st.dataframe(providers, width="stretch", hide_index=True, height=_table_height(len(providers), max_height=260))
 
     st.markdown("#### Automatisations intégrées")
     automation_df = pd.DataFrame(
@@ -18345,7 +18345,7 @@ def _render_ai_architecture() -> None:
             {"Automatisation": "ChatMD", "Comportement": "Bloc YAML/Markdown prêt à adapter avec `!useLLM`, `!useHistory` et `!RAG`."},
         ]
     )
-    st.dataframe(automation_df, use_container_width=True, hide_index=True, height=_table_height(len(automation_df), max_height=300))
+    st.dataframe(automation_df, width="stretch", hide_index=True, height=_table_height(len(automation_df), max_height=300))
 
     setup = st.container(border=True)
     setup.markdown("#### Étapes à mettre en oeuvre localement")
@@ -18399,7 +18399,7 @@ def _render_ai_architecture() -> None:
             },
         ]
     )
-    st.dataframe(share_df, use_container_width=True, hide_index=True, height=_table_height(len(share_df), max_height=220))
+    st.dataframe(share_df, width="stretch", hide_index=True, height=_table_height(len(share_df), max_height=220))
     st.markdown("#### Références techniques")
     st.markdown(
         """
@@ -18717,7 +18717,7 @@ def render_map(store_daily: pd.DataFrame) -> None:
             info_block.markdown("##### Stores focus sélectionnés")
             info_block.dataframe(
                 focus_info,
-                use_container_width=True,
+                width="stretch",
                 height=_table_height(len(focus_info), max_height=260),
             )
         else:
@@ -18740,7 +18740,7 @@ def render_map(store_daily: pd.DataFrame) -> None:
     info_block.markdown("##### Toutes les métriques disponibles")
     info_block.dataframe(
         details_df,
-        use_container_width=True,
+        width="stretch",
         height=_table_height(len(details_df), max_height=520),
     )
     st.markdown("### Explications")
@@ -18770,7 +18770,7 @@ def render_spatial_analysis(store_spatial: pd.DataFrame, geo_orders: pd.DataFram
             title="Distance moyenne client->store vs revenue",
             hover_data=["store_id"],
         ),
-        use_container_width=True,
+        width="stretch",
     )
 
 
@@ -19434,7 +19434,7 @@ def _render_spatial_overview(ctx: dict[str, pd.DataFrame | dict[str, float]]) ->
             title="Empreinte magasins (taille = CA total)",
         )
         fig_store.update_layout(template="plotly_white", xaxis_title="Longitude", yaxis_title="Latitude")
-        c1.plotly_chart(fig_store, use_container_width=True)
+        c1.plotly_chart(fig_store, width="stretch")
     else:
         c1.info("Données magasins insuffisantes.")
     if not customers.empty and {"home_lon", "home_lat"}.issubset(customers.columns):
@@ -19450,7 +19450,7 @@ def _render_spatial_overview(ctx: dict[str, pd.DataFrame | dict[str, float]]) ->
             opacity=0.55,
         )
         fig_cust.update_layout(template="plotly_white", xaxis_title="Longitude", yaxis_title="Latitude")
-        c2.plotly_chart(fig_cust, use_container_width=True)
+        c2.plotly_chart(fig_cust, width="stretch")
     else:
         c2.info("Coordonnées clients indisponibles.")
 
@@ -19470,7 +19470,7 @@ def _render_spatial_overview(ctx: dict[str, pd.DataFrame | dict[str, float]]) ->
             .sort_values("revenue", ascending=False)
         )
         st.markdown("##### Synthèse régionale (revenu, marge, couverture)")
-        st.dataframe(reg, use_container_width=True, height=_table_height(len(reg), max_height=320))
+        st.dataframe(reg, width="stretch", height=_table_height(len(reg), max_height=320))
 
     c3, c4 = st.columns(2)
     if not orders_geo.empty and {"distance_km", "clv_proxy", "churn_risk_proxy"}.issubset(orders_geo.columns):
@@ -19497,7 +19497,7 @@ def _render_spatial_overview(ctx: dict[str, pd.DataFrame | dict[str, float]]) ->
                 color_continuous_scale="RdYlGn",
                 title="Corrélations spatiales clés",
             ),
-            use_container_width=True,
+            width="stretch",
         )
     else:
         c3.info("Corrélations spatiales indisponibles.")
@@ -19513,7 +19513,7 @@ def _render_spatial_overview(ctx: dict[str, pd.DataFrame | dict[str, float]]) ->
         opp = tmp.sort_values("opportunity_score", ascending=False).head(15)
         keep_cols = [c for c in ["store_id", "city", "region", "revenue", "nearest_customers", "avg_distance_obs_km", "opportunity_score"] if c in opp.columns]
         c4.markdown("##### Top opportunités magasins")
-        c4.dataframe(opp[keep_cols], use_container_width=True, height=_table_height(len(opp), max_height=360))
+        c4.dataframe(opp[keep_cols], width="stretch", height=_table_height(len(opp), max_height=360))
     else:
         c4.info("Score d'opportunité indisponible.")
 
@@ -19552,7 +19552,7 @@ def _render_spatial_proximity(ctx: dict[str, pd.DataFrame | dict[str, float]]) -
                 nbins=45,
                 title="Distribution des distances de chalandise",
             ),
-            use_container_width=True,
+            width="stretch",
         )
     else:
         c1.info("Distances insuffisantes pour histogramme.")
@@ -19570,7 +19570,7 @@ def _render_spatial_proximity(ctx: dict[str, pd.DataFrame | dict[str, float]]) -
             hover_data=[c for c in ["store_id", "city", "store_type", "main_store_customers"] if c in tmp.columns],
             title="Chalandise observée par magasin",
         )
-        c2.plotly_chart(scatter, use_container_width=True)
+        c2.plotly_chart(scatter, width="stretch")
     else:
         c2.info("Données magasin insuffisantes.")
 
@@ -19613,7 +19613,7 @@ def _render_spatial_proximity(ctx: dict[str, pd.DataFrame | dict[str, float]]) -
             xaxis_title="Longitude",
             yaxis_title="Latitude",
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     top_cols = [
         c
@@ -19629,7 +19629,7 @@ def _render_spatial_proximity(ctx: dict[str, pd.DataFrame | dict[str, float]]) -
         top = pd.DataFrame()
     if not top.empty:
         st.markdown("##### Classement des magasins par chalandise")
-        st.dataframe(top, use_container_width=True, height=_table_height(len(top), max_height=440))
+        st.dataframe(top, width="stretch", height=_table_height(len(top), max_height=440))
 
     band_df = customers.copy()
     band_df["nearest_distance_km"] = pd.to_numeric(band_df.get("nearest_distance_km"), errors="coerce")
@@ -19658,10 +19658,10 @@ def _render_spatial_proximity(ctx: dict[str, pd.DataFrame | dict[str, float]]) -
         d1.markdown("##### Répartition par bande de distance")
         d1.plotly_chart(
             px.bar(by_band, x="distance_band_km", y="part_clients_%", title=None),
-            use_container_width=True,
+            width="stretch",
         )
         d2.markdown("##### Statistiques par bande de distance")
-        d2.dataframe(by_band, use_container_width=True, height=_table_height(len(by_band), max_height=320))
+        d2.dataframe(by_band, width="stretch", height=_table_height(len(by_band), max_height=320))
 
     if not customers.empty and not stores.empty and "nearest_store_id" in customers.columns and "store_id" in stores.columns:
         reg_map = stores.set_index("store_id")["region"] if "region" in stores.columns else pd.Series(dtype=object)
@@ -19676,7 +19676,7 @@ def _render_spatial_proximity(ctx: dict[str, pd.DataFrame | dict[str, float]]) -
                 align_rate=("is_main_nearest", "mean"),
             ).sort_values("clients", ascending=False)
             st.markdown("##### Comparatif régional de proximité")
-            st.dataframe(reg_agg, use_container_width=True, height=_table_height(len(reg_agg), max_height=300))
+            st.dataframe(reg_agg, width="stretch", height=_table_height(len(reg_agg), max_height=300))
 
     sim_block = _spatial_block("Simulation d'amélioration de proximité")
     gain_km = sim_block.slider("Réduction hypothétique de distance moyenne (km)", 0.0, 10.0, 2.0, 0.5, key="spatial_prox_gain_km")
@@ -19734,7 +19734,7 @@ def _render_spatial_hotspots(ctx: dict[str, pd.DataFrame | dict[str, float]]) ->
             text_auto=".1f",
         )
         heat.update_layout(template="plotly_white", xaxis_title="Bin longitude", yaxis_title="Bin latitude")
-        c1.plotly_chart(heat, use_container_width=True)
+        c1.plotly_chart(heat, width="stretch")
     else:
         c1.info("Grille spatiale indisponible.")
 
@@ -19767,7 +19767,7 @@ def _render_spatial_hotspots(ctx: dict[str, pd.DataFrame | dict[str, float]]) ->
             },
         )
         fig.update_layout(template="plotly_white")
-        c2.plotly_chart(fig, use_container_width=True)
+        c2.plotly_chart(fig, width="stretch")
     else:
         c2.info("Données stores insuffisantes.")
 
@@ -19777,9 +19777,9 @@ def _render_spatial_hotspots(ctx: dict[str, pd.DataFrame | dict[str, float]]) ->
         low_cells = grid.copy().assign(_metric=metric_vals).sort_values("_metric", ascending=True).head(15).drop(columns=["_metric"], errors="ignore")
         t1, t2 = st.columns(2)
         t1.markdown("##### Top cellules (hotspots)")
-        t1.dataframe(top_cells, use_container_width=True, height=_table_height(len(top_cells), max_height=360))
+        t1.dataframe(top_cells, width="stretch", height=_table_height(len(top_cells), max_height=360))
         t2.markdown("##### Bottom cellules (coldspots)")
-        t2.dataframe(low_cells, use_container_width=True, height=_table_height(len(low_cells), max_height=360))
+        t2.dataframe(low_cells, width="stretch", height=_table_height(len(low_cells), max_height=360))
 
     if not store_profile.empty and {"store_id", "revenue", "margin_rate", "local_churn_risk"}.issubset(store_profile.columns):
         out = store_profile.copy()
@@ -19792,7 +19792,7 @@ def _render_spatial_hotspots(ctx: dict[str, pd.DataFrame | dict[str, float]]) ->
                 out.sort_values("anomaly_score", ascending=False)[
                     [c for c in ["store_id", "city", "region", "revenue", "margin_rate", "local_churn_risk", "anomaly_score"] if c in out.columns]
                 ].head(30),
-                use_container_width=True,
+                width="stretch",
                 height=360,
             )
 
@@ -19925,7 +19925,7 @@ def _render_spatial_local_context(ctx: dict[str, pd.DataFrame | dict[str, float]
             points_control_y=1.38,
             points_control_top_margin=128,
         )
-        c1.plotly_chart(fig_event, use_container_width=True)
+        c1.plotly_chart(fig_event, width="stretch")
     else:
         c1.info("Analyse événement indisponible.")
 
@@ -19944,7 +19944,7 @@ def _render_spatial_local_context(ctx: dict[str, pd.DataFrame | dict[str, float]
             points_control_y=1.38,
             points_control_top_margin=128,
         )
-        c2.plotly_chart(fig_weather, use_container_width=True)
+        c2.plotly_chart(fig_weather, width="stretch")
     else:
         c2.info("Analyse météo indisponible.")
 
@@ -19960,7 +19960,7 @@ def _render_spatial_local_context(ctx: dict[str, pd.DataFrame | dict[str, float]
             .sort_values("revenue", ascending=False)
         )
         st.markdown("##### Synthèse ville: événements, météo et revenus")
-        st.dataframe(city_summary, use_container_width=True, height=_table_height(len(city_summary), max_height=420))
+        st.dataframe(city_summary, width="stretch", height=_table_height(len(city_summary), max_height=420))
 
     if isinstance(events_raw, pd.DataFrame) and not events_raw.empty and {"city", "date", "event_type"}.issubset(events_raw.columns):
         event_merge = analysis_df.merge(
@@ -19977,7 +19977,7 @@ def _render_spatial_local_context(ctx: dict[str, pd.DataFrame | dict[str, float]
         )
         st.plotly_chart(
             px.bar(event_type_perf, x="event_type", y="metric", color="observations", title=f"Performance moyenne par type d'événement ({target_col})"),
-            use_container_width=True,
+            width="stretch",
         )
 
     num_candidates = [c for c in [target_col, "expected_attendance", "temp_c", "precip_mm", "wind_kmh", "extreme_weather_rate"] if c in analysis_df.columns]
@@ -19988,7 +19988,7 @@ def _render_spatial_local_context(ctx: dict[str, pd.DataFrame | dict[str, float]
             cmat = corr.corr(numeric_only=True)
             st.plotly_chart(
                 px.imshow(cmat, color_continuous_scale="Tealgrn", title="Matrice de corrélation contexte local"),
-                use_container_width=True,
+                width="stretch",
             )
 
     if HAS_STATSMODELS and sm is not None and {target_col, "has_event"}.issubset(analysis_df.columns):
@@ -20015,7 +20015,7 @@ def _render_spatial_local_context(ctx: dict[str, pd.DataFrame | dict[str, float]
                 coef["p-value"] = coef["p-value"].apply(_fmt_pvalue)
                 with st.expander("Régression explicative locale (OLS)", expanded=False):
                     st.markdown("##### Coefficients de la régression locale")
-                    st.dataframe(coef, use_container_width=True, height=_table_height(len(coef), max_height=300))
+                    st.dataframe(coef, width="stretch", height=_table_height(len(coef), max_height=300))
                     st.caption(f"R² ajusté: {float(fit.rsquared_adj):.4f}")
 
     _render_spatial_page_footer("context")
@@ -20044,7 +20044,7 @@ def _render_spatial_temporal(ctx: dict[str, pd.DataFrame | dict[str, float]]) ->
     c1, c2 = st.columns(2)
     line = px.line(month_agg, x="month", y=["revenue", "margin"], title="Évolution mensuelle CA / marge")
     line.update_layout(template="plotly_white")
-    c1.plotly_chart(line, use_container_width=True)
+    c1.plotly_chart(line, width="stretch")
 
     if "region" in monthly_store.columns:
         reg_heat = (
@@ -20059,7 +20059,7 @@ def _render_spatial_temporal(ctx: dict[str, pd.DataFrame | dict[str, float]]) ->
             title="Heatmap revenu (région x mois)",
             labels={"x": "Mois", "y": "Région", "color": "Revenu"},
         )
-        c2.plotly_chart(heat, use_container_width=True)
+        c2.plotly_chart(heat, width="stretch")
     else:
         c2.info("Dimension région indisponible.")
 
@@ -20076,7 +20076,7 @@ def _render_spatial_temporal(ctx: dict[str, pd.DataFrame | dict[str, float]]) ->
             title="Animation mensuelle des revenus par magasin",
         )
         anim.update_layout(height=620)
-        st.plotly_chart(anim, use_container_width=True)
+        st.plotly_chart(anim, width="stretch")
 
     if {"store_id", "month", "revenue"}.issubset(monthly_store.columns):
         slope_rows: list[tuple[int, float, float]] = []
@@ -20102,13 +20102,13 @@ def _render_spatial_temporal(ctx: dict[str, pd.DataFrame | dict[str, float]]) ->
             s1.markdown("##### Top tendances positives")
             s1.dataframe(
                 slope_df.sort_values("trend_slope", ascending=False).head(20),
-                use_container_width=True,
+                width="stretch",
                 height=320,
             )
             s2.markdown("##### Top tendances négatives")
             s2.dataframe(
                 slope_df.sort_values("trend_slope", ascending=True).head(20),
-                use_container_width=True,
+                width="stretch",
                 height=320,
             )
 
@@ -20130,7 +20130,7 @@ def _render_spatial_temporal(ctx: dict[str, pd.DataFrame | dict[str, float]]) ->
                 title="Saisonnalité hebdomadaire moyenne (région x jour)",
                 labels={"x": "Jour", "y": "Région", "color": "CA moyen"},
             ),
-            use_container_width=True,
+            width="stretch",
         )
 
     _render_spatial_page_footer("temporal")
@@ -20189,7 +20189,7 @@ def _render_spatial_segmentation(ctx: dict[str, pd.DataFrame | dict[str, float]]
         .sort_values("revenue", ascending=False)
     )
     st.markdown("##### Profil des clusters territoriaux")
-    st.dataframe(seg_profile, use_container_width=True, height=_table_height(len(seg_profile), max_height=340))
+    st.dataframe(seg_profile, width="stretch", height=_table_height(len(seg_profile), max_height=340))
 
     c1, c2 = st.columns(2)
     map_seg = px.scatter(
@@ -20202,7 +20202,7 @@ def _render_spatial_segmentation(ctx: dict[str, pd.DataFrame | dict[str, float]]
         title="Carte des segments territoriaux",
     )
     map_seg.update_layout(template="plotly_white", xaxis_title="Longitude", yaxis_title="Latitude")
-    c1.plotly_chart(map_seg, use_container_width=True)
+    c1.plotly_chart(map_seg, width="stretch")
 
     if not seg_profile.empty:
         metric_cols = [c for c in ["revenue", "margin_rate", "avg_distance", "promo_share", "churn_local"] if c in seg_profile.columns]
@@ -20220,7 +20220,7 @@ def _render_spatial_segmentation(ctx: dict[str, pd.DataFrame | dict[str, float]]
                 line_close=True,
                 title="Profil relatif des clusters (normalisé)",
             )
-            c2.plotly_chart(radar, use_container_width=True)
+            c2.plotly_chart(radar, width="stretch")
 
     st.markdown("##### Détail des magasins")
     focus_cluster = st.selectbox("Focus cluster", sorted(tmp["territory_cluster"].dropna().astype(int).unique().tolist()), key="spatial_focus_cluster")
@@ -20230,7 +20230,7 @@ def _render_spatial_segmentation(ctx: dict[str, pd.DataFrame | dict[str, float]]
             focus_df[
                 [c for c in ["store_id", "city", "region", "store_type", "revenue", "margin_rate", "avg_distance_obs_km", "promo_share", "local_churn_risk"] if c in focus_df.columns]
             ].sort_values("revenue", ascending=False),
-            use_container_width=True,
+            width="stretch",
             height=360,
         )
 
@@ -20269,7 +20269,7 @@ def _render_spatial_coverage(ctx: dict[str, pd.DataFrame | dict[str, float]]) ->
     )
     c1.plotly_chart(
         px.line(cov_curve, x="km", y="coverage", markers=True, title="Courbe de couverture clients"),
-        use_container_width=True,
+        width="stretch",
     )
 
     if not pair_overlap.empty:
@@ -20283,7 +20283,7 @@ def _render_spatial_coverage(ctx: dict[str, pd.DataFrame | dict[str, float]]) ->
             title="Cannibalisation potentielle (stores proches et clients partagés)",
         )
         fig_pair.update_layout(template="plotly_white", xaxis_title="Distance inter-stores (km)", yaxis_title="Taux clients partagés")
-        c2.plotly_chart(fig_pair, use_container_width=True)
+        c2.plotly_chart(fig_pair, width="stretch")
     else:
         c2.info("Aucune paire de cannibalisation interne détectée.")
 
@@ -20344,12 +20344,12 @@ def _render_spatial_coverage(ctx: dict[str, pd.DataFrame | dict[str, float]]) ->
             xaxis_title="Longitude",
             yaxis_title="Latitude",
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     if not pair_overlap.empty:
         pair_table = pair_overlap.sort_values(["shared_rate", "distance_km"], ascending=[False, True]).head(120)
         with st.expander("Détail des paires à risque de cannibalisation", expanded=False):
-            st.dataframe(pair_table, use_container_width=True, height=_table_height(len(pair_table), max_height=460))
+            st.dataframe(pair_table, width="stretch", height=_table_height(len(pair_table), max_height=460))
 
     sim = _spatial_block("Scénario d'implantation (simulation rapide)")
     radius = sim.slider("Rayon de couverture cible (km)", 5, 35, 12, 1, key="spatial_new_store_radius")
@@ -20495,7 +20495,7 @@ def _render_spatial_coverage(ctx: dict[str, pd.DataFrame | dict[str, float]]) ->
                 )
             )
             fig_cand.update_layout(template="plotly_white", title="Simulation d'implantation (point candidat optimisé)")
-            st.plotly_chart(fig_cand, use_container_width=True)
+            st.plotly_chart(fig_cand, width="stretch")
             if city_candidates:
                 sim.markdown("##### Propositions par ville")
                 city_candidate_df = pd.DataFrame(city_candidates).rename(
@@ -20503,7 +20503,7 @@ def _render_spatial_coverage(ctx: dict[str, pd.DataFrame | dict[str, float]]) ->
                 )
                 sim.dataframe(
                     city_candidate_df,
-                    use_container_width=True,
+                    width="stretch",
                     height=_table_height(len(city_candidate_df), max_height=320),
                 )
 
@@ -21284,10 +21284,10 @@ L'objectif est d'identifier si la cible dépend de son **voisinage**, si les err
         )
     )
     conn_fig.update_layout(template="plotly_white", title="Carte des connexions spatiales", xaxis_title="Longitude", yaxis_title="Latitude", height=420)
-    wc1.plotly_chart(conn_fig, use_container_width=True)
-    wc2.plotly_chart(px.histogram(pd.DataFrame({"Voisins": neighbor_count}), x="Voisins", nbins=20, title="Nombre de voisins"), use_container_width=True)
+    wc1.plotly_chart(conn_fig, width="stretch")
+    wc2.plotly_chart(px.histogram(pd.DataFrame({"Voisins": neighbor_count}), x="Voisins", nbins=20, title="Nombre de voisins"), width="stretch")
     mat_preview = pd.DataFrame(w[: min(16, len(w)), : min(16, len(w))])
-    wc3.plotly_chart(px.imshow(mat_preview, color_continuous_scale="Blues", title="Matrice spatiale"), use_container_width=True)
+    wc3.plotly_chart(px.imshow(mat_preview, color_continuous_scale="Blues", title="Matrice spatiale"), width="stretch")
 
     y = pd.to_numeric(model_df[target_col], errors="coerce").to_numpy(dtype=float)
     x_df = model_df[selected_features].apply(pd.to_numeric, errors="coerce")
@@ -21351,7 +21351,7 @@ L'objectif est d'identifier si la cible dépend de son **voisinage**, si les err
     except Exception:
         pass
     fig_moran.update_layout(template="plotly_white")
-    sc1.plotly_chart(fig_moran, use_container_width=True)
+    sc1.plotly_chart(fig_moran, width="stretch")
     lisa_counts = lisa_df["lisa_cluster"].value_counts().rename_axis("Cluster").reset_index(name="Nombre")
     sc2.plotly_chart(
         px.bar(
@@ -21363,7 +21363,7 @@ L'objectif est d'identifier si la cible dépend de son **voisinage**, si les err
             color_discrete_map=lisa_color_map,
             category_orders={"Cluster": lisa_order},
         ),
-        use_container_width=True,
+        width="stretch",
     )
     lisa_html = _spatial_points_map_html(lisa_df, target_col, "store_id", cluster_col="lisa_cluster")
     if lisa_html:
@@ -21374,7 +21374,7 @@ L'objectif est d'identifier si la cible dépend de son **voisinage**, si les err
     lm_show["p-value"] = pd.to_numeric(lm_show["p-value"], errors="coerce").map(lambda v: "" if pd.isna(v) else f"{float(v):.4f}")
     lm_show = _format_significant_columns(lm_show)
     use_block.markdown("**Tests LM indicatifs**")
-    use_block.dataframe(lm_show, use_container_width=True, height=_table_height(len(lm_show), max_height=260))
+    use_block.dataframe(lm_show, width="stretch", height=_table_height(len(lm_show), max_height=260))
 
     models_available = ["OLS", "SAR", "SEM", "SLX", "SDM"]
     fitted = {model: _fit_spatial_model(model, y, x_df, w) for model in models_available}
@@ -21410,7 +21410,7 @@ L'objectif est d'identifier si la cible dépend de son **voisinage**, si les err
     if not decision_df.empty:
         decision_show = decision_df.copy()
         decision_show["p-value"] = pd.to_numeric(decision_show["p-value"], errors="coerce").map(lambda v: "" if pd.isna(v) else f"{float(v):.4f}")
-        model_panel.dataframe(decision_show, use_container_width=True, height=_table_height(len(decision_show), max_height=260))
+        model_panel.dataframe(decision_show, width="stretch", height=_table_height(len(decision_show), max_height=260))
 
     default_model_idx = models_available.index(recommended_model) if recommended_model in models_available else 0
     model_panel.markdown("**Modèles disponibles**")
@@ -21470,12 +21470,12 @@ L'objectif est d'identifier si la cible dépend de son **voisinage**, si les err
             coef_display["p-value"] = coef_display["p-value"].map(_format_p_value)
         ccoef.markdown("<div style='height:1.15rem;'></div>", unsafe_allow_html=True)
         ccoef.markdown("**Coefficients du modèle**")
-        ccoef.dataframe(coef_display, use_container_width=True, height=_table_height(len(coef_display), max_height=460))
+        ccoef.dataframe(coef_display, width="stretch", height=_table_height(len(coef_display), max_height=460))
         coef_plot = coef_show[~coef_show["Variable"].eq("Intercept")].copy()
         coef_plot["Importance relative"] = coef_plot["Coefficient"].abs() / max(float(coef_plot["Coefficient"].abs().sum()), 1e-9)
         cimp.plotly_chart(
             px.bar(coef_plot.sort_values("Importance relative", ascending=True), x="Importance relative", y="Variable", orientation="h", title="Importance des variables"),
-            use_container_width=True,
+            width="stretch",
         )
 
     impacts_df = _spatial_impacts_table(fit, selected_features)
@@ -21495,11 +21495,11 @@ L'objectif est d'identifier si la cible dépend de son **voisinage**, si les err
                 barmode="group",
                 title="Décomposition des impacts (effets directs / indirects)",
             ),
-            use_container_width=True,
+            width="stretch",
         )
     else:
         graph_left.info("Décomposition des impacts non disponible pour cette configuration.")
-    graph_right.plotly_chart(px.scatter(res_df, x="prediction", y="residual", color="region" if "region" in res_df.columns else None, title="Diagnostic des résidus"), use_container_width=True)
+    graph_right.plotly_chart(px.scatter(res_df, x="prediction", y="residual", color="region" if "region" in res_df.columns else None, title="Diagnostic des résidus"), width="stretch")
 
     if selected_model in {"SAR", "SDM"}:
         shock_var = model_panel.selectbox("Variable de choc pour propagation spatiale", selected_features, key="spatial_model_shock_var")
@@ -21516,7 +21516,7 @@ L'objectif est d'identifier si la cible dépend de son **voisinage**, si les err
         prop_df["diffusion_simulee"] = propagated
         model_panel.plotly_chart(
             px.scatter(prop_df, x="lon", y="lat", color="diffusion_simulee", size=np.abs(prop_df["diffusion_simulee"]) + 0.01, title=f"Propagation spatiale simulée: choc sur {shock_var}"),
-            use_container_width=True,
+            width="stretch",
         )
 
     compare_rows = []
@@ -21543,7 +21543,7 @@ L'objectif est d'identifier si la cible dépend de son **voisinage**, si les err
         """,
         unsafe_allow_html=True,
     )
-    cmp_block.dataframe(compare_df, use_container_width=True, height=_table_height(len(compare_df), max_height=260))
+    cmp_block.dataframe(compare_df, width="stretch", height=_table_height(len(compare_df), max_height=260))
     rank_df = compare_df.copy()
     rank_df["Score AIC inversé"] = -rank_df["AIC"]
     radar_cols = ["Score AIC inversé", "LogLik", "Pseudo R²"]
@@ -21568,8 +21568,8 @@ L'objectif est d'identifier si la cible dépend de son **voisinage**, si les err
         ),
         margin=dict(l=18, r=18, t=52, b=86),
     )
-    cpa.plotly_chart(radar_fig, use_container_width=True)
-    cpb.plotly_chart(px.bar(compare_df.sort_values("AIC"), x="Modèle", y="AIC", title="Classement des modèles (AIC)"), use_container_width=True)
+    cpa.plotly_chart(radar_fig, width="stretch")
+    cpb.plotly_chart(px.bar(compare_df.sort_values("AIC"), x="Modèle", y="AIC", title="Classement des modèles (AIC)"), width="stretch")
     if best_model != recommended_model and not compare_df.empty:
         aic_by_model = compare_df.set_index("Modèle")["AIC"]
         best_aic = float(aic_by_model.get(best_model, np.nan))
@@ -22229,7 +22229,7 @@ couches raster ou couches vecteur. Il sert à enrichir des magasins, stations, v
         default=["altitude", "densité population", "revenu médian", "trafic", "météo"],
         key="geostat_explanatory_vars",
     )
-    cata_block.dataframe(catalog, use_container_width=True, height=250)
+    cata_block.dataframe(catalog, width="stretch", height=250)
 
     points = _geostat_observation_points(ctx, source_name, target_var, max_points=max_points)
     if points.empty:
@@ -22250,7 +22250,7 @@ couches raster ou couches vecteur. Il sert à enrichir des magasins, stations, v
     kpi.markdown("<div style='height:.35rem;'></div>", unsafe_allow_html=True)
     pcols = [c for c in ["point_id", "source_layer", "lat", "lon", target_var, "scalar_value", "altitude", "ndvi", "densite_population", "trafic"] if c in points.columns]
     with kpi.expander("Table brute des données spatiales récupérées", expanded=False):
-        st.dataframe(points[pcols].head(120), use_container_width=True, height=320)
+        st.dataframe(points[pcols].head(120), width="stretch", height=320)
 
     method_block = _spatial_block("Construction du champ spatial")
     m1, m2, m3, m4 = method_block.columns(4)
@@ -22324,7 +22324,7 @@ couches raster ou couches vecteur. Il sert à enrichir des magasins, stations, v
         fig_vg.add_trace(go.Scatter(x=vgram["distance_km"], y=vgram["semivariance"], mode="markers", name="Variogramme empirique", marker=dict(color="#0a9396", size=7)))
         fig_vg.add_trace(go.Scatter(x=h_line, y=theo, mode="lines", name=f"Modèle {variogram_model}", line=dict(color="#bb3e03", width=2)))
         fig_vg.update_layout(template="plotly_white", title="Analyse du variogramme", xaxis_title="Distance (km)", yaxis_title="Semi-variance")
-        vg1.plotly_chart(fig_vg, use_container_width=True)
+        vg1.plotly_chart(fig_vg, width="stretch")
     else:
         vg1.info("Variogramme indisponible.")
     err_scores = _geostat_loocv(points, base_params, sample_n=60)
@@ -22350,7 +22350,7 @@ couches raster ou couches vecteur. Il sert à enrichir des magasins, stations, v
         labels={"color": target_var, "x": "Longitude", "y": "Latitude"},
     )
     heat.add_trace(go.Scatter(x=points["lon"], y=points["lat"], mode="markers", name="Points source", marker=dict(size=5, color="#111827", opacity=0.55)))
-    s1.plotly_chart(heat, use_container_width=True)
+    s1.plotly_chart(heat, width="stretch")
     contour = go.Figure(
         go.Contour(
             z=zz,
@@ -22362,12 +22362,12 @@ couches raster ou couches vecteur. Il sert à enrichir des magasins, stations, v
         )
     )
     contour.update_layout(template="plotly_white", title="Contours / isolignes", xaxis_title="Longitude", yaxis_title="Latitude")
-    s2.plotly_chart(contour, use_container_width=True)
+    s2.plotly_chart(contour, width="stretch")
     s3, s4 = st.columns(2)
-    s3.plotly_chart(px.imshow(uu, x=xx[0], y=yy[:, 0], origin="lower", color_continuous_scale="Magma", title="Raster de variance / incertitude"), use_container_width=True)
+    s3.plotly_chart(px.imshow(uu, x=xx[0], y=yy[:, 0], origin="lower", color_continuous_scale="Magma", title="Raster de variance / incertitude"), width="stretch")
     terrain = go.Figure(data=[go.Surface(z=zz, x=xx, y=yy, colorscale="RdYlBu_r", showscale=True)])
     terrain.update_layout(title="Surface 3D terrain", scene=dict(xaxis_title="Longitude", yaxis_title="Latitude", zaxis_title=target_var), height=520)
-    s4.plotly_chart(terrain, use_container_width=True)
+    s4.plotly_chart(terrain, width="stretch")
 
     opt_block = _spatial_block("Optimisation exhaustive")
     o1, o2 = opt_block.columns([1.0, 1.0])
@@ -22401,7 +22401,7 @@ couches raster ou couches vecteur. Il sert à enrichir des magasins, stations, v
     if isinstance(search_df, pd.DataFrame) and not search_df.empty:
         opt_block.dataframe(
             search_df,
-            use_container_width=True,
+            width="stretch",
             height=_table_height(len(search_df), max_height=420),
             column_config={
                 "RMSE": st.column_config.NumberColumn("RMSE", format="%.5f"),
@@ -22425,7 +22425,7 @@ couches raster ou couches vecteur. Il sert à enrichir des magasins, stations, v
             title="Classement LOOCV des configurations",
         )
         rank_fig.update_layout(template="plotly_white")
-        opt_block.plotly_chart(rank_fig, use_container_width=True)
+        opt_block.plotly_chart(rank_fig, width="stretch")
 
     try:
         generated_block = st.container(border=True)
@@ -22458,7 +22458,7 @@ couches raster ou couches vecteur. Il sert à enrichir des magasins, stations, v
                 result_poi[f"{extra}_estimee"] = ep
         st.session_state["geostat_last_poi_features"] = result_poi
         with generated_block.expander("Estimations spatiales brutes", expanded=False):
-            st.dataframe(result_poi.head(160), use_container_width=True, height=_table_height(min(len(result_poi), 160), max_height=420))
+            st.dataframe(result_poi.head(160), width="stretch", height=_table_height(min(len(result_poi), 160), max_height=420))
     else:
         result_poi = pd.DataFrame()
         generated_block.info("Aucun point d'intérêt disponible.")
@@ -22491,7 +22491,7 @@ couches raster ou couches vecteur. Il sert à enrichir des magasins, stations, v
             ],
         }
     )
-    fe_block.dataframe(tables_raw, use_container_width=True, height=320)
+    fe_block.dataframe(tables_raw, width="stretch", height=320)
 
     source_points_table = points.copy()
     source_points_table["target_variable"] = target_var
@@ -22579,7 +22579,7 @@ couches raster ou couches vecteur. Il sert à enrichir des magasins, stations, v
 
     generated_block.markdown("**Dictionnaire de données généré**")
     with generated_block.expander("Liste des données interpolées", expanded=False):
-        st.dataframe(dictionary_df, use_container_width=True, height=300)
+        st.dataframe(dictionary_df, width="stretch", height=300)
     generated_block.success("Couches, features et dictionnaire synchronisés avec les pages Données.")
 
     st.markdown(
@@ -22791,7 +22791,7 @@ def render_animation(store_daily: pd.DataFrame) -> None:
         paper_bgcolor="rgba(0,0,0,0)",
         title=dict(x=0.0, xanchor="left", y=0.98, yanchor="top", pad=dict(t=6, b=24)),
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
 
 def _style_temporal_series_figure(
@@ -23159,7 +23159,7 @@ def render_temporal_overview(store_daily: pd.DataFrame) -> None:
         title=f"Tendance {trend_metric} ({trend_granularity.lower()})",
     )
     _style_temporal_series_figure(trend_fig, xaxis_title="Date", yaxis_title=trend_metric)
-    st.plotly_chart(trend_fig, use_container_width=True)
+    st.plotly_chart(trend_fig, width="stretch")
 
     try:
         season_block = st.container(border=True)
@@ -23220,7 +23220,7 @@ def render_temporal_overview(store_daily: pd.DataFrame) -> None:
         grouped = season_df.groupby("bucket", as_index=False)[season_metric].agg(season_agg).sort_values("bucket")
         season_fig = px.line(grouped, x="bucket", y=season_metric, markers=True, title=f"Saisonnalité - {season_granularity.lower()}")
     _style_temporal_series_figure(season_fig, xaxis_title=season_granularity, yaxis_title=season_metric)
-    s_left.plotly_chart(season_fig, use_container_width=True)
+    s_left.plotly_chart(season_fig, width="stretch")
 
     heat_df = season_df.copy()
     heat_df["year"] = heat_df["date"].dt.year.astype(str)
@@ -23237,7 +23237,7 @@ def render_temporal_overview(store_daily: pd.DataFrame) -> None:
         labels={"x": "Mois", "y": "Année", "color": season_metric},
     )
     heat.update_layout(template="plotly_white")
-    st.plotly_chart(heat, use_container_width=True)
+    st.plotly_chart(heat, width="stretch")
 
 
 def _temporal_model_examples_catalog() -> list[dict[str, object]]:
@@ -23851,15 +23851,15 @@ def _render_temporal_quick_forecasting_panel(store_daily: pd.DataFrame) -> None:
         title=f"Forecasting - {metric_col} | {scope_label} ({freq_label.lower()}, {target_agg.lower()})",
     )
     _style_temporal_series_figure(fig, xaxis_title="Date", yaxis_title=metric_col)
-    quick_block.plotly_chart(fig, use_container_width=True)
+    quick_block.plotly_chart(fig, width="stretch")
 
     c1, c2 = quick_block.columns(2)
     err = px.line(result_df.reset_index().rename(columns={"index": "h"}), x="h", y="abs_error", markers=True, title="Erreur absolue par horizon")
     _style_temporal_series_figure(err, xaxis_title="Pas d'horizon", yaxis_title="Erreur absolue")
-    c1.plotly_chart(err, use_container_width=True)
+    c1.plotly_chart(err, width="stretch")
     resid = px.histogram(result_df, x="residual", nbins=35, title="Distribution des résidus")
     resid.update_layout(template="plotly_white")
-    c2.plotly_chart(resid, use_container_width=True)
+    c2.plotly_chart(resid, width="stretch")
 
     with quick_block.expander("Informations détaillées", expanded=False):
         info = dict(model_info)
@@ -23872,9 +23872,9 @@ def _render_temporal_quick_forecasting_panel(store_daily: pd.DataFrame) -> None:
         info["Points test"] = len(test_df)
         info_df = pd.DataFrame({"Paramètre": list(info.keys()), "Valeur": list(info.values())})
         st.markdown("##### Paramètres et contexte du modèle")
-        st.dataframe(info_df, use_container_width=True, height=_table_height(len(info_df), max_height=380))
+        st.dataframe(info_df, width="stretch", height=_table_height(len(info_df), max_height=380))
         st.markdown("##### Données de backtest")
-        st.dataframe(result_df, use_container_width=True, height=_table_height(len(result_df), max_height=420))
+        st.dataframe(result_df, width="stretch", height=_table_height(len(result_df), max_height=420))
 
     if model_info.get("Note"):
         quick_block.caption(str(model_info.get("Note")))
@@ -23904,7 +23904,7 @@ def _render_temporal_modeling_diagnostics(ts_agg: pd.DataFrame, date_col: str, t
     fig1.add_trace(go.Scatter(x=d[date_col], y=d["rolling_7"], mode="lines", name="Lissage"))
     fig1.update_layout(title="Signal + tendance lissée")
     _style_temporal_series_figure(fig1, xaxis_title="Date", yaxis_title=target_col)
-    c1.plotly_chart(fig1, use_container_width=True)
+    c1.plotly_chart(fig1, width="stretch")
 
     month_order = [
         "January",
@@ -23923,7 +23923,7 @@ def _render_temporal_modeling_diagnostics(ts_agg: pd.DataFrame, date_col: str, t
     by_month = d.groupby("month", as_index=False)[target_col].mean()
     by_month["month"] = pd.Categorical(by_month["month"], categories=month_order, ordered=True)
     by_month = by_month.sort_values("month")
-    c2.plotly_chart(px.bar(by_month, x="month", y=target_col, title="Profil saisonnier mensuel"), use_container_width=True)
+    c2.plotly_chart(px.bar(by_month, x="month", y=target_col, title="Profil saisonnier mensuel"), width="stretch")
 
     weekday_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
     by_weekday = d.groupby("weekday", as_index=False)[target_col].mean()
@@ -23931,7 +23931,7 @@ def _render_temporal_modeling_diagnostics(ts_agg: pd.DataFrame, date_col: str, t
     by_weekday = by_weekday.sort_values("weekday")
     week_fig = px.line(by_weekday, x="weekday", y=target_col, markers=True, title="Profil hebdomadaire")
     _style_temporal_series_figure(week_fig, xaxis_title="Jour", yaxis_title=target_col)
-    diag.plotly_chart(week_fig, use_container_width=True)
+    diag.plotly_chart(week_fig, width="stretch")
 
 
 def _temporal_model_scoped_examples(scope: str, prefix: str) -> list[dict[str, object]]:
@@ -25092,7 +25092,7 @@ def _render_temporal_modeling_scope(data: dict[str, pd.DataFrame], model_scope: 
         bench_df = bench_df.rename(columns={"RMSE": rmse_label, "Rang RMSE": f"Rang {rmse_label}"})
         compare_block.dataframe(
             bench_df[[f"Rang {rmse_label}", "Modèle", rmse_label, "MAE", "MASE", "sMAPE (%)", "R²"]],
-            use_container_width=True,
+            width="stretch",
             height=_table_height(len(bench_df), max_height=320),
         )
         best_rmsep_name = "n/a"
@@ -25179,7 +25179,7 @@ def _render_temporal_modeling_scope(data: dict[str, pd.DataFrame], model_scope: 
         title="Backtest temporel: observé vs prévision",
     )
     _style_temporal_series_figure(fig, xaxis_title="Date", yaxis_title=target_col)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
     c1, c2 = st.columns(2)
     err_fig = px.line(
@@ -25190,7 +25190,7 @@ def _render_temporal_modeling_scope(data: dict[str, pd.DataFrame], model_scope: 
         title="Erreur absolue par horizon",
     )
     _style_temporal_series_figure(err_fig, xaxis_title="Pas d'horizon", yaxis_title="Erreur absolue")
-    c1.plotly_chart(err_fig, use_container_width=True)
+    c1.plotly_chart(err_fig, width="stretch")
 
     resid_fig = px.histogram(
         result_df,
@@ -25199,7 +25199,7 @@ def _render_temporal_modeling_scope(data: dict[str, pd.DataFrame], model_scope: 
         title="Distribution des résidus (test)",
     )
     resid_fig.update_layout(template="plotly_white")
-    c2.plotly_chart(resid_fig, use_container_width=True)
+    c2.plotly_chart(resid_fig, width="stretch")
 
     if model_tables:
         try:
@@ -25266,10 +25266,10 @@ def _render_temporal_modeling_scope(data: dict[str, pd.DataFrame], model_scope: 
             cols = insight_block.columns(2) if len(row) == 2 else [insight_block]
             for col, (title, fig_obj, df_obj) in zip(cols, row, strict=False):
                 if fig_obj is not None:
-                    col.plotly_chart(fig_obj, use_container_width=True)
+                    col.plotly_chart(fig_obj, width="stretch")
                 else:
                     col.markdown(f"##### {title}")
-                    col.dataframe(df_obj, use_container_width=True, height=_table_height(len(df_obj), max_height=320))
+                    col.dataframe(df_obj, width="stretch", height=_table_height(len(df_obj), max_height=320))
 
     if HAS_STATSMODELS and sm is not None and result_df["residual"].notna().sum() >= 10:
         try:
@@ -25284,9 +25284,9 @@ def _render_temporal_modeling_scope(data: dict[str, pd.DataFrame], model_scope: 
 
     with st.expander("Informations détaillées du modèle", expanded=False):
         info_df = pd.DataFrame({"Paramètre": list(model_info.keys()), "Valeur": list(model_info.values())})
-        st.dataframe(info_df, use_container_width=True, height=_table_height(len(info_df), max_height=360))
+        st.dataframe(info_df, width="stretch", height=_table_height(len(info_df), max_height=360))
     with st.expander("Données de backtest", expanded=False):
-        st.dataframe(result_df, use_container_width=True, height=_table_height(len(result_df), max_height=420))
+        st.dataframe(result_df, width="stretch", height=_table_height(len(result_df), max_height=420))
 
     progress.progress(100, text="Étape 4/4 - Modélisation temporelle terminée.")
 
@@ -25382,7 +25382,7 @@ def _render_ml_table_selector(
                     help="Lance automatiquement l'entraînement après clic sur « Générer un exemple ».",
                 )
             )
-        if st.button("Générer un exemple", key=f"{prefix}_generate_example", use_container_width=True):
+        if st.button("Générer un exemple", key=f"{prefix}_generate_example", width="stretch"):
             if valid_examples:
                 current_idx = int(st.session_state.get(f"{prefix}_example_index", -1))
                 next_idx = (current_idx + 1) % len(valid_examples)
@@ -25409,11 +25409,11 @@ def _render_ml_table_selector(
 
         a1, a2 = st.columns([1, 1])
         with a1:
-            if st.button("+ Ajouter une table", key=f"{prefix}_add_table", use_container_width=True):
+            if st.button("+ Ajouter une table", key=f"{prefix}_add_table", width="stretch"):
                 st.session_state[slots_key] = min(max_tables, int(st.session_state[slots_key]) + 1)
                 st.rerun()
         with a2:
-            if st.button("Retirer la dernière table", key=f"{prefix}_remove_table", use_container_width=True):
+            if st.button("Retirer la dernière table", key=f"{prefix}_remove_table", width="stretch"):
                 st.session_state[slots_key] = max(1, int(st.session_state[slots_key]) - 1)
                 st.rerun()
 
@@ -27069,7 +27069,7 @@ def _render_supervised_fit_diagnostic(
                 "Correctif prioritaire": (actions + [""] * n_action_rows)[:n_action_rows],
             }
         )
-        diag_box.dataframe(action_df, use_container_width=True, hide_index=True)
+        diag_box.dataframe(action_df, width="stretch", hide_index=True)
         if model_name == "K plus proches voisins (KNN)":
             st.warning("Surapprentissage k-NN détecté: le voisinage est trop local ou trop sensible aux points proches.")
             tips = [
@@ -27231,7 +27231,7 @@ def _render_supervised_fit_diagnostic(
                 "Prochain essai": (next_steps + [""] * n_action_rows)[:n_action_rows],
             }
         )
-        diag_box.dataframe(action_df, use_container_width=True, hide_index=True)
+        diag_box.dataframe(action_df, width="stretch", hide_index=True)
         st.warning("Sous-apprentissage détecté: performances faibles en train et test.")
         tips = [
             "Commencer par vérifier que la cible est prédictible avec les variables disponibles.",
@@ -27527,6 +27527,17 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
         st.session_state[f"{prefix}_cv_type"] = default_cv_type
     if st.session_state.get(f"{prefix}_cv_group_var") not in (["Aucun"] + cv_group_candidates):
         st.session_state[f"{prefix}_cv_group_var"] = "Aucun"
+    cv_widget_defaults = {
+        f"{prefix}_use_cv": True,
+        f"{prefix}_cv_folds": 5,
+        f"{prefix}_search_iter": 14,
+        f"{prefix}_auto_tune": True,
+    }
+    for widget_key, default_value in cv_widget_defaults.items():
+        if widget_key not in st.session_state:
+            st.session_state[widget_key] = default_value
+    st.session_state[f"{prefix}_cv_folds"] = int(np.clip(int(st.session_state.get(f"{prefix}_cv_folds", 5)), 3, 10))
+    st.session_state[f"{prefix}_search_iter"] = int(np.clip(int(st.session_state.get(f"{prefix}_search_iter", 14)), 6, 40))
 
     auto_select_lda_qda = False
     chosen_discriminant_label: str | None = None
@@ -27586,15 +27597,15 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
         )
         cva, cvb, cvc, cvd, cve = st.columns([1.25, 1.0, 1.0, 1.0, 1.0])
         with cva:
-            use_cv = st.checkbox("Activer la cross-validation", value=True, key=f"{prefix}_use_cv")
+            use_cv = st.checkbox("Activer la cross-validation", key=f"{prefix}_use_cv")
         with cvb:
             cv_type = st.selectbox("Type de CV", cv_type_options, key=f"{prefix}_cv_type")
         with cvc:
-            cv_folds = st.slider("Nombre de folds CV", min_value=3, max_value=10, value=5, step=1, key=f"{prefix}_cv_folds")
+            cv_folds = st.slider("Nombre de folds CV", min_value=3, max_value=10, step=1, key=f"{prefix}_cv_folds")
         with cvd:
-            search_iter = st.slider("Itérations optimisation", min_value=6, max_value=40, value=14, step=2, key=f"{prefix}_search_iter")
+            search_iter = st.slider("Itérations optimisation", min_value=6, max_value=40, step=2, key=f"{prefix}_search_iter")
         with cve:
-            auto_tune = st.checkbox("Optimisation auto", value=True, key=f"{prefix}_auto_tune")
+            auto_tune = st.checkbox("Optimisation auto", key=f"{prefix}_auto_tune")
         if cv_type == "group k-fold":
             cv_group_var = st.selectbox(
                 "Variable de groupe (group k-fold)",
@@ -29290,7 +29301,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                 "model__min_samples_leaf": [1, 2, 3, 5, 8, 12],
             }
 
-    run_train_btn = st.button("Entraîner le modèle", key=f"{prefix}_train", use_container_width=True)
+    run_train_btn = st.button("Entraîner le modèle", key=f"{prefix}_train", width="stretch")
     auto_train_requested = bool(st.session_state.pop(f"{prefix}_auto_train_requested", False))
     run_train = run_train_btn or auto_train_requested
     if not run_train:
@@ -29579,7 +29590,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     }
                 )
             with st.expander("Détail de représentativité de la cible", expanded=False):
-                st.dataframe(pd.DataFrame(balance_rows), use_container_width=True, hide_index=True)
+                st.dataframe(pd.DataFrame(balance_rows), width="stretch", hide_index=True)
 
     if model_name == "Méthodes d'ensemble" and ensemble_reg_type == "AdaBoost Regressor":
         frac = float(np.clip(ab_max_samples_fraction, 0.3, 1.0))
@@ -29621,7 +29632,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     }
                 ).sort_values("Lignes train", ascending=False)
                 with st.expander("Détail des groupes utilisés en cross-validation", expanded=False):
-                    st.dataframe(group_diag, use_container_width=True, hide_index=True)
+                    st.dataframe(group_diag, width="stretch", hide_index=True)
             except Exception:
                 pass
     progress.progress(48, text="Préparation de l'algorithme et du pipeline d'entraînement...")
@@ -29749,7 +29760,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
             if comparison_rows:
                 cmp_df = pd.DataFrame(comparison_rows).sort_values("F1 CV (moyenne)", ascending=False)
                 st.markdown("##### Choix de distance par CV (k-NN)")
-                st.dataframe(cmp_df, use_container_width=True, hide_index=True)
+                st.dataframe(cmp_df, width="stretch", hide_index=True)
             if best_cfg is not None:
                 best_metric, best_p = best_cfg
                 chosen_knn_metric_label = best_metric
@@ -32381,7 +32392,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
             )
         if cv_rows:
             st.markdown("##### Résultats cross-validation (train)")
-            st.dataframe(pd.DataFrame(cv_rows), use_container_width=True, height=min(max(120, 36 * (len(cv_rows) + 1)), 340))
+            st.dataframe(pd.DataFrame(cv_rows), width="stretch", height=min(max(120, 36 * (len(cv_rows) + 1)), 340))
 
     if is_classification:
         cm_labels = (
@@ -32408,7 +32419,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                 labels=dict(x="Prédiction", y="Vrai"),
                 color_continuous_scale="Reds",
             ),
-            use_container_width=True,
+            width="stretch",
         )
         cm2.plotly_chart(
             px.imshow(
@@ -32419,7 +32430,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                 labels=dict(x="Prédiction", y="Vrai"),
                 color_continuous_scale="Blues",
             ),
-            use_container_width=True,
+            width="stretch",
         )
         if "ROC-AUC" in test_metrics and y_score_train is not None and y_score_test is not None:
             positive = class_labels[-1]
@@ -32482,8 +32493,8 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                 template="plotly_white",
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0.0),
             )
-            p1.plotly_chart(roc_fig, use_container_width=True)
-            p2.plotly_chart(pr_fig, use_container_width=True)
+            p1.plotly_chart(roc_fig, width="stretch")
+            p2.plotly_chart(pr_fig, width="stretch")
 
             cal_train_true, cal_train_pred = calibration_curve(y_bin_train, y_score_train, n_bins=10, strategy="quantile")
             cal_test_true, cal_test_pred = calibration_curve(y_bin_test, y_score_test, n_bins=10, strategy="quantile")
@@ -32541,7 +32552,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                 template="plotly_white",
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0.0),
             )
-            st.plotly_chart(cal_fig, use_container_width=True)
+            st.plotly_chart(cal_fig, width="stretch")
 
         if model_name == "Support Vector Machine (SVM)":
             st.markdown("##### Analyse Support Vector Machine (SVM)")
@@ -32577,7 +32588,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     hover_data={"Observations train": True, "Part supports (%)": ":.2f"},
                 )
                 support_fig.update_layout(template="plotly_white", coloraxis_colorbar_title="% supports")
-                svm_a.plotly_chart(support_fig, use_container_width=True)
+                svm_a.plotly_chart(support_fig, width="stretch")
 
                 if svm_margin_summary_df is not None and not svm_margin_summary_df.empty:
                     margin_summary_fig = px.bar(
@@ -32591,7 +32602,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         color_discrete_map={"Oui": "#2563eb", "Non": "#ef4444"},
                     )
                     margin_summary_fig.update_layout(template="plotly_white", yaxis_title="Marge absolue médiane")
-                    svm_b.plotly_chart(margin_summary_fig, use_container_width=True)
+                    svm_b.plotly_chart(margin_summary_fig, width="stretch")
                 _render_collapsible_dataframe(
                     "Détail des vecteurs supports par classe",
                     svm_support_df,
@@ -32612,7 +32623,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     hover_data={"Correct": True, "Classe réelle": True},
                 )
                 margin_hist.update_layout(template="plotly_white")
-                svm_c.plotly_chart(margin_hist, use_container_width=True)
+                svm_c.plotly_chart(margin_hist, width="stretch")
 
                 margin_box = px.box(
                     svm_margin_df,
@@ -32624,7 +32635,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     title="Marge des prédictions correctes vs erreurs",
                 )
                 margin_box.update_layout(template="plotly_white")
-                svm_d.plotly_chart(margin_box, use_container_width=True)
+                svm_d.plotly_chart(margin_box, width="stretch")
                 _render_collapsible_dataframe(
                     "Détail des marges SVM",
                     svm_margin_df.head(2000),
@@ -32644,7 +32655,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                 )
                 proj_fig.update_traces(marker=dict(size=7), selector=dict(mode="markers"))
                 proj_fig.update_layout(template="plotly_white", legend=dict(orientation="v", x=1.02, y=1.0))
-                st.plotly_chart(proj_fig, use_container_width=True)
+                st.plotly_chart(proj_fig, width="stretch")
 
             if svm_linear_coef_df is not None and not svm_linear_coef_df.empty:
                 top_coef = svm_linear_coef_df.head(25).sort_values("Importance |coef|")
@@ -32658,7 +32669,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     title="Coefficients du SVM linéaire (top features)",
                 )
                 coef_fig.update_layout(template="plotly_white", yaxis_title="")
-                st.plotly_chart(coef_fig, use_container_width=True)
+                st.plotly_chart(coef_fig, width="stretch")
                 _render_collapsible_dataframe(
                     "Détail des coefficients SVM linéaire",
                     svm_linear_coef_df.head(120),
@@ -32753,7 +32764,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         opacity=0.7,
                         title="Distribution des probabilités max (train/test)",
                     ),
-                    use_container_width=True,
+                    width="stretch",
                 )
                 show_violin_points = _stats_box_points_toggle("nb_true_prob_violin_show_points", ui=nb2)
                 true_prob_fig = px.violin(
@@ -32767,7 +32778,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     title="Distribution des probabilités de la classe vraie",
                 )
                 true_prob_fig = _add_violin_points_visibility_control(true_prob_fig)
-                nb2.plotly_chart(true_prob_fig, use_container_width=True)
+                nb2.plotly_chart(true_prob_fig, width="stretch")
 
                 cal_train_df = _confidence_calibration_df(y_train_s, prob_train, class_labels, "train")
                 cal_test_df = _confidence_calibration_df(y_test_s, prob_test, class_labels, "test")
@@ -32802,7 +32813,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         cal_nb_fig.update_xaxes(range=[max(0.0, x_min - x_pad), min(1.0, x_max + x_pad)])
                         cal_nb_fig.update_yaxes(range=[max(0.0, y_min - y_pad), min(1.0, y_max + y_pad)])
                     cal_nb_fig.update_layout(template="plotly_white")
-                    st.plotly_chart(cal_nb_fig, use_container_width=True)
+                    st.plotly_chart(cal_nb_fig, width="stretch")
 
             if hasattr(est, "named_steps"):
                 model_step = est.named_steps.get("model")
@@ -32869,7 +32880,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         title=f"Top features par classe ({view_cls})",
                     )
                     imp_fig.update_layout(template="plotly_white")
-                    st.plotly_chart(imp_fig, use_container_width=True)
+                    st.plotly_chart(imp_fig, width="stretch")
                     _render_collapsible_dataframe(
                         "Détail de l'importance",
                         top_imp[["Feature", "Log P(feature|classe)", "Importance approx (delta log-prob)"]],
@@ -32911,7 +32922,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                             color_continuous_scale="Tealgrn",
                             title="Top features par classe (importance approximative)",
                         ),
-                        use_container_width=True,
+                        width="stretch",
                     )
                     if len(class_names_nb) >= 2:
                         class_focus = st.selectbox(
@@ -32986,7 +32997,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                 acc_fig.add_trace(go.Scatter(x=knn_curve_df["k"], y=knn_curve_df["Accuracy train"], mode="lines+markers", name="Accuracy train", line=dict(color=split_colors["train"], width=2)))
                 acc_fig.add_trace(go.Scatter(x=knn_curve_df["k"], y=knn_curve_df["Accuracy test"], mode="lines+markers", name="Accuracy test", line=dict(color=split_colors["test"], width=2)))
                 acc_fig.update_layout(title="Accuracy vs k", xaxis_title="k", yaxis_title="Accuracy", template="plotly_white")
-                kf1.plotly_chart(acc_fig, use_container_width=True)
+                kf1.plotly_chart(acc_fig, width="stretch")
 
                 f1_fig = go.Figure()
                 f1_fig.add_trace(go.Scatter(x=knn_curve_df["k"], y=knn_curve_df["F1 train"], mode="lines+markers", name="F1 train", line=dict(color=split_colors["train"], width=2)))
@@ -33002,7 +33013,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         )
                 )
                 f1_fig.update_layout(title="F1 vs k", xaxis_title="k", yaxis_title="F1 pondéré", template="plotly_white")
-                kf2.plotly_chart(f1_fig, use_container_width=True)
+                kf2.plotly_chart(f1_fig, width="stretch")
                 _render_collapsible_dataframe(
                     "Détail des performances selon k",
                     knn_curve_df,
@@ -33022,7 +33033,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         color_discrete_map=split_colors,
                         title="Distribution des distances moyennes aux voisins",
                     ),
-                    use_container_width=True,
+                    width="stretch",
                 )
                 show_box_points = _stats_box_points_toggle("knn_distance_box_show_points", ui=kd2)
                 knn_distance_fig = _styled_stats_boxplot(
@@ -33034,7 +33045,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     yaxis_title="Distance moyenne voisins",
                     show_points=show_box_points,
                 )
-                kd2.plotly_chart(knn_distance_fig, use_container_width=True)
+                kd2.plotly_chart(knn_distance_fig, width="stretch")
 
             if knn_decision_df is not None and knn_decision_grid is not None:
                 xx, yy, zz, cls_map = knn_decision_grid
@@ -33068,7 +33079,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     yaxis_title="Composante PCA 2",
                     template="plotly_white",
                 )
-                st.plotly_chart(decision_fig, use_container_width=True)
+                st.plotly_chart(decision_fig, width="stretch")
 
         if model_name == "Arbre de décision":
             st.markdown("##### Analyse arbre de décision")
@@ -33086,7 +33097,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         color_continuous_scale="Tealgrn",
                         title="Importance des variables (arbre)",
                     ),
-                    use_container_width=True,
+                    width="stretch",
                 )
                 _render_collapsible_dataframe(
                     "Détail de l'importance",
@@ -33118,7 +33129,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     yaxis_title="F1 pondéré",
                     template="plotly_white",
                 )
-                st.plotly_chart(td_fig, use_container_width=True)
+                st.plotly_chart(td_fig, width="stretch")
             if tree_learning_curve_df is not None and not tree_learning_curve_df.empty:
                 lc_fig = go.Figure()
                 lc_fig.add_trace(
@@ -33145,10 +33156,10 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     yaxis_title="F1 pondéré",
                     template="plotly_white",
                 )
-                st.plotly_chart(lc_fig, use_container_width=True)
+                st.plotly_chart(lc_fig, width="stretch")
             if tree_decision_path_df is not None and not tree_decision_path_df.empty:
                 with st.expander("Decision path (échantillon test)", expanded=False):
-                    st.dataframe(tree_decision_path_df, use_container_width=True, hide_index=True)
+                    st.dataframe(tree_decision_path_df, width="stretch", hide_index=True)
 
         if model_name == "Forêt aléatoire":
             st.markdown("##### Analyse forêt aléatoire")
@@ -33180,7 +33191,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     yaxis_title="Score / erreur",
                     template="plotly_white",
                 )
-                st.plotly_chart(oob_fig, use_container_width=True)
+                st.plotly_chart(oob_fig, width="stretch")
                 _render_collapsible_dataframe(
                     "Détail des statistiques selon le nombre d'arbres",
                     rf_oob_curve_df,
@@ -33197,7 +33208,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         color_continuous_scale="Tealgrn",
                         title="Feature importance (forêt)",
                     ),
-                    use_container_width=True,
+                    width="stretch",
                 )
                 if rf_perm_importance_df is not None and not rf_perm_importance_df.empty:
                     rf2.plotly_chart(
@@ -33211,7 +33222,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                             color_continuous_scale="RdBu",
                             title="Permutation importance (test)",
                         ),
-                        use_container_width=True,
+                        width="stretch",
                     )
                 else:
                     rf2.info("Permutation importance indisponible (échantillon test insuffisant).")
@@ -33257,7 +33268,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                                     markers=True,
                                     title=f"PDP approximatif - {pdp_feature}",
                                 ),
-                                use_container_width=True,
+                                width="stretch",
                             )
 
         if model_name == "AdaBoost":
@@ -33292,7 +33303,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     yaxis_title="F1 pondéré",
                     template="plotly_white",
                 )
-                ab1.plotly_chart(ab_f1_fig, use_container_width=True)
+                ab1.plotly_chart(ab_f1_fig, width="stretch")
 
                 ab_acc_fig = go.Figure()
                 ab_acc_fig.add_trace(
@@ -33320,7 +33331,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     yaxis_title="Score",
                     template="plotly_white",
                 )
-                ab2.plotly_chart(ab_acc_fig, use_container_width=True)
+                ab2.plotly_chart(ab_acc_fig, width="stretch")
                 _render_collapsible_dataframe(
                     "Détail des statistiques selon le nombre d'arbres",
                     ab_stage_curve_df,
@@ -33336,7 +33347,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         color_continuous_scale="Tealgrn",
                         title="Feature importance (AdaBoost)",
                     ),
-                    use_container_width=True,
+                    width="stretch",
                 )
                 _render_collapsible_dataframe(
                     "Détail de l'importance",
@@ -33377,7 +33388,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     yaxis_title="F1 pondéré",
                     template="plotly_white",
                 )
-                g1.plotly_chart(f1_fig, use_container_width=True)
+                g1.plotly_chart(f1_fig, width="stretch")
                 perf_fig = go.Figure()
                 perf_fig.add_trace(
                     go.Scatter(
@@ -33404,7 +33415,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     yaxis_title="Score",
                     template="plotly_white",
                 )
-                g2.plotly_chart(perf_fig, use_container_width=True)
+                g2.plotly_chart(perf_fig, width="stretch")
                 _render_collapsible_dataframe(
                     "Détail des statistiques selon le nombre d'arbres",
                     gb_stage_curve_df,
@@ -33435,7 +33446,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     yaxis_title="F1 pondéré",
                     template="plotly_white",
                 )
-                st.plotly_chart(lc_fig, use_container_width=True)
+                st.plotly_chart(lc_fig, width="stretch")
             if gb_feat_importance_df is not None and not gb_feat_importance_df.empty:
                 b1, b2 = st.columns(2)
                 b1.plotly_chart(
@@ -33448,7 +33459,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         color_continuous_scale="Tealgrn",
                         title="Feature importance",
                     ),
-                    use_container_width=True,
+                    width="stretch",
                 )
                 if gb_perm_importance_df is not None and not gb_perm_importance_df.empty:
                     b2.plotly_chart(
@@ -33462,7 +33473,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                             color_continuous_scale="RdBu",
                             title="Permutation importance",
                         ),
-                        use_container_width=True,
+                        width="stretch",
                     )
                 else:
                     b2.info("Permutation importance indisponible.")
@@ -33493,7 +33504,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     yaxis_title="Gain cumulé",
                     template="plotly_white",
                 )
-                gl1.plotly_chart(gain_fig, use_container_width=True)
+                gl1.plotly_chart(gain_fig, width="stretch")
                 lift_fig = go.Figure()
                 lift_fig.add_trace(
                     go.Bar(
@@ -33510,7 +33521,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     yaxis_title="Lift",
                     template="plotly_white",
                 )
-                gl2.plotly_chart(lift_fig, use_container_width=True)
+                gl2.plotly_chart(lift_fig, width="stretch")
             if gb_shap_summary_df is not None and not gb_shap_summary_df.empty:
                 st.plotly_chart(
                     px.bar(
@@ -33522,7 +33533,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         color_continuous_scale="Viridis",
                         title="SHAP summary (approximation bar)",
                     ),
-                    use_container_width=True,
+                    width="stretch",
                 )
                 if gb_shap_dependence_df is not None and not gb_shap_dependence_df.empty:
                     st.plotly_chart(
@@ -33534,7 +33545,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                             trendline="ols",
                             title=f"SHAP dependence - {gb_shap_dependence_df['Feature'].iloc[0]}",
                         ),
-                        use_container_width=True,
+                        width="stretch",
                     )
             elif model_name in {"XGBoost", "LightGBM", "CatBoost", "Gradient Boosting"}:
                 st.caption("SHAP non disponible (librairie non installée ou modèle non compatible).")
@@ -33550,7 +33561,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         for name, score in discriminant_cv_scores.items()
                     ]
                 ).sort_values("F1 CV (moyenne)", ascending=False)
-                st.dataframe(cv_comp_df, use_container_width=True, hide_index=True)
+                st.dataframe(cv_comp_df, width="stretch", hide_index=True)
 
             dp1, dp2 = st.columns(2)
             proj_fig = px.scatter(
@@ -33564,7 +33575,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
             )
             proj_fig.update_traces(marker=dict(size=6.0, line=dict(color="#111111", width=0.5)))
             proj_fig.update_layout(template="plotly_white")
-            dp1.plotly_chart(proj_fig, use_container_width=True)
+            dp1.plotly_chart(proj_fig, width="stretch")
 
             show_violin_points = _stats_box_points_toggle("discriminant_scores_violin_show_points", ui=dp2)
             dist_fig = px.violin(
@@ -33579,7 +33590,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
             )
             dist_fig = _add_violin_points_visibility_control(dist_fig)
             dist_fig.update_layout(template="plotly_white")
-            dp2.plotly_chart(dist_fig, use_container_width=True)
+            dp2.plotly_chart(dist_fig, width="stretch")
 
             if discrim_cov_train is not None and discrim_cov_train.ndim == 2 and discrim_cov_train.size > 0:
                 cov_mat = np.asarray(discrim_cov_train, dtype=float)
@@ -33616,7 +33627,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         xaxis=dict(tickangle=-45, automargin=True, tickfont=dict(size=10)),
                         yaxis=dict(automargin=True, tickfont=dict(size=10)),
                     )
-                    st.plotly_chart(cov_fig, use_container_width=True)
+                    st.plotly_chart(cov_fig, width="stretch")
 
         if model_name == "Régression logistique" and hasattr(est, "named_steps"):
             model_step = est.named_steps.get("model")
@@ -33678,8 +33689,8 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     odds_fig.update_layout(template="plotly_white")
 
                     g1, g2 = st.columns(2)
-                    g1.plotly_chart(coef_fig, use_container_width=True)
-                    g2.plotly_chart(odds_fig, use_container_width=True)
+                    g1.plotly_chart(coef_fig, width="stretch")
+                    g2.plotly_chart(odds_fig, width="stretch")
                 except Exception as exc:
                     st.caption(f"Coefficients/Odds ratios indisponibles: {exc}")
     else:
@@ -33714,7 +33725,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     title="Observé vs Prédit (train/test)",
                     opacity=0.64,
                 ),
-                use_container_width=True,
+                width="stretch",
             )
             resid = pd.concat(
                 [
@@ -33733,7 +33744,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     color_discrete_map=split_colors,
                     title="Distribution des résidus (train/test)",
                 ),
-                use_container_width=True,
+                width="stretch",
             )
             if model_name == "Régression linéaire":
                 st.markdown("##### Diagnostics de régression linéaire")
@@ -33755,14 +33766,14 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                             opacity=0.55,
                             title="Residuals vs Fitted (train/test)",
                         ).update_layout(template="plotly_white"),
-                        use_container_width=True,
+                        width="stretch",
                     )
                     qq_fig = _qq_plot_figure(
                         pd.Series(lin_resid_train_df["Résidu"]) if len(lin_resid_train_df) > 0 else pd.Series(dtype=float),
                         "QQ plot des résidus (train)",
                     )
                     qq_fig.update_layout(template="plotly_white")
-                    d2.plotly_chart(qq_fig, use_container_width=True)
+                    d2.plotly_chart(qq_fig, width="stretch")
 
                 if lin_leverage_df is not None and not lin_leverage_df.empty:
                     lev_fig = px.scatter(
@@ -33777,7 +33788,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     )
                     lev_fig.add_hline(y=0.0, line_dash="dot", line_color="#666")
                     lev_fig.update_layout(template="plotly_white")
-                    st.plotly_chart(lev_fig, use_container_width=True)
+                    st.plotly_chart(lev_fig, width="stretch")
 
                 if lin_coef_df is not None and not lin_coef_df.empty:
                     top_coef_df = (
@@ -33796,7 +33807,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         title="Coefficients (top |coef|)",
                     )
                     coef_fig.update_layout(template="plotly_white")
-                    st.plotly_chart(coef_fig, use_container_width=True)
+                    st.plotly_chart(coef_fig, width="stretch")
 
                     coef_cols = ["Feature", "Coefficient", "p-value"] if "p-value" in lin_coef_df.columns else ["Feature", "Coefficient"]
                     coef_show = lin_coef_df[coef_cols].copy()
@@ -33825,7 +33836,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     )
                     path_fig.update_xaxes(type="log", title="alpha (échelle log)")
                     path_fig.update_layout(template="plotly_white")
-                    st.plotly_chart(path_fig, use_container_width=True)
+                    st.plotly_chart(path_fig, width="stretch")
 
                 if lin_perf_alpha_df is not None and not lin_perf_alpha_df.empty:
                     pa1, pa2 = st.columns(2)
@@ -33850,7 +33861,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     )
                     rmse_fig.update_xaxes(type="log", title="alpha (échelle log)")
                     rmse_fig.update_layout(title="Performance vs alpha (RMSE)", template="plotly_white")
-                    pa1.plotly_chart(rmse_fig, use_container_width=True)
+                    pa1.plotly_chart(rmse_fig, width="stretch")
 
                     r2_sparse_fig = go.Figure()
                     r2_sparse_fig.add_trace(
@@ -33879,7 +33890,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         yaxis2=dict(title="Sparsité", overlaying="y", side="right"),
                     )
                     r2_sparse_fig.update_xaxes(type="log", title="alpha (échelle log)")
-                    pa2.plotly_chart(r2_sparse_fig, use_container_width=True)
+                    pa2.plotly_chart(r2_sparse_fig, width="stretch")
 
                 st.caption(
                     "Ridge/Lasso/Elastic Net: le tuning CV porte principalement sur alpha "
@@ -33926,7 +33937,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         tube_fig.add_vline(x=-eps_val, line_dash="dot", line_color="#6b7280")
                         tube_fig.add_vline(x=eps_val, line_dash="dot", line_color="#6b7280")
                     tube_fig.update_layout(template="plotly_white")
-                    svr_r1.plotly_chart(tube_fig, use_container_width=True)
+                    svr_r1.plotly_chart(tube_fig, width="stretch")
 
                     abs_fig = px.box(
                         svr_residual_df,
@@ -33938,7 +33949,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         title="Erreurs absolues dans / hors tube epsilon",
                     )
                     abs_fig.update_layout(template="plotly_white")
-                    svr_r2.plotly_chart(abs_fig, use_container_width=True)
+                    svr_r2.plotly_chart(abs_fig, width="stretch")
 
                     obs_svr_fig = px.scatter(
                         svr_residual_df,
@@ -33963,7 +33974,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                             )
                         )
                     obs_svr_fig.update_layout(template="plotly_white")
-                    st.plotly_chart(obs_svr_fig, use_container_width=True)
+                    st.plotly_chart(obs_svr_fig, width="stretch")
 
                     if svr_residual_summary_df is not None and not svr_residual_summary_df.empty:
                         _render_collapsible_dataframe(
@@ -33990,7 +34001,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     )
                     proj_svr_fig.update_traces(marker=dict(size=7), selector=dict(mode="markers"))
                     proj_svr_fig.update_layout(template="plotly_white", legend=dict(orientation="v", x=1.02, y=1.0))
-                    st.plotly_chart(proj_svr_fig, use_container_width=True)
+                    st.plotly_chart(proj_svr_fig, width="stretch")
 
                 if svr_linear_coef_df is not None and not svr_linear_coef_df.empty:
                     top_svr_coef = svr_linear_coef_df.head(25).sort_values("Coefficient")
@@ -34004,7 +34015,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         title="SVR linéaire - coefficients (top features)",
                     )
                     coef_svr_fig.update_layout(template="plotly_white")
-                    st.plotly_chart(coef_svr_fig, use_container_width=True)
+                    st.plotly_chart(coef_svr_fig, width="stretch")
                     _render_collapsible_dataframe(
                         "Détail des coefficients SVR linéaire",
                         svr_linear_coef_df.head(120),
@@ -34026,7 +34037,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         aspect="auto",
                     )
                     heat_fig.update_layout(template="plotly_white")
-                    st.plotly_chart(heat_fig, use_container_width=True)
+                    st.plotly_chart(heat_fig, width="stretch")
                     best_cell = svr_tuning_heatmap_df.loc[svr_tuning_heatmap_df["RMSE CV"].idxmin()]
                     st.caption(
                         f"Meilleur couple CV (heatmap): C={best_cell['C']:.4g}, "
@@ -34055,7 +34066,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     )
                     c_fig.update_xaxes(type="log")
                     c_fig.update_layout(template="plotly_white")
-                    tune_c.plotly_chart(c_fig, use_container_width=True)
+                    tune_c.plotly_chart(c_fig, width="stretch")
                     eps_fig = px.line(
                         best_by_eps,
                         x="epsilon",
@@ -34066,7 +34077,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     )
                     eps_fig.update_xaxes(type="log")
                     eps_fig.update_layout(template="plotly_white")
-                    tune_eps.plotly_chart(eps_fig, use_container_width=True)
+                    tune_eps.plotly_chart(eps_fig, width="stretch")
                     _render_collapsible_dataframe(
                         "Détail du tuning SVR",
                         svr_tuning_heatmap_df.sort_values("RMSE CV"),
@@ -34125,7 +34136,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     )
                     disp_fig.add_hline(y=0.0, line_dash="dot", line_color="#6b7280")
                     disp_fig.update_layout(template="plotly_white")
-                    g1.plotly_chart(disp_fig, use_container_width=True)
+                    g1.plotly_chart(disp_fig, width="stretch")
 
                     resid_hist = px.histogram(
                         glm_dispersion_df,
@@ -34137,7 +34148,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         title="Residual plots (train/test)",
                     )
                     resid_hist.update_layout(template="plotly_white")
-                    g2.plotly_chart(resid_hist, use_container_width=True)
+                    g2.plotly_chart(resid_hist, width="stretch")
 
                     if glm_calibration_df is not None and not glm_calibration_df.empty:
                         c1, c2 = st.columns(2)
@@ -34175,7 +34186,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                             yaxis_title="Observé moyen",
                             template="plotly_white",
                         )
-                        c1.plotly_chart(cal_fig, use_container_width=True)
+                        c1.plotly_chart(cal_fig, width="stretch")
 
                         pearson_bin_fig = px.bar(
                             glm_calibration_df,
@@ -34189,7 +34200,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         )
                         pearson_bin_fig.add_hline(y=0.0, line_dash="dot", line_color="#6b7280")
                         pearson_bin_fig.update_layout(template="plotly_white")
-                        c2.plotly_chart(pearson_bin_fig, use_container_width=True)
+                        c2.plotly_chart(pearson_bin_fig, width="stretch")
 
                     if glm_residual_summary_df is not None and not glm_residual_summary_df.empty:
                         _render_collapsible_dataframe(
@@ -34210,7 +34221,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         title="Coefficients GLM (top |coef|)",
                     )
                     coef_glm_fig.update_layout(template="plotly_white")
-                    st.plotly_chart(coef_glm_fig, use_container_width=True)
+                    st.plotly_chart(coef_glm_fig, width="stretch")
                     _render_collapsible_dataframe(
                         "Détail des coefficients GLM",
                         glm_coef_df.head(160),
@@ -34268,7 +34279,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         yaxis_title=target,
                         template="plotly_white",
                     )
-                    st.plotly_chart(q_fig, use_container_width=True)
+                    st.plotly_chart(q_fig, width="stretch")
 
                     q_extra1, q_extra2 = st.columns(2)
                     q_extra1.plotly_chart(
@@ -34279,7 +34290,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                             title="Distribution de largeur des bandes quantiles",
                             color_discrete_sequence=["#0a9396"],
                         ).update_layout(template="plotly_white"),
-                        use_container_width=True,
+                        width="stretch",
                     )
                     q_tmp = qb.copy()
                     q_tmp["Couvert"] = np.where((q_tmp["Observed"] >= q_tmp["Q_low"]) & (q_tmp["Observed"] <= q_tmp["Q_high"]), "Oui", "Non")
@@ -34291,7 +34302,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                             title="Couverture empirique de la bande",
                             color_discrete_map={"Oui": "#2563eb", "Non": "#ef4444"},
                         ).update_layout(template="plotly_white"),
-                        use_container_width=True,
+                        width="stretch",
                     )
                     _render_collapsible_dataframe(
                         "Détail des bandes quantiles",
@@ -34339,7 +34350,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                             color_continuous_scale="Tealgrn",
                             title="Feature importance (Decision Tree Regressor)",
                         ).update_layout(template="plotly_white"),
-                        use_container_width=True,
+                        width="stretch",
                     )
                 if reg_tree_rules:
                     with st.expander("Arbre (règles, profondeur limitée)", expanded=False):
@@ -34376,7 +34387,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                             color_continuous_scale="Tealgrn",
                             title="Feature importance (RF Regressor)",
                         ).update_layout(template="plotly_white"),
-                        use_container_width=True,
+                        width="stretch",
                     )
                     if reg_rf_perm_importance_df is not None and not reg_rf_perm_importance_df.empty:
                         c2.plotly_chart(
@@ -34390,7 +34401,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                                 color_continuous_scale="RdBu",
                                 title="Permutation importance (RF Regressor)",
                             ).update_layout(template="plotly_white"),
-                            use_container_width=True,
+                            width="stretch",
                         )
                     else:
                         c2.info(
@@ -34409,7 +34420,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                             facet_col_wrap=2,
                             title="PDP (Partial Dependence, top variables quantitatives)",
                         ).update_layout(template="plotly_white"),
-                        use_container_width=True,
+                        width="stretch",
                     )
 
                 if reg_rf_shap_summary_df is not None and not reg_rf_shap_summary_df.empty:
@@ -34424,7 +34435,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                             color_continuous_scale="Viridis",
                             title="Importance explicative (RF Regressor)",
                         ).update_layout(template="plotly_white"),
-                        use_container_width=True,
+                        width="stretch",
                     )
             if model_name == "Méthodes d'ensemble" and (ensemble_reg_type or st.session_state.get(f"{prefix}_ens_type")) == "KNN Regressor":
                 st.markdown("##### Analyse k-NN Regressor")
@@ -34472,7 +34483,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         yaxis_title="RMSE",
                         template="plotly_white",
                     )
-                    c1.plotly_chart(rmse_fig, use_container_width=True)
+                    c1.plotly_chart(rmse_fig, width="stretch")
 
                     mae_fig = go.Figure()
                     mae_fig.add_trace(
@@ -34499,8 +34510,8 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         yaxis_title="MAE",
                         template="plotly_white",
                     )
-                    c2.plotly_chart(mae_fig, use_container_width=True)
-                    st.dataframe(knnr_curve_df, use_container_width=True, hide_index=True, height=min(max(120, 36 * (len(knnr_curve_df) + 1)), 420))
+                    c2.plotly_chart(mae_fig, width="stretch")
+                    st.dataframe(knnr_curve_df, width="stretch", hide_index=True, height=min(max(120, 36 * (len(knnr_curve_df) + 1)), 420))
 
                 if knnr_smooth_df is not None and not knnr_smooth_df.empty:
                     smooth_fig = go.Figure()
@@ -34520,7 +34531,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         yaxis_title="Prédit (moyenne locale)",
                         template="plotly_white",
                     )
-                    st.plotly_chart(smooth_fig, use_container_width=True)
+                    st.plotly_chart(smooth_fig, width="stretch")
 
             if model_name == "Méthodes d'ensemble" and (ensemble_reg_type or st.session_state.get(f"{prefix}_ens_type")) == "AdaBoost Regressor":
                 st.markdown("##### Analyse AdaBoost Regressor")
@@ -34552,7 +34563,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         yaxis_title="RMSE",
                         template="plotly_white",
                     )
-                    a1.plotly_chart(rmse_fig, use_container_width=True)
+                    a1.plotly_chart(rmse_fig, width="stretch")
 
                     score_fig = go.Figure()
                     score_fig.add_trace(
@@ -34570,7 +34581,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         yaxis_title="R²",
                         template="plotly_white",
                     )
-                    a2.plotly_chart(score_fig, use_container_width=True)
+                    a2.plotly_chart(score_fig, width="stretch")
                     _render_collapsible_dataframe(
                         "Détail des statistiques selon le nombre d'estimateurs",
                         reg_ab_stage_curve_df,
@@ -34587,7 +34598,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                             color_continuous_scale="Tealgrn",
                             title="Feature importance (AdaBoost Regressor)",
                         ).update_layout(template="plotly_white"),
-                        use_container_width=True,
+                        width="stretch",
                     )
 
             if model_name == "Méthodes d'ensemble" and (ensemble_reg_type or st.session_state.get(f"{prefix}_ens_type")) in {
@@ -34628,7 +34639,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         yaxis_title="RMSE",
                         template="plotly_white",
                     )
-                    b1.plotly_chart(boost_rmse, use_container_width=True)
+                    b1.plotly_chart(boost_rmse, width="stretch")
 
                     boost_perf = go.Figure()
                     boost_perf.add_trace(
@@ -34657,7 +34668,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         yaxis2=dict(title="R²", overlaying="y", side="right"),
                         template="plotly_white",
                     )
-                    b2.plotly_chart(boost_perf, use_container_width=True)
+                    b2.plotly_chart(boost_perf, width="stretch")
                     _render_collapsible_dataframe(
                         "Détail des statistiques selon le nombre d'estimateurs",
                         reg_boost_stage_curve_df,
@@ -34690,7 +34701,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         yaxis_title="RMSE",
                         template="plotly_white",
                     )
-                    st.plotly_chart(lc_fig, use_container_width=True)
+                    st.plotly_chart(lc_fig, width="stretch")
 
                 if reg_boost_feat_importance_df is not None and not reg_boost_feat_importance_df.empty:
                     st.plotly_chart(
@@ -34703,7 +34714,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                             color_continuous_scale="Tealgrn",
                             title="Feature importance (Boosting Regressor)",
                         ).update_layout(template="plotly_white"),
-                        use_container_width=True,
+                        width="stretch",
                     )
 
                 if reg_boost_shap_summary_df is not None and not reg_boost_shap_summary_df.empty:
@@ -34718,7 +34729,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                             color_continuous_scale="Viridis",
                             title="Importance explicative (SHAP ou fallback)",
                         ).update_layout(template="plotly_white"),
-                        use_container_width=True,
+                        width="stretch",
                     )
                 else:
                     st.caption(
@@ -34783,7 +34794,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     )
                     resid_fit_fig.add_hline(y=0.0, line_dash="dot", line_color="#6b7280")
                     resid_fit_fig.update_layout(template="plotly_white")
-                    nr1.plotly_chart(resid_fit_fig, use_container_width=True)
+                    nr1.plotly_chart(resid_fit_fig, width="stretch")
 
                     resid_abs_fig = px.histogram(
                         reg_nonlin_residual_df,
@@ -34796,7 +34807,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         title="Distribution des erreurs absolues",
                     )
                     resid_abs_fig.update_layout(template="plotly_white")
-                    nr2.plotly_chart(resid_abs_fig, use_container_width=True)
+                    nr2.plotly_chart(resid_abs_fig, width="stretch")
 
                 if reg_nonlin_residual_bins_df is not None and not reg_nonlin_residual_bins_df.empty:
                     nb1, nb2 = st.columns(2)
@@ -34836,7 +34847,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         yaxis_title="Observé moyen",
                         template="plotly_white",
                     )
-                    nb1.plotly_chart(cal_nonlin_fig, use_container_width=True)
+                    nb1.plotly_chart(cal_nonlin_fig, width="stretch")
 
                     bin_err_fig = px.bar(
                         reg_nonlin_residual_bins_df,
@@ -34849,7 +34860,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         hover_data={"n": True, "Résidu moyen": ":.3f"},
                     )
                     bin_err_fig.update_layout(template="plotly_white")
-                    nb2.plotly_chart(bin_err_fig, use_container_width=True)
+                    nb2.plotly_chart(bin_err_fig, width="stretch")
 
                 numeric_curve_candidates = [
                     c
@@ -34971,7 +34982,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                                 template="plotly_white",
                                 legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0.0),
                             )
-                            st.plotly_chart(curve_fig, use_container_width=True)
+                            st.plotly_chart(curve_fig, width="stretch")
 
                             importance_order: list[str] = []
                             if reg_nonlin_source_importance_df is not None and not reg_nonlin_source_importance_df.empty:
@@ -35024,7 +35035,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                                         facet_col_wrap=2,
                                         title="Partial effects (top variables quantitatives)",
                                     ).update_layout(template="plotly_white"),
-                                    use_container_width=True,
+                                    width="stretch",
                                 )
 
                 if reg_nonlin_source_importance_df is not None and not reg_nonlin_source_importance_df.empty:
@@ -35039,7 +35050,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                             color_continuous_scale="Tealgrn",
                             title="Importance des termes (source)",
                         ).update_layout(template="plotly_white"),
-                        use_container_width=True,
+                        width="stretch",
                     )
                 if reg_nonlin_term_df is not None and not reg_nonlin_term_df.empty:
                     coef_dist_col, coef_top_col = st.columns(2)
@@ -35051,7 +35062,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                             title="Distribution des coefficients transformés",
                             color_discrete_sequence=["#0a9396"],
                         ).update_layout(template="plotly_white"),
-                        use_container_width=True,
+                        width="stretch",
                     )
                     top_terms = reg_nonlin_term_df.head(25).sort_values("Coefficient")
                     coef_top_col.plotly_chart(
@@ -35064,7 +35075,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                             color_continuous_scale="RdBu",
                             title="Top termes transformés (|coefficient|)",
                         ).update_layout(template="plotly_white", yaxis_title=""),
-                        use_container_width=True,
+                        width="stretch",
                     )
                     _render_collapsible_dataframe(
                         "Termes transformés (top |coefficient|)",
@@ -35197,7 +35208,7 @@ def _render_unsupervised_ml(data: dict[str, pd.DataFrame]) -> None:
             sample_n = st.slider("Nombre max de lignes", min_value=800, max_value=40000, value=12000, step=400, key="ml_unsup_sample")
         with c3:
             random_state = st.number_input("Random state (clustering)", min_value=0, max_value=9999, value=42, step=1, key="ml_unsup_rs")
-        run_cluster = st.button("Lancer le clustering", key="ml_unsup_train", use_container_width=True)
+        run_cluster = st.button("Lancer le clustering", key="ml_unsup_train", width="stretch")
 
     if not run_cluster:
         st.info("Configurez puis lancez le clustering.")
@@ -35569,7 +35580,7 @@ def _render_unsupervised_ml(data: dict[str, pd.DataFrame]) -> None:
     pca_fig.update_layout(template="plotly_white")
     st.plotly_chart(
         pca_fig,
-        use_container_width=True,
+        width="stretch",
     )
 
     profile_df = work.copy()
@@ -35598,7 +35609,7 @@ def _render_unsupervised_ml(data: dict[str, pd.DataFrame]) -> None:
     )
     size_fig.update_traces(textposition="outside", cliponaxis=False)
     size_fig.update_layout(template="plotly_white", showlegend=False, yaxis_title="Observations")
-    v1.plotly_chart(size_fig, use_container_width=True)
+    v1.plotly_chart(size_fig, width="stretch")
 
     profile_heat = cluster_profile.set_index("cluster")[features].copy()
     profile_heat = profile_heat.apply(pd.to_numeric, errors="coerce")
@@ -35615,7 +35626,7 @@ def _render_unsupervised_ml(data: dict[str, pd.DataFrame]) -> None:
             labels={"x": "Variable", "y": "Cluster", "color": "Score z"},
         )
         heat_fig.update_layout(template="plotly_white", xaxis_tickangle=-30)
-        v2.plotly_chart(heat_fig, use_container_width=True)
+        v2.plotly_chart(heat_fig, width="stretch")
 
     if confidence is not None:
         conf_df = pd.DataFrame({"Cluster": labels.astype(str), "Confiance": confidence})
@@ -35629,7 +35640,7 @@ def _render_unsupervised_ml(data: dict[str, pd.DataFrame]) -> None:
             color_discrete_sequence=px.colors.qualitative.Set2,
         )
         conf_fig.update_layout(template="plotly_white", showlegend=False)
-        st.plotly_chart(conf_fig, use_container_width=True)
+        st.plotly_chart(conf_fig, width="stretch")
 
     if memberships_matrix is not None:
         memb_df = pd.DataFrame(memberships_matrix, columns=[f"Appartenance cluster {i}" for i in range(memberships_matrix.shape[1])])
@@ -35643,7 +35654,7 @@ def _render_unsupervised_ml(data: dict[str, pd.DataFrame]) -> None:
             labels={"x": "Appartenance", "y": "Cluster assigné", "color": "Degré"},
         )
         fuzzy_fig.update_layout(template="plotly_white", xaxis_tickangle=-25)
-        st.plotly_chart(fuzzy_fig, use_container_width=True)
+        st.plotly_chart(fuzzy_fig, width="stretch")
 
     if nb_model_artifact is not None and hasattr(nb_model_artifact, "theta_"):
         nb_theta = pd.DataFrame(
@@ -35659,7 +35670,7 @@ def _render_unsupervised_ml(data: dict[str, pd.DataFrame]) -> None:
             labels={"x": "Variable", "y": "Pseudo-classe", "color": "Moyenne"},
         )
         nb_fig.update_layout(template="plotly_white", xaxis_tickangle=-30)
-        st.plotly_chart(nb_fig, use_container_width=True)
+        st.plotly_chart(nb_fig, width="stretch")
 
     if hmm_transition_df is not None and not hmm_transition_df.empty:
         hmm_fig = px.imshow(
@@ -35671,7 +35682,7 @@ def _render_unsupervised_ml(data: dict[str, pd.DataFrame]) -> None:
             labels={"x": "État suivant", "y": "État courant", "color": "Probabilité"},
         )
         hmm_fig.update_layout(template="plotly_white")
-        st.plotly_chart(hmm_fig, use_container_width=True)
+        st.plotly_chart(hmm_fig, width="stretch")
 
     if mrf_neighbor_df is not None and not mrf_neighbor_df.empty:
         st.markdown("##### Analyse du champ aléatoire de Markov")
@@ -35703,7 +35714,7 @@ def _render_unsupervised_ml(data: dict[str, pd.DataFrame]) -> None:
         )
         mrf_fig.update_traces(texttemplate="%{text:.2f}", textposition="outside", cliponaxis=False)
         mrf_fig.update_layout(template="plotly_white", showlegend=False, yaxis_tickformat=".0%")
-        st.plotly_chart(mrf_fig, use_container_width=True)
+        st.plotly_chart(mrf_fig, width="stretch")
         mrf_cols = st.columns(2)
         if mrf_energy_df is not None and not mrf_energy_df.empty:
             energy_fig = go.Figure()
@@ -35733,7 +35744,7 @@ def _render_unsupervised_ml(data: dict[str, pd.DataFrame]) -> None:
                 yaxis2=dict(title="Cohérence", overlaying="y", side="right", tickformat=".0%"),
                 template="plotly_white",
             )
-            mrf_cols[0].plotly_chart(energy_fig, use_container_width=True)
+            mrf_cols[0].plotly_chart(energy_fig, width="stretch")
         if mrf_cluster_graph_df is not None and not mrf_cluster_graph_df.empty:
             mrf_matrix = mrf_cluster_graph_df.pivot_table(
                 index="Cluster",
@@ -35751,7 +35762,7 @@ def _render_unsupervised_ml(data: dict[str, pd.DataFrame]) -> None:
                 labels={"x": "Cluster voisin", "y": "Cluster", "color": "Part arêtes"},
             )
             graph_fig.update_layout(template="plotly_white")
-            mrf_cols[1].plotly_chart(graph_fig, use_container_width=True)
+            mrf_cols[1].plotly_chart(graph_fig, width="stretch")
         if mrf_node_df is not None and not mrf_node_df.empty:
             mrf_dist_fig = px.box(
                 mrf_node_df,
@@ -35763,7 +35774,7 @@ def _render_unsupervised_ml(data: dict[str, pd.DataFrame]) -> None:
                 color_discrete_map={"Oui": "#ef4444", "Non": "#2563eb"},
             )
             mrf_dist_fig.update_layout(template="plotly_white", yaxis_tickformat=".0%")
-            st.plotly_chart(mrf_dist_fig, use_container_width=True)
+            st.plotly_chart(mrf_dist_fig, width="stretch")
         _render_collapsible_dataframe("Détail énergie MRF", mrf_energy_df if mrf_energy_df is not None else pd.DataFrame(), hide_index=True)
         _render_collapsible_dataframe("Détail voisinage par cluster MRF", mrf_neighbor_df, hide_index=True)
         _render_collapsible_dataframe("Détail arêtes locales MRF", mrf_cluster_graph_df if mrf_cluster_graph_df is not None else pd.DataFrame(), hide_index=True)
@@ -35802,7 +35813,7 @@ def _render_unsupervised_ml(data: dict[str, pd.DataFrame]) -> None:
             color_discrete_sequence=px.colors.qualitative.Set2,
         )
         spectral_fig.update_layout(template="plotly_white", showlegend=False)
-        st.plotly_chart(spectral_fig, use_container_width=True)
+        st.plotly_chart(spectral_fig, width="stretch")
         spec_cols = st.columns(2)
         if spectral_eigen_df is not None and not spectral_eigen_df.empty:
             eig_fig = go.Figure()
@@ -35833,7 +35844,7 @@ def _render_unsupervised_ml(data: dict[str, pd.DataFrame]) -> None:
                 yaxis2=dict(title="Eigengap", overlaying="y", side="right"),
                 template="plotly_white",
             )
-            spec_cols[0].plotly_chart(eig_fig, use_container_width=True)
+            spec_cols[0].plotly_chart(eig_fig, width="stretch")
         if spectral_cluster_graph_df is not None and not spectral_cluster_graph_df.empty:
             spec_matrix = spectral_cluster_graph_df.pivot_table(
                 index="Cluster",
@@ -35851,7 +35862,7 @@ def _render_unsupervised_ml(data: dict[str, pd.DataFrame]) -> None:
                 labels={"x": "Cluster voisin", "y": "Cluster", "color": "Part arêtes"},
             )
             spec_graph_fig.update_layout(template="plotly_white")
-            spec_cols[1].plotly_chart(spec_graph_fig, use_container_width=True)
+            spec_cols[1].plotly_chart(spec_graph_fig, width="stretch")
         if spectral_degree_df is not None and not spectral_degree_df.empty:
             degree_fig = px.bar(
                 spectral_degree_df.sort_values("Cluster"),
@@ -35864,7 +35875,7 @@ def _render_unsupervised_ml(data: dict[str, pd.DataFrame]) -> None:
             )
             degree_fig.update_traces(textposition="outside", cliponaxis=False)
             degree_fig.update_layout(template="plotly_white")
-            st.plotly_chart(degree_fig, use_container_width=True)
+            st.plotly_chart(degree_fig, width="stretch")
         _render_collapsible_dataframe("Détail compacité graphe spectral", spectral_knn_df.head(2000), hide_index=True)
         _render_collapsible_dataframe("Détail degré par cluster spectral", spectral_degree_df if spectral_degree_df is not None else pd.DataFrame(), hide_index=True)
         _render_collapsible_dataframe("Détail eigengap spectral", spectral_eigen_df if spectral_eigen_df is not None else pd.DataFrame(), hide_index=True)
@@ -35995,13 +36006,13 @@ def _render_unsupervised_ml(data: dict[str, pd.DataFrame]) -> None:
                 ),
                 margin=dict(r=185),
             )
-            st.plotly_chart(decomp_fig, use_container_width=True)
+            st.plotly_chart(decomp_fig, width="stretch")
             if component_rows:
                 params_df = pd.DataFrame(component_rows).sort_values("Amplitude (poids)", ascending=False)
                 _render_collapsible_dataframe("Détail des paramètres gaussiens", params_df, hide_index=True)
 
     st.markdown("##### Détail des clusters")
-    st.dataframe(cluster_profile, use_container_width=True, height=min(max(120, 36 * (len(cluster_profile) + 1)), 420))
+    st.dataframe(cluster_profile, width="stretch", height=min(max(120, 36 * (len(cluster_profile) + 1)), 420))
     progress.progress(100, text="Clustering terminé.")
     st.markdown("### Explication")
     st.markdown(
@@ -36108,7 +36119,7 @@ def _render_method_catalog(scope: str, title: str = "Catalogue des méthodes") -
     if catalog.empty:
         return
     with st.expander(title, expanded=False):
-        st.dataframe(catalog, use_container_width=True, hide_index=True, height=_table_height(len(catalog), max_height=430))
+        st.dataframe(catalog, width="stretch", hide_index=True, height=_table_height(len(catalog), max_height=430))
 
 
 def _rl_transition_reward(action: int, ideal_action: int, magnitude: float) -> float:
@@ -36408,7 +36419,7 @@ def _render_reinforcement_ml(data: dict[str, pd.DataFrame]) -> None:
         with p5:
             n_bins = st.slider("Bins état", min_value=2, max_value=10, value=6, step=1, key="ml_rl_bins")
 
-    if not st.button("Lancer l'agent RL", key="ml_rl_train", use_container_width=True):
+    if not st.button("Lancer l'agent RL", key="ml_rl_train", width="stretch"):
         st.info("Configurez les paramètres puis lancez l'agent.")
         return
     progress = st.progress(0, text="Construction de l'environnement RL...")
@@ -36501,7 +36512,7 @@ def _render_reinforcement_ml(data: dict[str, pd.DataFrame]) -> None:
             title=f"Courbe d'apprentissage - {algo}",
             color_discrete_sequence=["#0a9396"],
         ),
-        use_container_width=True,
+        width="stretch",
     )
 
     action_scores = action_matrix if action_matrix.ndim == 2 else np.asarray(action_matrix)
@@ -36576,7 +36587,7 @@ def _render_reinforcement_ml(data: dict[str, pd.DataFrame]) -> None:
     with c1:
         st.plotly_chart(
             px.bar(actions_df, x="Action", y="États dominants", color="Action", title="Politique apprise"),
-            use_container_width=True,
+            width="stretch",
         )
     with c2:
         max_states = min(70, action_scores.shape[0])
@@ -36592,7 +36603,7 @@ def _render_reinforcement_ml(data: dict[str, pd.DataFrame]) -> None:
                 title="Score action par état (échantillon)",
                 color_continuous_scale="Tealgrn",
             ),
-            use_container_width=True,
+            width="stretch",
         )
 
     reward_diag_df = episode_df.copy()
@@ -36640,7 +36651,7 @@ def _render_reinforcement_ml(data: dict[str, pd.DataFrame]) -> None:
         yaxis_title="Reward moyen",
         template="plotly_white",
     )
-    r1.plotly_chart(reward_fig, use_container_width=True)
+    r1.plotly_chart(reward_fig, width="stretch")
     r2.plotly_chart(
         px.box(
             reward_diag_df,
@@ -36651,7 +36662,7 @@ def _render_reinforcement_ml(data: dict[str, pd.DataFrame]) -> None:
             title="Distribution de reward par phase d'apprentissage",
             color_discrete_sequence=px.colors.qualitative.Set2,
         ).update_layout(template="plotly_white", showlegend=False),
-        use_container_width=True,
+        width="stretch",
     )
 
     t1, t2 = st.columns(2)
@@ -36669,7 +36680,7 @@ def _render_reinforcement_ml(data: dict[str, pd.DataFrame]) -> None:
             title="Accord action idéale vs action apprise",
             labels={"x": "Action apprise", "y": "Action idéale", "color": "Part"},
         ).update_layout(template="plotly_white"),
-        use_container_width=True,
+        width="stretch",
     )
     t2.plotly_chart(
         px.scatter(
@@ -36682,7 +36693,7 @@ def _render_reinforcement_ml(data: dict[str, pd.DataFrame]) -> None:
             title="États visités, reward et action dominante",
             color_discrete_sequence=px.colors.qualitative.Set2,
         ).update_layout(template="plotly_white"),
-        use_container_width=True,
+        width="stretch",
     )
 
     p1, p2 = st.columns(2)
@@ -36694,7 +36705,7 @@ def _render_reinforcement_ml(data: dict[str, pd.DataFrame]) -> None:
             title="Distribution de l'entropie de politique",
             color_discrete_sequence=["#0a9396"],
         ).update_layout(template="plotly_white"),
-        use_container_width=True,
+        width="stretch",
     )
     p2.plotly_chart(
         px.histogram(
@@ -36704,7 +36715,7 @@ def _render_reinforcement_ml(data: dict[str, pd.DataFrame]) -> None:
             title="Distribution de la marge entre les deux meilleures actions",
             color_discrete_sequence=["#2563eb"],
         ).update_layout(template="plotly_white"),
-        use_container_width=True,
+        width="stretch",
     )
 
     if algo == "Méthode policy-gradient" or "TRPO" in algo or "PPO" in algo:
@@ -36721,7 +36732,7 @@ def _render_reinforcement_ml(data: dict[str, pd.DataFrame]) -> None:
                 title="Distribution des probabilités d'action",
                 color_discrete_sequence=px.colors.qualitative.Set2,
             ).update_layout(template="plotly_white", showlegend=False),
-            use_container_width=True,
+            width="stretch",
         )
     else:
         q_df = pd.DataFrame(action_scores, columns=["Diminuer", "Maintenir", "Augmenter"])
@@ -36737,7 +36748,7 @@ def _render_reinforcement_ml(data: dict[str, pd.DataFrame]) -> None:
                 title="Distribution des valeurs action",
                 color_discrete_sequence=px.colors.qualitative.Set2,
             ).update_layout(template="plotly_white", showlegend=False),
-            use_container_width=True,
+            width="stretch",
         )
 
     _render_collapsible_dataframe("Détail des épisodes RL", reward_diag_df, hide_index=True)
@@ -37573,7 +37584,7 @@ def render_statistical_tests(data: dict[str, pd.DataFrame]) -> None:
                                 )
                             )
                             fig.update_layout(template="plotly_white")
-                            st.plotly_chart(fig, use_container_width=True)
+                            st.plotly_chart(fig, width="stretch")
                             chart_drawn = True
 
                     elif compare_kind == "2 groupes":
@@ -37733,7 +37744,7 @@ def render_statistical_tests(data: dict[str, pd.DataFrame]) -> None:
                                             yaxis_title=y_var,
                                             show_points=show_box_points,
                                         )
-                                        st.plotly_chart(fig, use_container_width=True)
+                                        st.plotly_chart(fig, width="stretch")
                                         chart_drawn = True
 
                     elif compare_kind == "> 2 groupes (1 facteur)":
@@ -37877,7 +37888,7 @@ def render_statistical_tests(data: dict[str, pd.DataFrame]) -> None:
                                             show_points=_stats_box_points_toggle("ml_stat_adhoc_multi_box_show_points"),
                                         )
                                         fig.update_layout(xaxis_tickangle=-20)
-                                        st.plotly_chart(fig, use_container_width=True)
+                                        st.plotly_chart(fig, width="stretch")
                                         chart_drawn = True
 
                     else:
@@ -37904,7 +37915,7 @@ def render_statistical_tests(data: dict[str, pd.DataFrame]) -> None:
                                 anova_show = anova_tbl.reset_index().rename(columns={"index": "Effet"})
                                 st.dataframe(
                                     anova_show,
-                                    use_container_width=True,
+                                    width="stretch",
                                     height=_test_results_table_height(len(anova_show), max_height=360),
                                 )
                                 p_inter = float(anova_tbl.loc["C(A):C(B)", "PR(>F)"]) if "C(A):C(B)" in anova_tbl.index else np.nan
@@ -37934,7 +37945,7 @@ def render_statistical_tests(data: dict[str, pd.DataFrame]) -> None:
                                     title="Interaction plot (moyennes par combinaison de facteurs)",
                                 )
                                 fig.update_layout(template="plotly_white", xaxis_title=fac_a, yaxis_title=f"Moyenne {y_var}")
-                                st.plotly_chart(fig, use_container_width=True)
+                                st.plotly_chart(fig, width="stretch")
                                 chart_drawn = True
 
             elif objective == "Association entre deux variables":
@@ -38032,7 +38043,7 @@ def render_statistical_tests(data: dict[str, pd.DataFrame]) -> None:
                             if getattr(trace, "mode", None) == "lines":
                                 trace.update(line=dict(color="#dc2626", width=3), name="Droite de régression (OLS)")
                         fig.update_layout(template="plotly_white")
-                        st.plotly_chart(fig, use_container_width=True)
+                        st.plotly_chart(fig, width="stretch")
                         chart_drawn = True
 
             else:
@@ -38100,11 +38111,11 @@ def render_statistical_tests(data: dict[str, pd.DataFrame]) -> None:
                             f1, f2 = st.columns(2)
                             f1.plotly_chart(
                                 px.bar(viz_df, x="Modalité", y=["Observé", "Attendu"], barmode="group", title="Observé vs attendu"),
-                                use_container_width=True,
+                                width="stretch",
                             )
                             f2.plotly_chart(
                                 px.pie(viz_df, names="Modalité", values="Observé", title="Répartition observée"),
-                                use_container_width=True,
+                                width="stretch",
                             )
                             chart_drawn = True
                     else:
@@ -38180,7 +38191,7 @@ def render_statistical_tests(data: dict[str, pd.DataFrame]) -> None:
                                 )
                                 _add_heatmap_labels(res_fig, residuals, fmt=".2f", threshold_mode="abs")
                                 res_fig.update_layout(template="plotly_white", height=visual_height)
-                                c_res.plotly_chart(res_fig, use_container_width=True)
+                                c_res.plotly_chart(res_fig, width="stretch")
                                 ct_values = ct.to_numpy(dtype=float)
                                 ct_fig = px.imshow(
                                     ct_values,
@@ -38191,7 +38202,7 @@ def render_statistical_tests(data: dict[str, pd.DataFrame]) -> None:
                                 )
                                 _add_heatmap_labels(ct_fig, ct_values, fmt=".0f", threshold_mode="positive")
                                 ct_fig.update_layout(template="plotly_white", height=visual_height)
-                                c_table.plotly_chart(ct_fig, use_container_width=True)
+                                c_table.plotly_chart(ct_fig, width="stretch")
                                 chart_drawn = True
 
             if result_rows:
@@ -38213,7 +38224,7 @@ def render_statistical_tests(data: dict[str, pd.DataFrame]) -> None:
                     lambda v: "" if pd.isna(v) else f"{float(v):.4f}"
                 )
                 show["p-value"] = pd.to_numeric(show["p-value"], errors="coerce").map(lambda v: _format_p_stats(v, alpha))
-                st.dataframe(show, use_container_width=True, height=_test_results_table_height(len(show), max_height=560))
+                st.dataframe(show, width="stretch", height=_test_results_table_height(len(show), max_height=560))
                 if adhoc_pairwise_df is not None and not adhoc_pairwise_df.empty:
                     st.markdown("##### Comparaisons pairwise (Kruskal-Wallis)")
                     adhoc_show = adhoc_pairwise_df.copy()
@@ -38224,7 +38235,7 @@ def render_statistical_tests(data: dict[str, pd.DataFrame]) -> None:
                     adhoc_show = _format_significant_columns(adhoc_show)
                     st.dataframe(
                         adhoc_show,
-                        use_container_width=True,
+                        width="stretch",
                         height=_test_results_table_height(len(adhoc_show), max_height=480),
                     )
             elif not chart_drawn:
@@ -38408,7 +38419,7 @@ Le mode **Manuel** vous laisse forcer le test parmi ceux compatibles avec la str
                         means = tmp.groupby(g_var, as_index=False)[y_var].mean().sort_values(y_var, ascending=False)
                         fig = px.bar(means, x=g_var, y=y_var, title=f"Moyennes par groupe ({g_var})")
                         fig.update_layout(template="plotly_white", xaxis_tickangle=-20)
-                        st.plotly_chart(fig, use_container_width=True)
+                        st.plotly_chart(fig, width="stretch")
 
                 elif context == "Kruskal-Wallis":
                     try:
@@ -38472,7 +38483,7 @@ Le mode **Manuel** vous laisse forcer le test parmi ceux compatibles avec la str
                             show_points=show_box_points,
                         )
                         fig.update_layout(xaxis_tickangle=-20)
-                        st.plotly_chart(fig, use_container_width=True)
+                        st.plotly_chart(fig, width="stretch")
 
                 else:
                     if not HAS_STATSMODELS or sm is None:
@@ -38530,7 +38541,7 @@ Le mode **Manuel** vous laisse forcer le test parmi ceux compatibles avec la str
                                 pairwise_df = pd.DataFrame()
                             else:
                                 show = anova_tbl.reset_index().rename(columns={"index": "Effet"})
-                                st.dataframe(show, use_container_width=True, height=_test_results_table_height(len(show), max_height=340))
+                                st.dataframe(show, width="stretch", height=_test_results_table_height(len(show), max_height=340))
                                 p_inter = float(anova_tbl.loc["C(A):C(B)", "PR(>F)"]) if "C(A):C(B)" in anova_tbl.index else np.nan
                                 rows.append(
                                     {
@@ -38614,7 +38625,7 @@ Le mode **Manuel** vous laisse forcer le test parmi ceux compatibles avec la str
                                     xaxis_title=fac_a,
                                     legend_title=fac_b,
                                 )
-                                st.plotly_chart(fig, use_container_width=True)
+                                st.plotly_chart(fig, width="stretch")
 
                 if rows:
                     global_df = pd.DataFrame(rows)
@@ -38624,7 +38635,7 @@ Le mode **Manuel** vous laisse forcer le test parmi ceux compatibles avec la str
                     )
                     global_show["p-value"] = pd.to_numeric(global_show["p-value"], errors="coerce").map(lambda v: _format_p_stats(v, alpha))
                     st.markdown("##### Résultat du test global")
-                    st.dataframe(global_show, use_container_width=True, height=_test_results_table_height(len(global_show), max_height=240))
+                    st.dataframe(global_show, width="stretch", height=_test_results_table_height(len(global_show), max_height=240))
 
                 if pairwise_df is not None and not pairwise_df.empty:
                     st.markdown("##### Comparaisons multiples")
@@ -38634,7 +38645,7 @@ Le mode **Manuel** vous laisse forcer le test parmi ceux compatibles avec la str
                     if "p-brute" in show_pw.columns:
                         show_pw["p-brute"] = pd.to_numeric(show_pw["p-brute"], errors="coerce").map(lambda v: _format_p_stats(v, alpha))
                     show_pw = _format_significant_columns(show_pw)
-                    st.dataframe(show_pw, use_container_width=True, height=_test_results_table_height(len(show_pw), max_height=620))
+                    st.dataframe(show_pw, width="stretch", height=_test_results_table_height(len(show_pw), max_height=620))
 
                     if {"Groupe 1", "Groupe 2", "Différence moyenne"}.issubset(pairwise_df.columns):
                         sig_col = "Significatif" if "Significatif" in pairwise_df.columns else None
@@ -38677,7 +38688,7 @@ Le mode **Manuel** vous laisse forcer le test parmi ceux compatibles avec la str
                                 hovertemplate="Ligne: %{y}<br>Colonne: %{x}<br>Différence moyenne: %{z:.4f}<br>p-value: %{customdata:.4g}<extra></extra>",
                             )
                             hfig.update_layout(template="plotly_white")
-                            st.plotly_chart(hfig, use_container_width=True)
+                            st.plotly_chart(hfig, width="stretch")
                         else:
                             st.info("Aucune paire significative à afficher sur la carte.")
 
@@ -39899,7 +39910,7 @@ def _render_dl_network_diagram(
         context=context,
         executable_layers=executable_layers,
     )
-    container.plotly_chart(fig, use_container_width=True, key=key)
+    container.plotly_chart(fig, width="stretch", key=key)
 
 
 def _dl_architecture_summary_df(
@@ -39961,7 +39972,7 @@ def _render_dl_architecture_insights(
         compact_values=True,
     )
     c1, c2 = info_box.columns([1.15, 1.0])
-    c1.dataframe(summary, use_container_width=True, hide_index=True, height=_table_height(len(summary), max_height=300))
+    c1.dataframe(summary, width="stretch", hide_index=True, height=_table_height(len(summary), max_height=300))
     if stack_df is not None and not stack_df.empty and "Famille" in stack_df.columns:
         fam_df = stack_df["Famille"].fillna("Autre").astype(str).value_counts().reset_index()
         fam_df.columns = ["Famille", "Nombre"]
@@ -39974,7 +39985,7 @@ def _render_dl_architecture_insights(
             title="Répartition des familles de couches",
         )
         fig.update_layout(template="plotly_white", showlegend=False, height=max(260, 44 * len(fam_df) + 120))
-        c2.plotly_chart(fig, use_container_width=True, key=f"{key_prefix}_families")
+        c2.plotly_chart(fig, width="stretch", key=f"{key_prefix}_families")
 
 
 def _render_dl_training_diagnostics(
@@ -40021,19 +40032,19 @@ def _render_dl_training_diagnostics(
         loss_df = pd.DataFrame({"Itération": np.arange(1, len(loss_curve) + 1), "Loss": pd.to_numeric(pd.Series(loss_curve), errors="coerce")})
         fig = px.line(loss_df, x="Itération", y="Loss", markers=False, title="Courbe de perte")
         fig.update_layout(template="plotly_white")
-        c1.plotly_chart(fig, use_container_width=True, key=f"{key_prefix}_loss")
+        c1.plotly_chart(fig, width="stretch", key=f"{key_prefix}_loss")
     else:
         c1.caption("Courbe de perte indisponible pour ce solveur ou cet entraînement.")
     if validation_scores is not None and len(validation_scores) > 1:
         val_df = pd.DataFrame({"Itération": np.arange(1, len(validation_scores) + 1), "Score validation": pd.to_numeric(pd.Series(validation_scores), errors="coerce")})
         fig = px.line(val_df, x="Itération", y="Score validation", markers=False, title="Score validation interne")
         fig.update_layout(template="plotly_white")
-        c2.plotly_chart(fig, use_container_width=True, key=f"{key_prefix}_validation")
+        c2.plotly_chart(fig, width="stretch", key=f"{key_prefix}_validation")
     else:
         depth_df = pd.DataFrame({"Couche": [f"H{i + 1}" for i in range(len(layers))], "Neurones": list(layers)})
         fig = px.bar(depth_df, x="Couche", y="Neurones", title="Largeur par couche exécutable", color="Neurones", color_continuous_scale="Tealgrn")
         fig.update_layout(template="plotly_white", showlegend=False)
-        c2.plotly_chart(fig, use_container_width=True, key=f"{key_prefix}_width")
+        c2.plotly_chart(fig, width="stretch", key=f"{key_prefix}_width")
     diag_box.caption(
         "Lecture: une loss qui descend puis stagne suggère une convergence correcte; un écart train/test élevé signale plutôt un réseau trop capacitaire, "
         "un manque de régularisation ou un split peu représentatif."
@@ -40055,7 +40066,7 @@ def _render_dl_reading_guide(container) -> None:
             ],
             columns=["Élément", "Ce que cela représente", "Lecture pratique"],
         )
-        st.dataframe(guide_df, use_container_width=True, hide_index=True, height=_table_height(len(guide_df), max_height=360))
+        st.dataframe(guide_df, width="stretch", hide_index=True, height=_table_height(len(guide_df), max_height=360))
         st.markdown(
             """
 **Lecture rapide**
@@ -40169,7 +40180,7 @@ def _render_dl_universal_layer_builder(
         "Le constructeur accepte les grandes familles de couches modernes. Dans cette version Streamlit légère, "
         "les couches non denses sont documentées et converties en profil dense exécutable lorsque nécessaire."
     )
-    box.dataframe(summary_df, use_container_width=True, hide_index=True, height=_table_height(len(summary_df), max_height=360))
+    box.dataframe(summary_df, width="stretch", hide_index=True, height=_table_height(len(summary_df), max_height=360))
     box.caption(f"Architecture exécutable actuelle: {smoothed}")
     return smoothed, summary_df, "Personnalisée (constructeur universel)", arch_continuity, len(smoothed)
 
@@ -40549,7 +40560,7 @@ def _render_dl_timeseries_modeling(data: dict[str, pd.DataFrame]) -> None:
             )
             st.dataframe(
                 preset_stack,
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
                 height=_table_height(len(preset_stack), max_height=260),
             )
@@ -40620,7 +40631,7 @@ def _render_dl_timeseries_modeling(data: dict[str, pd.DataFrame]) -> None:
             f"Architecture exécutée: {layers}. Moteur léger compatible Streamlit Cloud: fenêtres de lags + MLPRegressor."
         )
 
-    if not st.button("Entraîner le réseau temporel", key="dl_ts_train", use_container_width=True):
+    if not st.button("Entraîner le réseau temporel", key="dl_ts_train", width="stretch"):
         st.info("Configurez la série et l'architecture puis lancez l'entraînement.")
         return
 
@@ -40715,7 +40726,7 @@ def _render_dl_timeseries_modeling(data: dict[str, pd.DataFrame]) -> None:
             {"Modèle": "Naïf", **naive_metrics},
         ]
     ).sort_values("RMSE", ascending=True, na_position="last")
-    metric_box.dataframe(compare_df, use_container_width=True, hide_index=True, height=_table_height(len(compare_df), max_height=220))
+    metric_box.dataframe(compare_df, width="stretch", hide_index=True, height=_table_height(len(compare_df), max_height=220))
     _render_dl_training_diagnostics(
         st,
         estimator=base_mlp,
@@ -40755,15 +40766,15 @@ def _render_dl_timeseries_modeling(data: dict[str, pd.DataFrame]) -> None:
     fig.add_trace(go.Scatter(x=result_df[date_col], y=result_df["Baseline saisonnière"], mode="lines", name="Saisonnier naïf", line=dict(color="#9333ea", dash="dot")))
     fig.update_layout(title="Backtest DL temporel: observé vs prévision")
     _style_temporal_series_figure(fig, xaxis_title="Date", yaxis_title=target_col)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
     g1, g2 = st.columns(2)
     err_fig = px.line(result_df, x="Horizon backtest", y="Erreur absolue", markers=True, title="Erreur absolue par pas de backtest")
     _style_temporal_series_figure(err_fig, xaxis_title="Pas", yaxis_title="Erreur absolue")
-    g1.plotly_chart(err_fig, use_container_width=True)
+    g1.plotly_chart(err_fig, width="stretch")
     resid_fig = px.histogram(result_df, x="Résidu", nbins=35, title="Distribution des résidus")
     resid_fig.update_layout(template="plotly_white")
-    g2.plotly_chart(resid_fig, use_container_width=True)
+    g2.plotly_chart(resid_fig, width="stretch")
 
     try:
         pi = permutation_importance(
@@ -40787,7 +40798,7 @@ def _render_dl_timeseries_modeling(data: dict[str, pd.DataFrame]) -> None:
                     color_continuous_scale="Tealgrn",
                     title="Importance des variables temporelles (permutation)",
                 ).update_layout(template="plotly_white", height=max(420, min(760, 30 * len(imp_df) + 120))),
-                use_container_width=True,
+                width="stretch",
             )
     except Exception:
         st.caption("Importance permutation indisponible sur ce paramétrage.")
@@ -40817,8 +40828,8 @@ def _render_dl_timeseries_modeling(data: dict[str, pd.DataFrame]) -> None:
                 ],
             }
         )
-        st.dataframe(info_df, use_container_width=True, hide_index=True, height=_table_height(len(info_df), max_height=320))
-        st.dataframe(result_df, use_container_width=True, height=_table_height(len(result_df), max_height=420))
+        st.dataframe(info_df, width="stretch", hide_index=True, height=_table_height(len(info_df), max_height=320))
+        st.dataframe(result_df, width="stretch", height=_table_height(len(result_df), max_height=420))
 
     st.markdown("### Explications")
     st.markdown(
@@ -40856,7 +40867,7 @@ def _render_dl_timeseries_modeling(data: dict[str, pd.DataFrame]) -> None:
             ],
             columns=["Technique", "Famille", "Cas d'usage", "Point d'attention"],
         )
-        st.dataframe(catalog, use_container_width=True, hide_index=True, height=_table_height(len(catalog), max_height=360))
+        st.dataframe(catalog, width="stretch", hide_index=True, height=_table_height(len(catalog), max_height=360))
     progress.progress(100, text="Réseau temporel entraîné.")
 
 
@@ -40989,7 +41000,7 @@ def _render_dl_model_mode(data: dict[str, pd.DataFrame], mode: str, prefix: str)
             )
             st.dataframe(
                 preset_stack,
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
                 height=_table_height(len(preset_stack), max_height=260),
             )
@@ -41128,7 +41139,7 @@ def _render_dl_model_mode(data: dict[str, pd.DataFrame], mode: str, prefix: str)
                     cv_folds = 0
                     st.caption("CV désactivée")
 
-    run_train = st.button("Entraîner le réseau de neurones", key=f"{prefix}_train", use_container_width=True)
+    run_train = st.button("Entraîner le réseau de neurones", key=f"{prefix}_train", width="stretch")
     if not run_train:
         st.info("Configurez les paramètres puis lancez l'entraînement.")
         return
@@ -41580,7 +41591,7 @@ def _render_dl_model_mode(data: dict[str, pd.DataFrame], mode: str, prefix: str)
 
     if not model_selection_df.empty:
         with st.expander("Comparatif architectures (auto)", expanded=False):
-            st.dataframe(model_selection_df, use_container_width=True, height=_table_height(len(model_selection_df), max_height=320))
+            st.dataframe(model_selection_df, width="stretch", height=_table_height(len(model_selection_df), max_height=320))
 
     c1, c2 = st.columns(2)
     if is_classification:
@@ -41596,7 +41607,7 @@ def _render_dl_model_mode(data: dict[str, pd.DataFrame], mode: str, prefix: str)
             text_auto=True,
         )
         cm_fig.update_layout(template="plotly_white")
-        c1.plotly_chart(cm_fig, use_container_width=True, key=f"{prefix}_confusion_matrix")
+        c1.plotly_chart(cm_fig, width="stretch", key=f"{prefix}_confusion_matrix")
 
         if hasattr(pipe.named_steps["model"], "predict_proba") and len(classes) == 2:
             try:
@@ -41616,7 +41627,7 @@ def _render_dl_model_mode(data: dict[str, pd.DataFrame], mode: str, prefix: str)
                     yaxis_title="TPR",
                     template="plotly_white",
                 )
-                c2.plotly_chart(roc_fig, use_container_width=True, key=f"{prefix}_roc_curve")
+                c2.plotly_chart(roc_fig, width="stretch", key=f"{prefix}_roc_curve")
             except Exception:
                 c2.info("ROC non disponible sur ce paramétrage.")
         else:
@@ -41652,7 +41663,7 @@ def _render_dl_model_mode(data: dict[str, pd.DataFrame], mode: str, prefix: str)
         max_v = float(max(y_test_plot.max(), y_pred_plot.max()))
         scat.add_trace(go.Scatter(x=[min_v, max_v], y=[min_v, max_v], mode="lines", line=dict(dash="dash"), name="Référence y=x"))
         scat.update_layout(template="plotly_white")
-        c1.plotly_chart(scat, use_container_width=True, key=f"{prefix}_observed_predicted")
+        c1.plotly_chart(scat, width="stretch", key=f"{prefix}_observed_predicted")
 
         res_fig = px.scatter(
             x=y_pred_plot,
@@ -41662,11 +41673,11 @@ def _render_dl_model_mode(data: dict[str, pd.DataFrame], mode: str, prefix: str)
         )
         res_fig.add_hline(y=0.0, line_dash="dash")
         res_fig.update_layout(template="plotly_white")
-        c2.plotly_chart(res_fig, use_container_width=True, key=f"{prefix}_residuals_predicted")
+        c2.plotly_chart(res_fig, width="stretch", key=f"{prefix}_residuals_predicted")
 
         hist_res = px.histogram(resid, nbins=40, title="Distribution des résidus")
         hist_res.update_layout(template="plotly_white")
-        st.plotly_chart(hist_res, use_container_width=True, key=f"{prefix}_residuals_hist")
+        st.plotly_chart(hist_res, width="stretch", key=f"{prefix}_residuals_hist")
 
         result_df = pd.DataFrame(
             {
@@ -41725,10 +41736,10 @@ def _render_dl_model_mode(data: dict[str, pd.DataFrame], mode: str, prefix: str)
                 ],
                 ignore_index=True,
             )
-        st.dataframe(info_df, use_container_width=True, height=_table_height(len(info_df), max_height=360))
+        st.dataframe(info_df, width="stretch", height=_table_height(len(info_df), max_height=360))
 
     with st.expander("Prédictions (test)", expanded=False):
-        st.dataframe(result_df, use_container_width=True, height=_table_height(len(result_df), max_height=420))
+        st.dataframe(result_df, width="stretch", height=_table_height(len(result_df), max_height=420))
 
     st.markdown("### Explications")
     if is_classification:
@@ -41892,7 +41903,7 @@ def render_dl_anomalies(data: dict[str, pd.DataFrame]) -> None:
         with p3:
             ae_max_iter = int(st.slider("AE max iter", min_value=100, max_value=1200, value=320, step=20, key="dl_anom_ae_iter"))
 
-    if not st.button("Lancer la détection d'anomalies", key="dl_anom_train", use_container_width=True):
+    if not st.button("Lancer la détection d'anomalies", key="dl_anom_train", width="stretch"):
         st.info("Configurez les paramètres puis lancez la détection.")
         return
 
@@ -42082,7 +42093,7 @@ def render_dl_anomalies(data: dict[str, pd.DataFrame]) -> None:
         color_discrete_map={"Normal": "#0a9396", "Anomalie": "#bb3e03"},
     )
     scat.update_layout(template="plotly_white")
-    c1.plotly_chart(scat, use_container_width=True)
+    c1.plotly_chart(scat, width="stretch")
 
     hist = px.histogram(
         result,
@@ -42096,7 +42107,7 @@ def render_dl_anomalies(data: dict[str, pd.DataFrame]) -> None:
     )
     hist.add_vline(x=threshold, line_dash="dash", line_color="#d62828")
     hist.update_layout(template="plotly_white")
-    c2.plotly_chart(hist, use_container_width=True)
+    c2.plotly_chart(hist, width="stretch")
 
     if date_col != "Aucune" and date_col in result.columns:
         ts = result[[date_col, "anomaly_score", "anomaly_flag"]].copy().sort_values(date_col)
@@ -42114,16 +42125,16 @@ def render_dl_anomalies(data: dict[str, pd.DataFrame]) -> None:
             )
         ts_fig.add_hline(y=threshold, line_dash="dash", line_color="#d62828")
         _style_temporal_series_figure(ts_fig, xaxis_title="Date", yaxis_title="Score anomalie")
-        st.plotly_chart(ts_fig, use_container_width=True)
+        st.plotly_chart(ts_fig, width="stretch")
 
     top_n = min(200, len(result))
     top_cols = [c for c in [date_col] if c != "Aucune" and c in result.columns] + features + ["anomaly_score", "anomaly_rank", "anomaly_flag"]
     top_df = result.sort_values("anomaly_score", ascending=False)[top_cols].head(top_n).copy()
-    st.dataframe(top_df, use_container_width=True, height=_table_height(len(top_df), max_height=520))
+    st.dataframe(top_df, width="stretch", height=_table_height(len(top_df), max_height=520))
 
     for title, ddf in detail_tables:
         with st.expander(title, expanded=False):
-            st.dataframe(ddf, use_container_width=True, height=_table_height(len(ddf), max_height=360))
+            st.dataframe(ddf, width="stretch", height=_table_height(len(ddf), max_height=360))
 
     progress.progress(100, text="Détection d'anomalies terminée.")
     st.markdown("### Explications")
@@ -42999,13 +43010,13 @@ Schéma d'architecture cloud fictif du projet (vue globale) :
                     "Ajoutez `Architecture_Schema.jpg` pour l'affichage."
                 )
             else:
-                st.image(str(schema_path), use_container_width=True)
+                st.image(str(schema_path), width="stretch")
                 st.download_button(
                     "Télécharger le schéma",
                     data=schema_path.read_bytes(),
                     file_name=schema_path.name,
                     mime="image/jpeg" if schema_path.suffix.lower() in {".jpg", ".jpeg"} else "image/png",
-                    use_container_width=True,
+                    width="stretch",
                 )
         with tab_current:
             _render_construction_state(
@@ -43038,9 +43049,9 @@ Cette section présente le projet dbt comme une chaîne analytique complète, de
         with tab_ingestion:
             _render_construction_state("Ingestion", "Suivi des jobs d'extraction, normalisation raw, retries et alerting.")
             a1, a2 = st.columns(2)
-            if a1.button("Airbyte Cloud", key="orchestration_airbyte_cloud_btn", use_container_width=True):
+            if a1.button("Airbyte Cloud", key="orchestration_airbyte_cloud_btn", width="stretch"):
                 st.session_state["orchestration_ingestion_tool"] = "Airbyte Cloud"
-            if a2.button("PyAirbyte", key="orchestration_pyairbyte_btn", use_container_width=True):
+            if a2.button("PyAirbyte", key="orchestration_pyairbyte_btn", width="stretch"):
                 st.session_state["orchestration_ingestion_tool"] = "PyAirbyte"
             ingestion_tool = st.session_state.get("orchestration_ingestion_tool", "Airbyte Cloud")
             if ingestion_tool == "PyAirbyte":
@@ -43690,11 +43701,11 @@ def _render_client_overview(ctx: dict[str, pd.DataFrame]) -> None:
         hole=0.45,
         title="Répartition du cycle de vie client",
     )
-    c1.plotly_chart(fig_status, use_container_width=True)
+    c1.plotly_chart(fig_status, width="stretch")
     if "acquisition_channel" in scoped.columns:
         acq = scoped["acquisition_channel"].fillna("N/A").value_counts().rename_axis("Canal").reset_index(name="Clients")
         fig_acq = px.bar(acq, x="Canal", y="Clients", title="Structure du portefeuille par acquisition")
-        c2.plotly_chart(fig_acq, use_container_width=True)
+        c2.plotly_chart(fig_acq, width="stretch")
     else:
         c2.info("Canal d'acquisition indisponible.")
 
@@ -43706,7 +43717,7 @@ def _render_client_overview(ctx: dict[str, pd.DataFrame]) -> None:
             title="Dynamique mensuelle clients actifs / commandes",
         )
         monthly_fig.update_traces(line=dict(width=2))
-        st.plotly_chart(monthly_fig, use_container_width=True)
+        st.plotly_chart(monthly_fig, width="stretch")
 
     st.markdown("#### Segmentation et RFM (intégrée)")
     _render_client_segmentation(ctx, embedded=True)
@@ -43786,7 +43797,7 @@ def _render_client_segmentation(ctx: dict[str, pd.DataFrame], embedded: bool = F
         )
         .sort_values("clv", ascending=False)
     )
-    st.dataframe(top, use_container_width=True, height=_table_height(len(top), max_height=320))
+    st.dataframe(top, width="stretch", height=_table_height(len(top), max_height=320))
     c1, c2 = st.columns(2)
     rfm_heat = (
         scoped.groupby(["R_score", "F_score"], as_index=False)
@@ -43800,7 +43811,7 @@ def _render_client_segmentation(ctx: dict[str, pd.DataFrame], embedded: bool = F
         title="Heatmap R/F (CLV prédite moyenne)",
         labels={"x": "F score", "y": "R score", "color": "CLV"},
     )
-    c1.plotly_chart(fig_heat, use_container_width=True)
+    c1.plotly_chart(fig_heat, width="stretch")
     scatter = px.scatter(
         scoped.sample(min(6000, len(scoped)), random_state=42),
         x="frequency",
@@ -43810,7 +43821,7 @@ def _render_client_segmentation(ctx: dict[str, pd.DataFrame], embedded: bool = F
         hover_data=["customer_id", "segment_valeur", "segment_risque", "next_best_action"],
         title="Carte RFM (fréquence vs monétaire)",
     )
-    c2.plotly_chart(scatter, use_container_width=True)
+    c2.plotly_chart(scatter, width="stretch")
 
 
 def _binary_clf_metrics(y_true: np.ndarray, y_pred: np.ndarray, y_score: np.ndarray | None = None) -> dict[str, float]:
@@ -44064,7 +44075,7 @@ def _render_client_churn_propensity(ctx: dict[str, pd.DataFrame]) -> None:
         for col in ["Train", "Test"]:
             display[col] = display[col].map(lambda v: "" if pd.isna(v) else f"{float(v):.4f}")
         with st.expander("Métriques du modèle churn (train/test)", expanded=False):
-            st.dataframe(display, use_container_width=True, height=_table_height(len(display), max_height=360))
+            st.dataframe(display, width="stretch", height=_table_height(len(display), max_height=360))
     else:
         kpi_block.info("Métriques de modélisation indisponibles sur ce jeu.")
 
@@ -44072,11 +44083,11 @@ def _render_client_churn_propensity(ctx: dict[str, pd.DataFrame]) -> None:
         with st.expander("Variables utilisées pour l'entraînement", expanded=False):
             show_feat = feature_profile_df.copy()
             show_feat["% manquant"] = show_feat["% manquant"].map(lambda v: f"{float(v):.2f}%")
-            st.dataframe(show_feat, use_container_width=True, height=_table_height(len(show_feat), max_height=360))
+            st.dataframe(show_feat, width="stretch", height=_table_height(len(show_feat), max_height=360))
 
     if not model_info_df.empty:
         with st.expander("Informations détaillées du modèle", expanded=False):
-            st.dataframe(model_info_df, use_container_width=True, height=_table_height(len(model_info_df), max_height=420))
+            st.dataframe(model_info_df, width="stretch", height=_table_height(len(model_info_df), max_height=420))
 
     if not importance_df.empty:
         top_imp = importance_df.head(20).copy()
@@ -44087,24 +44098,24 @@ def _render_client_churn_propensity(ctx: dict[str, pd.DataFrame]) -> None:
             orientation="h",
             title="Top variables contributives du modèle",
         )
-        st.plotly_chart(fig_imp, use_container_width=True)
+        st.plotly_chart(fig_imp, width="stretch")
         with st.expander("Importance complète des variables", expanded=False):
-            st.dataframe(importance_df, use_container_width=True, height=_table_height(len(importance_df), max_height=480))
+            st.dataframe(importance_df, width="stretch", height=_table_height(len(importance_df), max_height=480))
 
     if y_test.size > 0 and y_score_test.size > 0 and len(np.unique(y_test)) > 1:
         fpr, tpr, _ = roc_curve(y_test, y_score_test)
         precision, recall, _ = precision_recall_curve(y_test, y_score_test)
         p1, p2 = st.columns(2)
-        p1.plotly_chart(px.area(x=fpr, y=tpr, title="ROC (test)", labels={"x": "FPR", "y": "TPR"}), use_container_width=True)
+        p1.plotly_chart(px.area(x=fpr, y=tpr, title="ROC (test)", labels={"x": "FPR", "y": "TPR"}), width="stretch")
         p2.plotly_chart(
             px.area(x=recall, y=precision, title="Precision-Recall (test)", labels={"x": "Recall", "y": "Precision"}),
-            use_container_width=True,
+            width="stretch",
         )
 
     s1, s2 = st.columns(2)
     hist = px.histogram(customers, x="churn_risk_proxy", nbins=40, title="Distribution du risque churn")
     hist.update_layout(xaxis_title="Risque churn", yaxis_title="Clients")
-    s1.plotly_chart(hist, use_container_width=True)
+    s1.plotly_chart(hist, width="stretch")
     prop_scatter = px.scatter(
         customers.sample(min(6000, len(customers)), random_state=42),
         x="propensity_buy",
@@ -44114,7 +44125,7 @@ def _render_client_churn_propensity(ctx: dict[str, pd.DataFrame]) -> None:
         hover_data=["customer_id", "churn_risk_proxy", "next_best_action"],
         title="Propensity map (buy vs reactivate)",
     )
-    s2.plotly_chart(prop_scatter, use_container_width=True)
+    s2.plotly_chart(prop_scatter, width="stretch")
     risk_table = customers.sort_values(["churn_risk_proxy", "clv_pred"], ascending=[False, False]).head(200)[
         [
             "customer_id",
@@ -44140,7 +44151,7 @@ def _render_client_churn_propensity(ctx: dict[str, pd.DataFrame]) -> None:
         }
     )
     with st.expander("Top clients à risque (table détaillée)", expanded=False):
-        st.dataframe(risk_table, use_container_width=True, height=_table_height(len(risk_table), max_height=520))
+        st.dataframe(risk_table, width="stretch", height=_table_height(len(risk_table), max_height=520))
     st.markdown("### Explications")
     st.markdown(
         """
@@ -44318,7 +44329,7 @@ def _render_client_clv_profitability(ctx: dict[str, pd.DataFrame]) -> None:
         )
         fig_new_clients.update_traces(mode="lines", line=dict(width=1.6))
         fig_new_clients.update_layout(template="plotly_white")
-        st.plotly_chart(fig_new_clients, use_container_width=True)
+        st.plotly_chart(fig_new_clients, width="stretch")
 
     c1, c2 = st.columns(2)
     pareto_fig = px.line(
@@ -44329,7 +44340,7 @@ def _render_client_clv_profitability(ctx: dict[str, pd.DataFrame]) -> None:
         labels={"cum_client_share": "Part cumulée clients", "cum_revenue_share": "Part cumulée CA"},
     )
     pareto_fig.add_shape(type="line", x0=0, y0=0, x1=1, y1=1, line=dict(color="#8d99ae", dash="dot"))
-    c1.plotly_chart(pareto_fig, use_container_width=True)
+    c1.plotly_chart(pareto_fig, width="stretch")
     scatter = px.scatter(
         customers.sample(min(6000, len(customers)), random_state=42),
         x="clv_pred",
@@ -44339,7 +44350,7 @@ def _render_client_clv_profitability(ctx: dict[str, pd.DataFrame]) -> None:
         hover_data=["customer_id", "segment_valeur", "next_best_action"],
         title="CLV prédite vs marge",
     )
-    c2.plotly_chart(scatter, use_container_width=True)
+    c2.plotly_chart(scatter, width="stretch")
 
     seg = (
         customers.groupby(["segment_valeur", "segment_risque"], as_index=False)
@@ -44352,7 +44363,7 @@ def _render_client_clv_profitability(ctx: dict[str, pd.DataFrame]) -> None:
         .sort_values("clv", ascending=False)
     )
     with st.expander("Table segment valeur x risque", expanded=False):
-        st.dataframe(seg, use_container_width=True, height=_table_height(len(seg), max_height=420))
+        st.dataframe(seg, width="stretch", height=_table_height(len(seg), max_height=420))
     st.markdown("### Explications")
     st.markdown(
         """
@@ -44697,7 +44708,7 @@ def _render_client_satisfaction(ctx: dict[str, pd.DataFrame]) -> None:
                     title="Satisfaction moyenne par motif d'incident (Retours, incidents et qualité perçue)",
                 )
                 fig_issue.update_layout(template="plotly_white", xaxis_tickangle=-20)
-                p1.plotly_chart(fig_issue, use_container_width=True)
+                p1.plotly_chart(fig_issue, width="stretch")
             else:
                 p1.info("Motifs d'incident indisponibles.")
 
@@ -44716,7 +44727,7 @@ def _render_client_satisfaction(ctx: dict[str, pd.DataFrame]) -> None:
                 p2.markdown("<div style='height:1.15rem'></div>", unsafe_allow_html=True)
                 p2.dataframe(
                     return_summary,
-                    use_container_width=True,
+                    width="stretch",
                     height=_table_height(len(return_summary), max_height=280),
                 )
             else:
@@ -44771,7 +44782,7 @@ def _render_client_satisfaction(ctx: dict[str, pd.DataFrame]) -> None:
                     yaxis2=dict(title="Taux de retour (%)", overlaying="y", side="right"),
                     legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0.0),
                 )
-                c1.plotly_chart(fig_trend, use_container_width=True)
+                c1.plotly_chart(fig_trend, width="stretch")
             else:
                 c1.info("Série temporelle indisponible.")
 
@@ -44795,7 +44806,7 @@ def _render_client_satisfaction(ctx: dict[str, pd.DataFrame]) -> None:
                     hover_data=["reponses", "nps"],
                 )
                 fig_channel.update_layout(template="plotly_white")
-                c2.plotly_chart(fig_channel, use_container_width=True)
+                c2.plotly_chart(fig_channel, width="stretch")
             else:
                 c2.info("Comparaison canal indisponible.")
 
@@ -44814,7 +44825,7 @@ def _render_client_satisfaction(ctx: dict[str, pd.DataFrame]) -> None:
                 points_control_top_margin=satisfaction_return_graph_margin["t"],
             )
             fig_ret.update_layout(height=satisfaction_return_graph_height, margin=satisfaction_return_graph_margin)
-            d1.plotly_chart(fig_ret, use_container_width=True)
+            d1.plotly_chart(fig_ret, width="stretch")
 
             fig_ret_scatter = px.scatter(
                 sat_view.sample(min(5000, len(sat_view)), random_state=42),
@@ -44847,7 +44858,7 @@ def _render_client_satisfaction(ctx: dict[str, pd.DataFrame]) -> None:
                 height=satisfaction_return_graph_height,
                 margin=satisfaction_return_graph_margin,
             )
-            d2.plotly_chart(fig_ret_scatter, use_container_width=True)
+            d2.plotly_chart(fig_ret_scatter, width="stretch")
 
             focus_block = _spatial_block("Foyers de dégradation à traiter en priorité")
             foc_cols = [
@@ -44892,11 +44903,11 @@ def _render_client_satisfaction(ctx: dict[str, pd.DataFrame]) -> None:
                         title="Top segments prioritaires (score composite)",
                     )
                     fig_focus.update_layout(template="plotly_white", xaxis_tickangle=-25)
-                    focus_block.plotly_chart(fig_focus, use_container_width=True)
+                    focus_block.plotly_chart(fig_focus, width="stretch")
                     with focus_block.expander("Table détaillée des priorités", expanded=False):
                         st.dataframe(
                             focus_df,
-                            use_container_width=True,
+                            width="stretch",
                             height=_table_height(len(focus_df), max_height=360),
                         )
                 else:
@@ -45047,7 +45058,7 @@ def _render_client_satisfaction(ctx: dict[str, pd.DataFrame]) -> None:
                             )
                         )
                         fig.update_layout(template="plotly_white")
-                        test_block.plotly_chart(fig, use_container_width=True)
+                        test_block.plotly_chart(fig, width="stretch")
 
             elif test_mode == "Corrélation (2 variables quantitatives)":
                 if len(quant_candidates) < 2:
@@ -45075,7 +45086,7 @@ def _render_client_satisfaction(ctx: dict[str, pd.DataFrame]) -> None:
                         )
                         test_block.plotly_chart(
                             px.scatter(df_corr, x=x_var, y=y_var, trendline="ols", title=f"{method}: {x_var} vs {y_var}"),
-                            use_container_width=True,
+                            width="stretch",
                         )
 
             elif test_mode == "Différence entre 2 groupes":
@@ -45133,7 +45144,7 @@ def _render_client_satisfaction(ctx: dict[str, pd.DataFrame]) -> None:
                             yaxis_title=y_var,
                             show_points=show_box_points,
                         )
-                        test_block.plotly_chart(fig_box, use_container_width=True)
+                        test_block.plotly_chart(fig_box, width="stretch")
 
             elif test_mode == "Différence entre plusieurs groupes":
                 group_candidates = [c for c in cat_candidates if sat_view[c].astype(str).nunique() >= 3]
@@ -45195,7 +45206,7 @@ def _render_client_satisfaction(ctx: dict[str, pd.DataFrame]) -> None:
                             yaxis_title=y_var,
                             show_points=show_box_points,
                         )
-                        test_block.plotly_chart(fig_box, use_container_width=True)
+                        test_block.plotly_chart(fig_box, width="stretch")
                         if float(pval) <= 0.05:
                             pair_rows: list[dict[str, object]] = []
                             raw_p: list[float] = []
@@ -45225,7 +45236,7 @@ def _render_client_satisfaction(ctx: dict[str, pd.DataFrame]) -> None:
                                     show = pair_df.copy()
                                     show["p-brute"] = show["p-brute"].map(lambda v: _format_p_stats(float(v), 0.05))
                                     show["p-ajustée"] = show["p-ajustée"].map(lambda v: _format_p_stats(float(v), 0.05))
-                                    st.dataframe(show, use_container_width=True, height=_table_height(len(show), max_height=360))
+                                    st.dataframe(show, width="stretch", height=_table_height(len(show), max_height=360))
 
             else:
                 if len(cat_candidates) < 2:
@@ -45252,11 +45263,11 @@ def _render_client_satisfaction(ctx: dict[str, pd.DataFrame]) -> None:
                         )
                         test_block.plotly_chart(
                             px.imshow(tab, text_auto=True, color_continuous_scale="Tealgrn", title=f"Table de contingence: {r_var} x {c_var}"),
-                            use_container_width=True,
+                            width="stretch",
                         )
                         with test_block.expander("Effectifs attendus", expanded=False):
                             exp_df = pd.DataFrame(expected, index=tab.index, columns=tab.columns)
-                            st.dataframe(exp_df, use_container_width=True, height=_table_height(len(exp_df), max_height=320))
+                            st.dataframe(exp_df, width="stretch", height=_table_height(len(exp_df), max_height=320))
 
             quick_tests_block = _spatial_block("Batterie de tests")
             quick_rows: list[dict[str, object]] = []
@@ -45317,7 +45328,7 @@ def _render_client_satisfaction(ctx: dict[str, pd.DataFrame]) -> None:
                 quick_show["p-value"] = quick_show["p-value"].map(lambda v: _format_p_stats(v, 0.05))
                 quick_tests_block.dataframe(
                     quick_show,
-                    use_container_width=True,
+                    width="stretch",
                     height=_table_height(len(quick_show), max_height=320),
                 )
                 sig_count = int((pd.to_numeric(quick_df["p-value"], errors="coerce") <= 0.05).sum())
@@ -45351,7 +45362,7 @@ def _render_client_satisfaction(ctx: dict[str, pd.DataFrame]) -> None:
         with form_block.expander(f"{bloc_id} — {bloc_df['bloc'].iloc[0]}", expanded=False):
             st.dataframe(
                 bloc_df[["question_id", "question", "type_reponse"]],
-                use_container_width=True,
+                width="stretch",
                 height=_table_height(len(bloc_df), max_height=260),
             )
     st.download_button(
@@ -45542,7 +45553,7 @@ def _render_client_sampling(ctx: dict[str, pd.DataFrame], embedded: bool = False
                 "allocation_sur_echantillonnage",
             ]
         ],
-        use_container_width=True,
+        width="stretch",
         height=_table_height(len(quota_df), max_height=360),
         column_config={
             "variable_split": st.column_config.TextColumn("Variable de split", width="medium"),
@@ -45595,7 +45606,7 @@ def _render_client_sampling(ctx: dict[str, pd.DataFrame], embedded: bool = False
         np.ceil(strata["allocation_proportionnelle"] * 1.35).astype(int),
         strata["allocation_proportionnelle"],
     )
-    case_block.dataframe(strata, use_container_width=True, height=_table_height(len(strata), max_height=420))
+    case_block.dataframe(strata, width="stretch", height=_table_height(len(strata), max_height=420))
     st.markdown(
         """
 **Plan recommandé**
@@ -45679,7 +45690,7 @@ def _render_client_experimentation(ctx: dict[str, pd.DataFrame]) -> None:
         ]
         if "ab_example_index" not in st.session_state:
             st.session_state["ab_example_index"] = -1
-        if st.button("Générer un exemple", key="ab_generate_example", use_container_width=True):
+        if st.button("Générer un exemple", key="ab_generate_example", width="stretch"):
             next_idx = (int(st.session_state.get("ab_example_index", -1)) + 1) % len(ab_examples)
             st.session_state["ab_example_index"] = next_idx
             ex = ab_examples[next_idx]
@@ -45812,7 +45823,7 @@ def _render_client_experimentation(ctx: dict[str, pd.DataFrame]) -> None:
                 )
             )
             fig_rates.update_layout(template="plotly_white", showlegend=False)
-            g1.plotly_chart(fig_rates, use_container_width=True)
+            g1.plotly_chart(fig_rates, width="stretch")
 
             fig_delta = go.Figure(
                 go.Indicator(
@@ -45824,7 +45835,7 @@ def _render_client_experimentation(ctx: dict[str, pd.DataFrame]) -> None:
                 )
             )
             fig_delta.update_layout(template="plotly_white", height=320, margin=dict(l=10, r=10, t=60, b=10))
-            g2.plotly_chart(fig_delta, use_container_width=True)
+            g2.plotly_chart(fig_delta, width="stretch")
             g2.caption(
                 f"Delta absolu: {delta_rate * 100.0:+.2f} pts | IC95%: [{delta_ci_low * 100.0:+.2f}; {delta_ci_high * 100.0:+.2f}] pts."
             )
@@ -45862,7 +45873,7 @@ def _render_client_experimentation(ctx: dict[str, pd.DataFrame]) -> None:
                 yaxis_title="Score",
                 show_points=show_box_points,
             )
-            st.plotly_chart(fig_box, use_container_width=True)
+            st.plotly_chart(fig_box, width="stretch")
 
         st.markdown("### Explications")
         st.markdown(
@@ -46185,7 +46196,7 @@ Bon usage:
         )
 
         st.markdown("#### Plan expérimental (cellules)")
-        st.dataframe(design, use_container_width=True, height=_table_height(len(design), max_height=340))
+        st.dataframe(design, width="stretch", height=_table_height(len(design), max_height=340))
 
         main_effect_rows = []
         for f in factor_names:
@@ -46211,7 +46222,7 @@ Bon usage:
             simulated_case_block = st.container()
         simulated_case_block.markdown("#### Cas d'usage sur les données simulées")
         simulated_case_block.markdown("##### Effets principaux par facteur")
-        simulated_case_block.dataframe(main_effect_df, use_container_width=True, height=_table_height(len(main_effect_df), max_height=340))
+        simulated_case_block.dataframe(main_effect_df, width="stretch", height=_table_height(len(main_effect_df), max_height=340))
 
         g1, g2 = simulated_case_block.columns(2)
         # Palette conservée (rouge-jaune-vert), adoucie pour réduire le contraste visuel.
@@ -46227,7 +46238,7 @@ Bon usage:
             )
             fig_main.update_layout(template="plotly_white", coloraxis_showscale=False)
             fig_main.update_traces(marker=dict(opacity=0.96, line=dict(color="rgba(17,17,17,0.22)", width=0.35)))
-            g1.plotly_chart(fig_main, use_container_width=True)
+            g1.plotly_chart(fig_main, width="stretch")
         if len(factor_names) >= 2:
             f1, f2 = factor_names[:2]
             interaction_pivot = sim.pivot_table(index=f1, columns=f2, values="score", aggfunc="mean")
@@ -46240,7 +46251,7 @@ Bon usage:
             )
             fig_heat.update_layout(template="plotly_white")
             fig_heat.update_traces(opacity=0.96)
-            g2.plotly_chart(fig_heat, use_container_width=True)
+            g2.plotly_chart(fig_heat, width="stretch")
 
         means = sim.groupby(factor_names, as_index=False)["score"].mean()
         combo_cols = [c for c in factor_names]
@@ -46255,7 +46266,7 @@ Bon usage:
         )
         fig_combo.update_layout(template="plotly_white", xaxis_tickangle=-25, coloraxis_showscale=False)
         fig_combo.update_traces(marker=dict(opacity=0.96, line=dict(color="rgba(17,17,17,0.20)", width=0.3)))
-        simulated_case_block.plotly_chart(fig_combo, use_container_width=True)
+        simulated_case_block.plotly_chart(fig_combo, width="stretch")
 
         if HAS_STATSMODELS and sm is not None:
             def _pretty_factor_term(term: object) -> str:
@@ -46303,7 +46314,7 @@ Bon usage:
                 simulated_case_block.markdown("##### ANOVA (test des effets et interactions)")
                 simulated_case_block.dataframe(
                     anova_tbl[["terme_lisible", "sum_sq", "df", "F", "p-value", "Significatif"]],
-                    use_container_width=True,
+                    width="stretch",
                     height=_table_height(len(anova_tbl), max_height=320),
                     column_config={
                         "terme_lisible": st.column_config.TextColumn("Terme", width="large"),
@@ -46356,7 +46367,7 @@ Bon usage:
                         "p-value interaction",
                     ]
                 ],
-                use_container_width=True,
+                width="stretch",
                 height=_table_height(len(coef), max_height=320),
                 column_config={
                     "terme_lisible": st.column_config.TextColumn("Terme", width="large"),
@@ -46486,16 +46497,16 @@ def _render_customer_360(ctx: dict[str, pd.DataFrame]) -> None:
 
     if not cust_orders.empty:
         c1, c2 = st.columns(2)
-        c1.plotly_chart(px.line(timeline, x="month", y=["ca", "marge"], title="Timeline valeur client"), use_container_width=True)
+        c1.plotly_chart(px.line(timeline, x="month", y=["ca", "marge"], title="Timeline valeur client"), width="stretch")
         if "channel" in cust_orders.columns:
             ch = cust_orders["channel"].fillna("N/A").value_counts().rename_axis("canal").reset_index(name="commandes")
-            c2.plotly_chart(px.pie(ch, names="canal", values="commandes", title="Canaux utilisés"), use_container_width=True)
+            c2.plotly_chart(px.pie(ch, names="canal", values="commandes", title="Canaux utilisés"), width="stretch")
         keep_cols = [c for c in ["order_id", "order_datetime", "channel", "city", "order_amount", "units", "margin", "promo_id"] if c in cust_orders.columns]
         table_df = cust_orders[keep_cols].tail(80).copy()
         table_df = table_df.dropna(how="all").reset_index(drop=True)
         st.dataframe(
             table_df,
-            use_container_width=True,
+            width="stretch",
             height=_table_height(len(table_df), max_height=520),
         )
     st.markdown("### Explications")
@@ -46609,10 +46620,10 @@ def _render_plotly_grid(figures: list[tuple[go.Figure, str]]) -> None:
         if len(row) == 2:
             cols = st.columns(2)
             for col, (fig, key) in zip(cols, row, strict=False):
-                col.plotly_chart(fig, use_container_width=True, key=key)
+                col.plotly_chart(fig, width="stretch", key=key)
         else:
             fig, key = row[0]
-            st.plotly_chart(fig, use_container_width=True, key=key)
+            st.plotly_chart(fig, width="stretch", key=key)
 
 
 def _physical_parameter_descriptions(model: str, *, context: str = "") -> list[str]:
@@ -50122,7 +50133,7 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                 if isinstance(stoch_result.get("extra"), pd.DataFrame) and not stoch_result["extra"].empty:
                     extra_df = stoch_result["extra"].copy()
                     if "t" not in extra_df.columns:
-                        st.dataframe(extra_df, use_container_width=True, hide_index=True, height=_table_height(len(extra_df), max_height=260))
+                        st.dataframe(extra_df, width="stretch", hide_index=True, height=_table_height(len(extra_df), max_height=260))
 
         st.markdown("### Taxonomie")
         st.markdown(
@@ -50356,7 +50367,7 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
         if line_cols:
             fig = px.line(sim, x="t", y=line_cols[: min(7, len(line_cols))], title=f"Évolution des stocks et flux - {model_name}")
             fig.update_layout(template="plotly_white", xaxis_title="Période", yaxis_title="Valeur", legend_title_text="")
-            st.plotly_chart(fig, use_container_width=True, key=f"phys_comp_portfolio_line_{model_name}")
+            st.plotly_chart(fig, width="stretch", key=f"phys_comp_portfolio_line_{model_name}")
         if result["sankey_labels"] and sum(result["sankey_values"]) > 0:
             sankey = go.Figure(
                 go.Sankey(
@@ -50370,7 +50381,7 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                 )
             )
             sankey.update_layout(title="Flux finaux du modèle", height=390, template="plotly_white", margin=dict(l=10, r=10, t=55, b=10))
-            st.plotly_chart(sankey, use_container_width=True, key=f"phys_comp_portfolio_sankey_{model_name}")
+            st.plotly_chart(sankey, width="stretch", key=f"phys_comp_portfolio_sankey_{model_name}")
         visual_cols = st.columns(2)
         target_labels = [
             result["sankey_labels"][idx]
@@ -50379,7 +50390,7 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
         ]
         waterfall = _make_physical_waterfall(target_labels, result["sankey_values"], title="Waterfall des flux finaux")
         if waterfall is not None:
-            visual_cols[0].plotly_chart(waterfall, use_container_width=True, key=f"phys_comp_portfolio_waterfall_{model_name}")
+            visual_cols[0].plotly_chart(waterfall, width="stretch", key=f"phys_comp_portfolio_waterfall_{model_name}")
         causal = _make_physical_causal_network(
             result["sankey_labels"],
             result["sankey_source"],
@@ -50387,7 +50398,7 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
             result["sankey_values"],
         )
         if causal is not None:
-            visual_cols[1].plotly_chart(causal, use_container_width=True, key=f"phys_comp_portfolio_causal_{model_name}")
+            visual_cols[1].plotly_chart(causal, width="stretch", key=f"phys_comp_portfolio_causal_{model_name}")
         _render_collapsible_dataframe("Détail de simulation comportementale", sim, hide_index=True)
 
         st.markdown("##### Boucles causales à montrer")
@@ -50400,11 +50411,11 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
             ],
             columns=["Boucle", "Chaîne causale", "Type", "Lecture"],
         )
-        st.dataframe(loops, use_container_width=True, hide_index=True, height=_table_height(len(loops), max_height=260))
+        st.dataframe(loops, width="stretch", hide_index=True, height=_table_height(len(loops), max_height=260))
 
         with st.expander("Catalogue des modèles comportementaux", expanded=False):
             comp = _physical_compartment_catalog()
-            st.dataframe(comp, use_container_width=True, hide_index=True, height=_table_height(len(comp), max_height=520))
+            st.dataframe(comp, width="stretch", hide_index=True, height=_table_height(len(comp), max_height=520))
 
 
 
@@ -50983,7 +50994,7 @@ def render_references_tab() -> None:
         display_cols = ["Menu", "Type", "Thème", "Référence", "Usage", "URL", "Priorité"]
         st.dataframe(
             filtered[display_cols],
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
             height=_table_height(len(filtered), max_height=620),
             column_config={"URL": st.column_config.LinkColumn("URL")},
@@ -51037,7 +51048,7 @@ def render_mlflow_tab() -> None:
         columns=["Objet tracké", "Exemples", "Usage"],
     )
     st.markdown("##### Plan de tracking MLflow")
-    st.dataframe(tracking_plan, use_container_width=True, height=_table_height(len(tracking_plan), max_height=300))
+    st.dataframe(tracking_plan, width="stretch", height=_table_height(len(tracking_plan), max_height=300))
 
 
 def render_prefect_tab() -> None:
@@ -51058,7 +51069,7 @@ def render_prefect_tab() -> None:
         columns=["Task", "Objectif", "Artefact", "Statut"],
     )
     st.markdown("##### Flow chart")
-    st.dataframe(flow_df, use_container_width=True, height=_table_height(len(flow_df), max_height=300))
+    st.dataframe(flow_df, width="stretch", height=_table_height(len(flow_df), max_height=300))
     st.markdown("##### Contrôles prévus")
     st.markdown(
         """
@@ -51089,7 +51100,7 @@ def render_export_tab(features: dict[str, pd.DataFrame]) -> None:
         columns=["Étape", "Outil", "Objectif", "Statut"],
     )
     st.markdown("##### Pipeline Export et CI/CD")
-    st.dataframe(ci_df, use_container_width=True, height=_table_height(len(ci_df), max_height=360))
+    st.dataframe(ci_df, width="stretch", height=_table_height(len(ci_df), max_height=360))
     st.markdown("##### Commandes clés")
     st.code(
         """pytest
@@ -51166,7 +51177,7 @@ def main() -> None:
             if saved_subpage in subpage_aliases:
                 st.session_state["subpage_by_section"][section_name] = subpage_aliases[str(saved_subpage)]
 
-    if st.sidebar.button(_t("settings_button_open"), key="ui_settings_btn", use_container_width=True):
+    if st.sidebar.button(_t("settings_button_open"), key="ui_settings_btn", width="stretch"):
         _init_settings_draft_from_active()
         st.session_state["ui_settings_open"] = True
     st.sidebar.title(_t("navigation_title"))
@@ -51325,7 +51336,7 @@ def main() -> None:
             regenerate_frame = st.container(border=True)
         except TypeError:
             regenerate_frame = st.container()
-        regenerate = regenerate_frame.button(_t("regen_data"), use_container_width=True)
+        regenerate = regenerate_frame.button(_t("regen_data"), width="stretch")
 
     if regenerate:
         ensure_data_bundle(
