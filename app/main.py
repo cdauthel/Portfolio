@@ -7442,7 +7442,7 @@ def render_correlations(data: dict[str, pd.DataFrame]) -> None:
         )
     table_height = min(max(120, 36 * (len(display_df) + 1)), 740)
     with st.expander("Table des corrélations (détail)", expanded=True):
-        st.dataframe(display_df, width="stretch", height=table_height)
+        st.dataframe(_arrow_safe_dataframe(display_df), width="stretch", height=table_height)
 
     st.markdown("---")
     st.markdown("### Explications")
@@ -7507,6 +7507,19 @@ def _arrow_safe_dataframe(df: pd.DataFrame) -> pd.DataFrame:
 
             safe[col] = safe[col].map(_format_cell)
     return safe
+
+
+def _safe_corrcoef(a: Any, b: Any) -> float:
+    a_s = pd.to_numeric(pd.Series(a), errors="coerce")
+    b_s = pd.to_numeric(pd.Series(b), errors="coerce")
+    mask = a_s.notna() & b_s.notna()
+    if int(mask.sum()) < 2:
+        return np.nan
+    a_v = a_s.loc[mask].to_numpy(dtype=float)
+    b_v = b_s.loc[mask].to_numpy(dtype=float)
+    if np.nanstd(a_v) <= 1e-12 or np.nanstd(b_v) <= 1e-12:
+        return np.nan
+    return float(np.corrcoef(a_v, b_v)[0, 1])
 
 
 def _render_dataset_construction_stats(
@@ -8206,8 +8219,8 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
                 vec = z_inactive[:, idx]
                 if np.nanstd(vec) <= 1e-9:
                     continue
-                corr_d1 = float(np.corrcoef(vec, scores[:, 0])[0, 1])
-                corr_d2 = float(np.corrcoef(vec, scores[:, 1])[0, 1])
+                corr_d1 = _safe_corrcoef(vec, scores[:, 0])
+                corr_d2 = _safe_corrcoef(vec, scores[:, 1])
                 if np.isfinite(corr_d1) and np.isfinite(corr_d2):
                     circle_rows.append(
                         {
@@ -9645,7 +9658,7 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
         st.dataframe(contrib_var_df, width="stretch", height=_table_height(len(contrib_var_df), max_height=640))
 
         st.markdown("##### Encodage AFM par groupe")
-        st.dataframe(pd.DataFrame(group_card_rows), width="stretch", height=_table_height(len(group_card_rows), max_height=280))
+        st.dataframe(_arrow_safe_dataframe(pd.DataFrame(group_card_rows)), width="stretch", height=_table_height(len(group_card_rows), max_height=280))
         st.markdown("### Explication")
         st.markdown(
             """
@@ -10042,8 +10055,8 @@ def _render_afmd_analysis(
         vec = pd.to_numeric(quant_df[col], errors="coerce")
         if vec.nunique(dropna=True) <= 1:
             continue
-        c1 = float(np.corrcoef(vec, scores[:, 0])[0, 1])
-        c2 = float(np.corrcoef(vec, scores[:, 1])[0, 1])
+        c1 = _safe_corrcoef(vec, scores[:, 0])
+        c2 = _safe_corrcoef(vec, scores[:, 1])
         quant_corr_rows.append({"Variable quantitative": col, "Corr Dim1": c1, "Corr Dim2": c2, "cos² (Dim1+Dim2)": c1**2 + c2**2})
     if quant_corr_rows:
         quant_corr_df = pd.DataFrame(quant_corr_rows).sort_values("cos² (Dim1+Dim2)", ascending=False)
@@ -10086,7 +10099,7 @@ def _render_afmd_analysis(
 
     if modality_info_rows:
         st.markdown("##### Encodage qualitatif (controle)")
-        st.dataframe(pd.DataFrame(modality_info_rows), width="stretch", height=_table_height(len(modality_info_rows), max_height=320))
+        st.dataframe(_arrow_safe_dataframe(pd.DataFrame(modality_info_rows)), width="stretch", height=_table_height(len(modality_info_rows), max_height=320))
 
     st.markdown("### Explication")
     st.markdown(
@@ -10636,7 +10649,7 @@ def render_primary_tests(data: dict[str, pd.DataFrame]) -> None:
                             show_df["Statistique"] = show_df["Statistique"].map(lambda v: "" if pd.isna(v) else f"{float(v):.4f}")
                             show_df["p-value"] = show_df["p-value"].map(_format_p_norm)
                             show_df = _format_significant_columns(show_df)
-                            st.dataframe(show_df, width="stretch", height=_test_results_table_height(len(show_df), max_height=640))
+                            st.dataframe(_arrow_safe_dataframe(show_df), width="stretch", height=_test_results_table_height(len(show_df), max_height=640))
 
                             p_df = res_df.dropna(subset=["p-value"]).copy()
                             if not p_df.empty:
@@ -16301,7 +16314,7 @@ def _render_scraping_documentation() -> None:
         ],
         ignore_index=True,
     )
-    st.dataframe(fiche, width="stretch", height=360)
+    st.dataframe(_arrow_safe_dataframe(fiche), width="stretch", height=360)
 
     sample_payload = df.head(1).to_dict(orient="records")
     if not sample_payload:
@@ -16386,7 +16399,7 @@ def _render_scraping_web_documentation() -> None:
             {"Information": "Clé Data Lake", "Valeur": lake_key},
         ]
     )
-    st.dataframe(fiche, width="stretch", hide_index=True, height=_table_height(len(fiche), max_height=420))
+    st.dataframe(_arrow_safe_dataframe(fiche), width="stretch", hide_index=True, height=_table_height(len(fiche), max_height=420))
 
     request_code = f"""import requests
 from bs4 import BeautifulSoup
@@ -17163,7 +17176,7 @@ def _render_adaptive_collected_data_views(df: pd.DataFrame, dataset_key: str, ap
     st.markdown("##### Visualisations adaptatives")
     st.caption("Le moteur inspecte les rôles des colonnes et choisit automatiquement les représentations les plus utiles pour la table sélectionnée.")
     with st.expander("Lecture automatique du dataset", expanded=False):
-        st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True, height=_table_height(len(rows), max_height=320))
+        st.dataframe(_arrow_safe_dataframe(pd.DataFrame(rows)), width="stretch", hide_index=True, height=_table_height(len(rows), max_height=320))
 
     charts: list[tuple[str, object]] = []
     primary_measure = measures[0] if measures else None
@@ -18488,7 +18501,6 @@ def _render_ai_chatbot_rag(data: dict[str, pd.DataFrame]) -> None:
         model_choice = st.selectbox(
             "Modèle",
             model_options,
-            index=model_options.index(default_model) if default_model in model_options else 0,
             key=model_key,
         )
     if model_choice == "Modèle personnalisé":
@@ -19979,7 +19991,7 @@ def _render_spatial_proximity(ctx: dict[str, pd.DataFrame | dict[str, float]]) -
         if "frequency" in band_df.columns:
             agg_dict["freq_moy"] = ("frequency", "mean")
         by_band = (
-            band_df.groupby("distance_band_km", as_index=False)
+            band_df.groupby("distance_band_km", as_index=False, observed=False)
             .agg(**agg_dict)
             .sort_values("distance_band_km")
         )
@@ -21122,8 +21134,7 @@ def _fit_spatial_model(model_name: str, y: np.ndarray, x_raw: pd.DataFrame, w: n
         base = _spatial_ols_fit(y_arr, x_scaled, list(x_scaled.columns))
         resid = np.asarray(base["resid"], dtype=float)
         w_resid = w @ resid
-        if np.nanstd(w_resid) > 1e-12 and np.nanstd(resid) > 1e-12:
-            lam = float(np.corrcoef(resid, w_resid)[0, 1])
+        lam = _safe_corrcoef(resid, w_resid)
         fit = base
         fit["pred"] = np.asarray(base["pred"], dtype=float) + np.nan_to_num(lam, nan=0.0) * w_resid
         fit["resid"] = y_arr - np.asarray(fit["pred"], dtype=float)
@@ -21151,7 +21162,7 @@ def _spatial_lm_diagnostics(y: np.ndarray, x_df: pd.DataFrame, w: np.ndarray, al
         mask = np.isfinite(a) & np.isfinite(b)
         if int(mask.sum()) < 4 or np.nanstd(a[mask]) <= 1e-12 or np.nanstd(b[mask]) <= 1e-12:
             return np.nan, np.nan
-        r = float(np.corrcoef(a[mask], b[mask])[0, 1])
+        r = _safe_corrcoef(a[mask], b[mask])
         stat = max(0.0, (len(a[mask]) - 2) * r * r)
         p = float(1.0 - chi2.cdf(stat, df=1))
         return stat, p
@@ -29920,7 +29931,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     }
                 )
             with st.expander("Détail de représentativité de la cible", expanded=False):
-                st.dataframe(pd.DataFrame(balance_rows), width="stretch", hide_index=True)
+                st.dataframe(_arrow_safe_dataframe(pd.DataFrame(balance_rows)), width="stretch", hide_index=True)
 
     if model_name == "Méthodes d'ensemble" and ensemble_reg_type == "AdaBoost Regressor":
         frac = float(np.clip(ab_max_samples_fraction, 0.3, 1.0))
@@ -32722,7 +32733,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
             )
         if cv_rows:
             st.markdown("##### Résultats cross-validation (train)")
-            st.dataframe(pd.DataFrame(cv_rows), width="stretch", height=min(max(120, 36 * (len(cv_rows) + 1)), 340))
+            st.dataframe(_arrow_safe_dataframe(pd.DataFrame(cv_rows)), width="stretch", height=min(max(120, 36 * (len(cv_rows) + 1)), 340))
 
     if is_classification:
         cm_labels = (
@@ -38554,7 +38565,7 @@ def render_statistical_tests(data: dict[str, pd.DataFrame]) -> None:
                     lambda v: "" if pd.isna(v) else f"{float(v):.4f}"
                 )
                 show["p-value"] = pd.to_numeric(show["p-value"], errors="coerce").map(lambda v: _format_p_stats(v, alpha))
-                st.dataframe(show, width="stretch", height=_test_results_table_height(len(show), max_height=560))
+                st.dataframe(_arrow_safe_dataframe(show), width="stretch", height=_test_results_table_height(len(show), max_height=560))
                 if adhoc_pairwise_df is not None and not adhoc_pairwise_df.empty:
                     st.markdown("##### Comparaisons pairwise (Kruskal-Wallis)")
                     adhoc_show = adhoc_pairwise_df.copy()
@@ -38871,7 +38882,7 @@ Le mode **Manuel** vous laisse forcer le test parmi ceux compatibles avec la str
                                 pairwise_df = pd.DataFrame()
                             else:
                                 show = anova_tbl.reset_index().rename(columns={"index": "Effet"})
-                                st.dataframe(show, width="stretch", height=_test_results_table_height(len(show), max_height=340))
+                                st.dataframe(_arrow_safe_dataframe(show), width="stretch", height=_test_results_table_height(len(show), max_height=340))
                                 p_inter = float(anova_tbl.loc["C(A):C(B)", "PR(>F)"]) if "C(A):C(B)" in anova_tbl.index else np.nan
                                 rows.append(
                                     {
@@ -38975,7 +38986,7 @@ Le mode **Manuel** vous laisse forcer le test parmi ceux compatibles avec la str
                     if "p-brute" in show_pw.columns:
                         show_pw["p-brute"] = pd.to_numeric(show_pw["p-brute"], errors="coerce").map(lambda v: _format_p_stats(v, alpha))
                     show_pw = _format_significant_columns(show_pw)
-                    st.dataframe(show_pw, width="stretch", height=_test_results_table_height(len(show_pw), max_height=620))
+                    st.dataframe(_arrow_safe_dataframe(show_pw), width="stretch", height=_test_results_table_height(len(show_pw), max_height=620))
 
                     if {"Groupe 1", "Groupe 2", "Différence moyenne"}.issubset(pairwise_df.columns):
                         sig_col = "Significatif" if "Significatif" in pairwise_df.columns else None
@@ -44405,7 +44416,7 @@ def _render_client_churn_propensity(ctx: dict[str, pd.DataFrame]) -> None:
         for col in ["Train", "Test"]:
             display[col] = display[col].map(lambda v: "" if pd.isna(v) else f"{float(v):.4f}")
         with st.expander("Métriques du modèle churn (train/test)", expanded=False):
-            st.dataframe(display, width="stretch", height=_table_height(len(display), max_height=360))
+            st.dataframe(_arrow_safe_dataframe(display), width="stretch", height=_table_height(len(display), max_height=360))
     else:
         kpi_block.info("Métriques de modélisation indisponibles sur ce jeu.")
 
@@ -44413,7 +44424,7 @@ def _render_client_churn_propensity(ctx: dict[str, pd.DataFrame]) -> None:
         with st.expander("Variables utilisées pour l'entraînement", expanded=False):
             show_feat = feature_profile_df.copy()
             show_feat["% manquant"] = show_feat["% manquant"].map(lambda v: f"{float(v):.2f}%")
-            st.dataframe(show_feat, width="stretch", height=_table_height(len(show_feat), max_height=360))
+            st.dataframe(_arrow_safe_dataframe(show_feat), width="stretch", height=_table_height(len(show_feat), max_height=360))
 
     if not model_info_df.empty:
         with st.expander("Informations détaillées du modèle", expanded=False):
@@ -44961,7 +44972,10 @@ def _render_client_satisfaction(ctx: dict[str, pd.DataFrame]) -> None:
                     return np.nan
                 return float(with_ret.mean() - without_ret.mean())
 
-            monthly_delta_return_sat = monthly_base.apply(_monthly_delta_return_satisfaction).sort_index()
+            try:
+                monthly_delta_return_sat = monthly_base.apply(_monthly_delta_return_satisfaction, include_groups=False).sort_index()
+            except TypeError:
+                monthly_delta_return_sat = monthly_base.apply(_monthly_delta_return_satisfaction).sort_index()
 
             try:
                 kpi_block = st.container(border=True)
@@ -45566,7 +45580,7 @@ def _render_client_satisfaction(ctx: dict[str, pd.DataFrame]) -> None:
                                     show = pair_df.copy()
                                     show["p-brute"] = show["p-brute"].map(lambda v: _format_p_stats(float(v), 0.05))
                                     show["p-ajustée"] = show["p-ajustée"].map(lambda v: _format_p_stats(float(v), 0.05))
-                                    st.dataframe(show, width="stretch", height=_table_height(len(show), max_height=360))
+                                    st.dataframe(_arrow_safe_dataframe(show), width="stretch", height=_table_height(len(show), max_height=360))
 
             else:
                 if len(cat_candidates) < 2:
