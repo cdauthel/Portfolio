@@ -1092,7 +1092,7 @@ UI_TEXTS: dict[str, dict[str, str]] = {
     "navigation_title": {"fr": "Navigation", "en": "Navigation"},
     "menu_label": {"fr": "Menu", "en": "Menu"},
     "submenu_label": {"fr": "Sous-menu", "en": "Submenu"},
-    "settings_button_open": {"fr": "Paramètres", "en": "Settings"},
+    "settings_button_open": {"fr": "⚙️ Paramètres", "en": "⚙️ Settings"},
     "settings_button_close": {"fr": "✕ Fermer les paramètres", "en": "✕ Close settings"},
     "settings_title": {"fr": "Préférences", "en": "Preferences"},
     "settings_save": {"fr": "Enregistrer", "en": "Save"},
@@ -52793,7 +52793,7 @@ def main() -> None:
         st.session_state["feedback_dialog_open"] = False
         st.session_state["ui_settings_open"] = True
     if contact_col.button(
-        "Contact",
+        "📅 Contact",
         key="contact_dialog_btn",
         width="stretch",
     ):
@@ -52801,7 +52801,7 @@ def main() -> None:
         st.session_state["feedback_dialog_open"] = False
         st.session_state["contact_dialog_open"] = True
     if feedback_col.button(
-        "Avis",
+        "💬 Avis",
         key="feedback_dialog_btn",
         width="stretch",
     ):
