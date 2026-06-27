@@ -2547,6 +2547,470 @@ def _render_contact_dialog() -> None:
             st.markdown("**Contact**")
             _render_contact_fields()
 
+
+def _close_feedback_dialog() -> None:
+    st.session_state["feedback_dialog_open"] = False
+
+
+def _feedback_jira_configured() -> bool:
+    required = ["JIRA_BASE_URL", "JIRA_EMAIL", "JIRA_API_TOKEN", "JIRA_PROJECT_KEY"]
+    return all(bool(_secret_value(name)) for name in required)
+
+
+def _feedback_current_page() -> tuple[str, str]:
+    section = str(st.session_state.get("menu_section") or "Page non déterminée")
+    subpages = st.session_state.get("subpage_by_section", {})
+    subpage = str(subpages.get(section) or "") if isinstance(subpages, dict) else ""
+    return section, subpage
+
+
+def _build_feedback_email_body(feedback: dict[str, Any]) -> str:
+    lines = [
+        "Nouveau retour depuis le portfolio Streamlit.",
+        "",
+        f"Référence: {feedback['reference']}",
+        f"Catégorie: {feedback['category']}",
+        f"Priorité proposée: {feedback['priority']}",
+        f"Page: {feedback['page']}",
+        f"Titre: {feedback['title']}",
+        "",
+        "Description:",
+        str(feedback["description"]),
+    ]
+    if feedback.get("reproduction_steps"):
+        lines.extend(["", "Étapes de reproduction:", str(feedback["reproduction_steps"])])
+    if feedback.get("expected_result"):
+        lines.extend(["", "Résultat attendu / recommandation:", str(feedback["expected_result"])])
+    if feedback.get("technical_context"):
+        lines.extend(["", "Contexte technique:", str(feedback["technical_context"])])
+    lines.extend(
+        [
+            "",
+            f"Auteur: {feedback.get('name') or 'Anonyme'}",
+            f"Email: {feedback.get('email') or 'Non renseigné'}",
+            f"Organisation: {feedback.get('organization') or 'Non renseignée'}",
+            f"Suivi autorisé: {'Oui' if feedback.get('allow_follow_up') else 'Non'}",
+            f"Horodatage UTC: {feedback['submitted_at']}",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def _send_feedback_email(feedback: dict[str, Any]) -> tuple[bool, str]:
+    host = _secret_value("CONTACT_SMTP_HOST", "SMTP_HOST")
+    password = _secret_value("CONTACT_SMTP_PASSWORD", "SMTP_PASSWORD")
+    if not host or not password:
+        return False, "SMTP non configuré."
+    port = int(_secret_value("CONTACT_SMTP_PORT", "SMTP_PORT", default="587") or "587")
+    user = _secret_value("CONTACT_SMTP_USER", "SMTP_USER")
+    from_email = _secret_value(
+        "CONTACT_FROM_EMAIL",
+        "SMTP_FROM_EMAIL",
+        default=user or CONTACT_OWNER_EMAIL,
+    ) or CONTACT_OWNER_EMAIL
+    to_email = _secret_value(
+        "FEEDBACK_TO_EMAIL",
+        "CONTACT_TO_EMAIL",
+        "SMTP_TO_EMAIL",
+        default=CONTACT_OWNER_EMAIL,
+    ) or CONTACT_OWNER_EMAIL
+
+    msg = EmailMessage()
+    msg["Subject"] = (
+        f"[Portfolio][{feedback['category']}][{feedback['priority']}] "
+        f"{feedback['title']} · {feedback['reference']}"
+    )[:240]
+    msg["From"] = from_email
+    msg["To"] = to_email
+    if feedback.get("email") and feedback.get("allow_follow_up"):
+        msg["Reply-To"] = str(feedback["email"])
+    msg.set_content(_build_feedback_email_body(feedback))
+
+    try:
+        if port == 465:
+            with smtplib.SMTP_SSL(
+                host,
+                port,
+                context=ssl.create_default_context(),
+                timeout=20,
+            ) as smtp:
+                if user:
+                    smtp.login(user, password)
+                smtp.send_message(msg, to_addrs=[to_email])
+        else:
+            with smtplib.SMTP(host, port, timeout=20) as smtp:
+                smtp.starttls(context=ssl.create_default_context())
+                if user:
+                    smtp.login(user, password)
+                smtp.send_message(msg, to_addrs=[to_email])
+    except Exception as exc:
+        return False, f"Échec d'envoi SMTP: {exc}"
+    return True, f"Email envoyé à {to_email}."
+
+
+def _jira_adf_document(text: str) -> dict[str, Any]:
+    content: list[dict[str, Any]] = []
+    for line in str(text).splitlines():
+        paragraph: dict[str, Any] = {"type": "paragraph", "content": []}
+        if line:
+            paragraph["content"] = [{"type": "text", "text": line[:3000]}]
+        content.append(paragraph)
+    return {
+        "type": "doc",
+        "version": 1,
+        "content": content or [{"type": "paragraph", "content": []}],
+    }
+
+
+def _jira_issue_type(feedback: dict[str, Any]) -> dict[str, str]:
+    is_bug = feedback.get("category") == "Bug / dysfonctionnement"
+    id_secret = "JIRA_BUG_ISSUE_TYPE_ID" if is_bug else "JIRA_DEFAULT_ISSUE_TYPE_ID"
+    name_secret = "JIRA_BUG_ISSUE_TYPE" if is_bug else "JIRA_DEFAULT_ISSUE_TYPE"
+    issue_type_id = _secret_value(id_secret)
+    if issue_type_id:
+        return {"id": issue_type_id}
+    default_name = "Bug" if is_bug else "Task"
+    return {"name": _secret_value(name_secret, default=default_name) or default_name}
+
+
+def _jira_default_issue_type() -> dict[str, str]:
+    issue_type_id = _secret_value("JIRA_DEFAULT_ISSUE_TYPE_ID")
+    if issue_type_id:
+        return {"id": issue_type_id}
+    return {
+        "name": _secret_value("JIRA_DEFAULT_ISSUE_TYPE", default="Task")
+        or "Task"
+    }
+
+
+def _create_feedback_jira_issue(
+    feedback: dict[str, Any],
+) -> tuple[bool, str, str | None]:
+    if not _feedback_jira_configured():
+        return False, "Jira non configuré.", None
+    base_url = str(_secret_value("JIRA_BASE_URL") or "").rstrip("/")
+    email = str(_secret_value("JIRA_EMAIL") or "")
+    api_token = str(_secret_value("JIRA_API_TOKEN") or "")
+    project_key = str(_secret_value("JIRA_PROJECT_KEY") or "")
+    category_slug = re.sub(
+        r"[^a-z0-9]+",
+        "-",
+        str(feedback["category"]).lower(),
+    ).strip("-")
+    priority_slug = re.sub(
+        r"[^a-z0-9]+",
+        "-",
+        str(feedback["priority"]).lower(),
+    ).strip("-")
+    payload = {
+        "fields": {
+            "project": {"key": project_key},
+            "summary": f"[{feedback['reference']}] {feedback['title']}"[:255],
+            "description": _jira_adf_document(_build_feedback_email_body(feedback)),
+            "issuetype": _jira_issue_type(feedback),
+            "labels": [
+                "portfolio-feedback",
+                category_slug,
+                f"priorite-{priority_slug}",
+            ],
+        }
+    }
+    try:
+        response = requests.post(
+            f"{base_url}/rest/api/3/issue",
+            auth=(email, api_token),
+            headers={"Accept": "application/json", "Content-Type": "application/json"},
+            json=payload,
+            timeout=25,
+        )
+        if (
+            response.status_code == 400
+            and feedback.get("category") == "Bug / dysfonctionnement"
+            and payload["fields"]["issuetype"] != _jira_default_issue_type()
+        ):
+            payload["fields"]["issuetype"] = _jira_default_issue_type()
+            response = requests.post(
+                f"{base_url}/rest/api/3/issue",
+                auth=(email, api_token),
+                headers={
+                    "Accept": "application/json",
+                    "Content-Type": "application/json",
+                },
+                json=payload,
+                timeout=25,
+            )
+        response.raise_for_status()
+        response_data = response.json()
+        issue_key = str(response_data.get("key") or "")
+        issue_url = f"{base_url}/browse/{issue_key}" if issue_key else None
+        return True, f"Ticket Jira {issue_key or 'créé'}.", issue_url
+    except requests.HTTPError as exc:
+        detail = ""
+        try:
+            detail = response.text[:900]
+        except Exception:
+            pass
+        suffix = f" · {detail}" if detail else ""
+        return False, f"Création Jira impossible: {exc}{suffix}", None
+    except Exception as exc:
+        return False, f"Création Jira impossible: {exc}", None
+
+
+def _feedback_mailto_link(feedback: dict[str, Any]) -> str:
+    subject = (
+        f"[Portfolio][{feedback['category']}] "
+        f"{feedback['title']} · {feedback['reference']}"
+    )
+    return (
+        f"mailto:{CONTACT_OWNER_EMAIL}?subject={quote(subject)}"
+        f"&body={quote(_build_feedback_email_body(feedback))}"
+    )
+
+
+def _render_feedback_fields() -> None:
+    st.caption("Partagez un avis, un problème rencontré ou une amélioration possible.")
+    section, subpage = _feedback_current_page()
+    detected_page = " · ".join(part for part in [section, subpage] if part)
+    try:
+        feedback_card = st.container(border=True)
+    except TypeError:
+        feedback_card = st.container()
+
+    with feedback_card:
+        top_1, top_2, top_3 = st.columns([1.25, 0.85, 1.2])
+        with top_1:
+            category = st.selectbox(
+                "Type de retour",
+                [
+                    "Avis général",
+                    "Bug / dysfonctionnement",
+                    "Recommandation technique",
+                    "Amélioration fonctionnelle",
+                    "Ergonomie / interface",
+                    "Données / qualité",
+                    "Performance",
+                    "Accessibilité",
+                    "Autre",
+                ],
+                key="feedback_category",
+            )
+        with top_2:
+            priority = st.selectbox(
+                "Impact",
+                ["Faible", "Modéré", "Important", "Bloquant"],
+                index=1,
+                key="feedback_priority",
+                help=(
+                    "Estimation de l'impact observé; la priorisation finale "
+                    "reste à la charge du mainteneur."
+                ),
+            )
+        with top_3:
+            page = st.text_input(
+                "Page concernée",
+                value=detected_page,
+                key="feedback_page",
+                help="La page courante est détectée automatiquement et reste modifiable.",
+            )
+
+        title = st.text_input(
+            "Titre",
+            placeholder="Résumé clair en une phrase",
+            max_chars=180,
+            key="feedback_title",
+        )
+        description = st.text_area(
+            "Description",
+            placeholder="Décrivez votre observation, son contexte et son intérêt...",
+            height=140,
+            max_chars=5000,
+            key="feedback_description",
+        )
+        if category == "Bug / dysfonctionnement":
+            bug_col_1, bug_col_2 = st.columns(2)
+            with bug_col_1:
+                reproduction_steps = st.text_area(
+                    "Étapes pour reproduire",
+                    placeholder="1. Ouvrir...\n2. Sélectionner...\n3. Observer...",
+                    height=120,
+                    max_chars=3000,
+                    key="feedback_reproduction_steps",
+                )
+            with bug_col_2:
+                expected_result = st.text_area(
+                    "Résultat attendu",
+                    placeholder="Ce qui aurait dû se produire...",
+                    height=120,
+                    max_chars=3000,
+                    key="feedback_expected_result",
+                )
+        else:
+            reproduction_steps = ""
+            expected_result = st.text_area(
+                "Recommandation ou résultat attendu",
+                placeholder="Décrivez la solution, l'amélioration ou le bénéfice attendu...",
+                height=100,
+                max_chars=3000,
+                key="feedback_expected_result",
+            )
+
+        technical_context = st.text_input(
+            "Contexte technique (facultatif)",
+            placeholder="Navigateur, appareil, message d'erreur, modèle ou données utilisés...",
+            max_chars=600,
+            key="feedback_technical_context",
+        )
+        identity_1, identity_2, identity_3 = st.columns([1.0, 1.15, 0.95])
+        with identity_1:
+            name = st.text_input(
+                "Nom / prénom (facultatif)",
+                key="feedback_name",
+            )
+        with identity_2:
+            email = st.text_input("Email (facultatif)", key="feedback_email")
+        with identity_3:
+            organization = st.text_input(
+                "Organisation (facultatif)",
+                key="feedback_organization",
+            )
+        allow_follow_up = st.checkbox(
+            "J'accepte d'être recontacté au sujet de ce retour",
+            value=False,
+            key="feedback_allow_follow_up",
+            disabled=not bool(str(email).strip()),
+        )
+
+    submitted = st.button(
+        "Envoyer le retour",
+        type="primary",
+        width="stretch",
+        key="feedback_submit",
+    )
+    if not submitted:
+        return
+
+    validation_errors: list[str] = []
+    if not str(title).strip():
+        validation_errors.append("un titre")
+    if len(str(description).strip()) < 15:
+        validation_errors.append("une description d'au moins 15 caractères")
+    if str(email).strip() and not re.match(
+        r"^[^@\s]+@[^@\s]+\.[^@\s]+$",
+        str(email).strip(),
+    ):
+        validation_errors.append("un email valide ou aucun email")
+    if (
+        category == "Bug / dysfonctionnement"
+        and not str(reproduction_steps).strip()
+    ):
+        validation_errors.append("les étapes permettant de reproduire le bug")
+    if validation_errors:
+        st.warning("Merci de renseigner " + ", ".join(validation_errors) + ".")
+        return
+
+    now = perf_counter()
+    last_submit = float(
+        st.session_state.get("feedback_last_submit_at", 0.0) or 0.0
+    )
+    min_interval = int(
+        _secret_value("FEEDBACK_MIN_INTERVAL_SECONDS", default="30") or "30"
+    )
+    if now - last_submit < min_interval:
+        st.warning(
+            f"Un retour vient déjà d'être envoyé. Patientez {min_interval} "
+            "secondes avant un nouvel envoi."
+        )
+        return
+
+    reference = (
+        "PF-"
+        + dt.datetime.now(dt.timezone.utc).strftime("%Y%m%d-%H%M%S")
+        + "-"
+        + uuid.uuid4().hex[:5].upper()
+    )
+    feedback = {
+        "reference": reference,
+        "category": str(category),
+        "priority": str(priority),
+        "page": str(page).strip() or detected_page,
+        "title": str(title).strip(),
+        "description": str(description).strip(),
+        "reproduction_steps": str(reproduction_steps).strip(),
+        "expected_result": str(expected_result).strip(),
+        "technical_context": str(technical_context).strip(),
+        "name": str(name).strip(),
+        "email": str(email).strip(),
+        "organization": str(organization).strip(),
+        "allow_follow_up": bool(allow_follow_up and str(email).strip()),
+        "submitted_at": dt.datetime.now(dt.timezone.utc).isoformat(
+            timespec="seconds"
+        ),
+    }
+
+    email_ok = False
+    email_status = "SMTP non configuré."
+    jira_ok = False
+    jira_status = "Jira non configuré."
+    with st.spinner("Transmission du retour..."):
+        if _contact_smtp_configured():
+            email_ok, email_status = _send_feedback_email(feedback)
+        if _feedback_jira_configured():
+            jira_ok, jira_status, _ = _create_feedback_jira_issue(feedback)
+
+    if email_ok or jira_ok:
+        st.session_state["feedback_last_submit_at"] = now
+        st.success(
+            f"Merci, votre retour a été transmis. Référence: `{reference}`"
+        )
+        if email_ok:
+            st.caption(email_status)
+        if jira_ok:
+            st.caption(jira_status)
+        if not email_ok:
+            st.warning(
+                "Le ticket Jira a été créé, mais la copie email n'a pas pu "
+                "être envoyée automatiquement."
+            )
+        if not jira_ok:
+            st.warning(
+                "L'email a été transmis, mais le ticket Jira n'a pas pu "
+                "être créé automatiquement."
+            )
+    else:
+        st.error("Le retour n'a pas pu être transmis automatiquement.")
+        st.caption(
+            "Les canaux serveur sont indisponibles. Vous pouvez utiliser "
+            "l'email prérempli ci-dessous."
+        )
+        st.markdown(
+            f"[Ouvrir un email prérempli]({_feedback_mailto_link(feedback)})"
+        )
+
+
+def _render_feedback_dialog() -> None:
+    if not bool(st.session_state.get("feedback_dialog_open", False)):
+        return
+    if hasattr(st, "dialog"):
+        @st.dialog(
+            "Avis et suggestions",
+            width="large",
+            dismissible=True,
+            on_dismiss=_close_feedback_dialog,
+        )
+        def _feedback_modal() -> None:
+            _render_feedback_fields()
+
+        _feedback_modal()
+    else:
+        try:
+            fallback_box = st.container(border=True)
+        except TypeError:
+            fallback_box = st.container()
+        with fallback_box:
+            st.markdown("**Avis et suggestions**")
+            _render_feedback_fields()
+
+
 PRIMARY_KEYS: dict[str, set[str]] = {
     "stores": {"store_id"},
     "products": {"product_id"},
@@ -47068,7 +47532,7 @@ Bon usage:
         formula_block.latex(plan_formula)
         formula_block.caption(plan_formula_note)
         formula_block.markdown(
-            f"**Correspondance des facteurs**: "
+            "**Correspondance des facteurs**: "
             + " · ".join(
                 f"$X_{{{idx}}}$ = `{factor}`"
                 for idx, factor in enumerate(factor_names, start=1)
@@ -52031,6 +52495,8 @@ def main() -> None:
         st.session_state["ui_settings_open"] = False
     if "contact_dialog_open" not in st.session_state:
         st.session_state["contact_dialog_open"] = False
+    if "feedback_dialog_open" not in st.session_state:
+        st.session_state["feedback_dialog_open"] = False
     section_aliases = {
         "Données": "Tableau de bord",
         "Originales": "Tableau de bord",
@@ -52065,15 +52531,28 @@ def main() -> None:
 
     if st.sidebar.button(_t("settings_button_open"), key="ui_settings_btn", width="stretch"):
         _init_settings_draft_from_active()
+        st.session_state["contact_dialog_open"] = False
+        st.session_state["feedback_dialog_open"] = False
         st.session_state["ui_settings_open"] = True
     if st.sidebar.button("📅 Contact", key="contact_dialog_btn", width="stretch"):
+        st.session_state["ui_settings_open"] = False
+        st.session_state["feedback_dialog_open"] = False
         st.session_state["contact_dialog_open"] = True
+    if st.sidebar.button(
+        "💬 Avis et suggestions",
+        key="feedback_dialog_btn",
+        width="stretch",
+    ):
+        st.session_state["ui_settings_open"] = False
+        st.session_state["contact_dialog_open"] = False
+        st.session_state["feedback_dialog_open"] = True
     st.sidebar.title(_t("navigation_title"))
 
     _apply_runtime_theme(bool(st.session_state.get("ui_dark_mode", False)))
     _apply_ui_layout_preferences()
     _render_settings_dialog()
     _render_contact_dialog()
+    _render_feedback_dialog()
 
     pending_nav = st.session_state.pop("pending_navigation", None)
     query_nav = _consume_navigation_query_param()
