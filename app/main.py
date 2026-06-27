@@ -47423,9 +47423,10 @@ Bon usage:
             design_resolution = "D-optimal approx."
 
         level_symbols = [f"L_{{{idx}}}" for idx in range(1, len(factor_names) + 1)]
+        levels_product = r" \times ".join(level_symbols)
         if plan_type == "Plan complet (factoriel)":
             plan_formula = (
-                rf"\mathcal{{D}} = {' \\times '.join(level_symbols)},"
+                rf"\mathcal{{D}} = {levels_product},"
                 rf"\qquad N_{{cellules}} = \prod_{{i=1}}^{{{len(factor_names)}}}|L_i| = {len(design)}"
             )
             plan_formula_note = "Toutes les combinaisons des modalités sont présentes."
@@ -47455,7 +47456,7 @@ Bon usage:
             plan_formula_note = "Le sous-plan recherche une représentation équilibrée des deux niveaux de chaque facteur et une bonne couverture des couples."
         elif plan_type == "Plan orthogonal équilibré (mixte)":
             plan_formula = (
-                rf"\mathcal{{D}}_{{orth}} \subset {' \\times '.join(level_symbols)},"
+                rf"\mathcal{{D}}_{{orth}} \subset {levels_product},"
                 r"\qquad X^{\mathsf{T}}X \approx \operatorname{diag}(X^{\mathsf{T}}X)"
             )
             plan_formula_note = "Le sous-plan équilibre les modalités et réduit les corrélations entre colonnes de la matrice expérimentale."
