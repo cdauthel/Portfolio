@@ -1092,7 +1092,7 @@ UI_TEXTS: dict[str, dict[str, str]] = {
     "navigation_title": {"fr": "Navigation", "en": "Navigation"},
     "menu_label": {"fr": "Menu", "en": "Menu"},
     "submenu_label": {"fr": "Sous-menu", "en": "Submenu"},
-    "settings_button_open": {"fr": "⚙️ Paramètres", "en": "⚙️ Settings"},
+    "settings_button_open": {"fr": "Paramètres", "en": "Settings"},
     "settings_button_close": {"fr": "✕ Fermer les paramètres", "en": "✕ Close settings"},
     "settings_title": {"fr": "Préférences", "en": "Preferences"},
     "settings_save": {"fr": "Enregistrer", "en": "Save"},
@@ -52755,17 +52755,53 @@ def main() -> None:
             if saved_subpage in subpage_aliases:
                 st.session_state["subpage_by_section"][section_name] = subpage_aliases[str(saved_subpage)]
 
-    if st.sidebar.button(_t("settings_button_open"), key="ui_settings_btn", width="stretch"):
+    st.sidebar.markdown(
+        """
+        <style>
+        section[data-testid="stSidebar"] .st-key-sidebar_quick_actions {
+            margin-bottom: .2rem;
+        }
+        section[data-testid="stSidebar"] .st-key-sidebar_quick_actions [data-testid="stButton"] {
+            margin: 0;
+        }
+        section[data-testid="stSidebar"] .st-key-sidebar_quick_actions button {
+            min-height: 1.9rem;
+            padding: .18rem .24rem;
+            border-radius: 6px;
+        }
+        section[data-testid="stSidebar"] .st-key-sidebar_quick_actions button p {
+            font-size: .68rem;
+            line-height: 1.05;
+            white-space: nowrap;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    quick_actions = st.sidebar.container(key="sidebar_quick_actions")
+    settings_col, contact_col, feedback_col = quick_actions.columns(
+        [1.2, 0.9, 0.65],
+        gap="small",
+    )
+    if settings_col.button(
+        _t("settings_button_open"),
+        key="ui_settings_btn",
+        width="stretch",
+    ):
         _init_settings_draft_from_active()
         st.session_state["contact_dialog_open"] = False
         st.session_state["feedback_dialog_open"] = False
         st.session_state["ui_settings_open"] = True
-    if st.sidebar.button("📅 Contact", key="contact_dialog_btn", width="stretch"):
+    if contact_col.button(
+        "Contact",
+        key="contact_dialog_btn",
+        width="stretch",
+    ):
         st.session_state["ui_settings_open"] = False
         st.session_state["feedback_dialog_open"] = False
         st.session_state["contact_dialog_open"] = True
-    if st.sidebar.button(
-        "💬 Avis et suggestions",
+    if feedback_col.button(
+        "Avis",
         key="feedback_dialog_btn",
         width="stretch",
     ):
