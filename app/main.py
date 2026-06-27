@@ -778,6 +778,8 @@ def _apply_runtime_theme(dark_mode: bool) -> None:
             --dm-bg-2: #292b30;
             --dm-surface: #303136;
             --dm-surface-raised: #3c3c3c;
+            --dm-panel: #35363b;
+            --dm-panel-inner: #292b30;
             --dm-surface-soft: rgba(34, 36, 42, 0.92);
             --dm-surface-muted: rgba(60, 60, 60, 0.78);
             --dm-border: rgba(191, 191, 191, 0.18);
@@ -875,16 +877,23 @@ def _apply_runtime_theme(dark_mode: bool) -> None:
             color: var(--dm-text-soft) !important;
         }
         [data-testid="stMetric"] {
-            background: var(--dm-surface-soft);
+            background: var(--dm-panel-inner);
             border: 1px solid var(--dm-border);
             border-radius: 8px;
             padding: 0.5rem 0.65rem;
         }
-        [data-testid="stExpander"] details,
-        [data-testid="stVerticalBlockBorderWrapper"] {
-            background: var(--dm-surface-soft);
-            border-color: var(--dm-border) !important;
+        [data-testid="stExpander"] details {
+            background: var(--dm-panel-inner);
+            border-color: var(--dm-border-strong) !important;
             border-radius: 8px;
+        }
+        [data-testid="stVerticalBlockBorderWrapper"] {
+            background: var(--dm-panel) !important;
+            border: 1px solid var(--dm-border-strong) !important;
+            border-radius: 8px;
+            box-shadow:
+                0 1px 0 rgba(254, 254, 254, 0.035) inset,
+                0 8px 20px rgba(0, 0, 0, 0.16);
         }
         [data-testid="stAlert"] {
             background: var(--dm-bg-2);
@@ -978,6 +987,35 @@ def _apply_runtime_theme(dark_mode: bool) -> None:
         }
         [data-testid="stDataFrame"] [role="grid"] {
             background: var(--dm-bg-1);
+        }
+        [data-testid="stPlotlyChart"],
+        [data-testid="stVegaLiteChart"],
+        [data-testid="stPyplot"],
+        [data-testid="stGraphVizChart"],
+        [data-testid="stDeckGlJsonChart"] {
+            background: var(--dm-bg-1) !important;
+            border: 1px solid var(--dm-border) !important;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        [data-testid="stPlotlyChart"] > div,
+        [data-testid="stVegaLiteChart"] > div,
+        [data-testid="stPyplot"] > div,
+        [data-testid="stGraphVizChart"] > div,
+        [data-testid="stDeckGlJsonChart"] > div {
+            background: transparent !important;
+        }
+        [data-testid="stPlotlyChart"] .modebar {
+            background: rgba(34, 36, 42, 0.88) !important;
+            border-radius: 6px;
+        }
+        [data-testid="stPlotlyChart"] .modebar-btn path {
+            fill: var(--dm-text-soft) !important;
+        }
+        iframe {
+            background: var(--dm-bg-1) !important;
+            color-scheme: dark;
+            border-radius: 8px;
         }
         [data-testid="stToolbar"] button {
             color: var(--dm-text-soft) !important;
@@ -1617,16 +1655,66 @@ def _apply_dark_plotly_layout(fig: Any) -> Any:
         out = go.Figure(fig)
         out.update_layout(
             template="plotly_dark",
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="#22242a",
+            paper_bgcolor="#22242a",
+            plot_bgcolor="#292b30",
             font=dict(color="#bfbfbf"),
             title_font=dict(color="#fefefe"),
             colorway=["#fefefe", "#bfbfbf", "#929499", "#6f7073", "#d8d8d8", "#3c3c3c"],
+            hoverlabel=dict(
+                bgcolor="#35363b",
+                bordercolor="rgba(191,191,191,0.32)",
+                font=dict(color="#fefefe"),
+            ),
             legend=dict(
                 bgcolor="rgba(41,43,48,0.88)",
                 bordercolor="rgba(191,191,191,0.18)",
                 borderwidth=1,
                 font=dict(color="#bfbfbf"),
+            ),
+            polar=dict(
+                bgcolor="#292b30",
+                angularaxis=dict(
+                    gridcolor="rgba(191,191,191,0.12)",
+                    linecolor="rgba(191,191,191,0.24)",
+                    tickfont=dict(color="#bfbfbf"),
+                ),
+                radialaxis=dict(
+                    gridcolor="rgba(191,191,191,0.12)",
+                    linecolor="rgba(191,191,191,0.24)",
+                    tickfont=dict(color="#bfbfbf"),
+                ),
+            ),
+            scene=dict(
+                bgcolor="#292b30",
+                xaxis=dict(
+                    backgroundcolor="#292b30",
+                    gridcolor="rgba(191,191,191,0.12)",
+                    linecolor="rgba(191,191,191,0.24)",
+                    tickfont=dict(color="#bfbfbf"),
+                ),
+                yaxis=dict(
+                    backgroundcolor="#292b30",
+                    gridcolor="rgba(191,191,191,0.12)",
+                    linecolor="rgba(191,191,191,0.24)",
+                    tickfont=dict(color="#bfbfbf"),
+                ),
+                zaxis=dict(
+                    backgroundcolor="#292b30",
+                    gridcolor="rgba(191,191,191,0.12)",
+                    linecolor="rgba(191,191,191,0.24)",
+                    tickfont=dict(color="#bfbfbf"),
+                ),
+            ),
+            geo=dict(
+                bgcolor="#22242a",
+                landcolor="#35363b",
+                lakecolor="#22242a",
+                oceancolor="#1f2020",
+                coastlinecolor="rgba(191,191,191,0.28)",
+                subunitcolor="rgba(191,191,191,0.18)",
+                showland=True,
+                showlakes=True,
+                showocean=True,
             ),
         )
         out.update_xaxes(
@@ -1643,9 +1731,45 @@ def _apply_dark_plotly_layout(fig: Any) -> Any:
             tickfont=dict(color="#bfbfbf"),
             title_font=dict(color="#fefefe"),
         )
+        out.update_annotations(font=dict(color="#bfbfbf"))
+        for trace in out.data:
+            colorbar = getattr(trace, "colorbar", None)
+            if colorbar is not None:
+                try:
+                    colorbar.tickfont = dict(color="#bfbfbf")
+                    colorbar.title.font = dict(color="#fefefe")
+                    colorbar.outlinewidth = 0
+                except Exception:
+                    pass
         return out
     except Exception:
         return fig
+
+
+def _install_dark_plotly_renderer() -> None:
+    """Apply the active dark theme to every Plotly chart rendered by Streamlit."""
+    try:
+        from streamlit.delta_generator import DeltaGenerator
+    except Exception:
+        return
+
+    current = getattr(DeltaGenerator, "plotly_chart", None)
+    if not callable(current) or bool(getattr(current, "_portfolio_dark_chart_renderer", False)):
+        return
+
+    original = current
+
+    def plotly_chart(self: Any, *args: Any, **kwargs: Any) -> Any:
+        updated_args = list(args)
+        if updated_args:
+            updated_args[0] = _apply_dark_plotly_layout(updated_args[0])
+        elif "figure_or_data" in kwargs:
+            kwargs = dict(kwargs)
+            kwargs["figure_or_data"] = _apply_dark_plotly_layout(kwargs["figure_or_data"])
+        return original(self, *updated_args, **kwargs)
+
+    setattr(plotly_chart, "_portfolio_dark_chart_renderer", True)
+    setattr(DeltaGenerator, "plotly_chart", plotly_chart)
 
 
 def _translate_plotly_figure(fig: Any) -> Any:
@@ -3322,6 +3446,10 @@ def _render_html_fragment(html_content: object, *, height: int | None = None) ->
             return
 
     components.html(str(html_content or ""), height=height)
+
+
+def _folium_default_tiles() -> str:
+    return "CartoDB dark_matter" if bool(st.session_state.get("ui_dark_mode", False)) else "CartoDB positron"
 
 
 def _scroll_to_top_on_navigation(section: str, subpage: str) -> None:
@@ -15165,7 +15293,7 @@ def _scraping_preview_dataset(api_name: str, df: pd.DataFrame) -> None:
     if {"lat", "lon"}.issubset(df.columns):
         map_df = df.dropna(subset=["lat", "lon"]).head(1500)
         if not map_df.empty:
-            fmap = folium.Map(location=[float(map_df["lat"].mean()), float(map_df["lon"].mean())], zoom_start=5, tiles="CartoDB positron")
+            fmap = folium.Map(location=[float(map_df["lat"].mean()), float(map_df["lon"].mean())], zoom_start=5, tiles=_folium_default_tiles())
             for _, row in map_df.iterrows():
                 folium.CircleMarker(
                     location=[float(row["lat"]), float(row["lon"])],
@@ -17358,7 +17486,7 @@ def _render_scraping_infrastructure() -> None:
         hosting_view = catalog[["API", "Propriétaire", "Hébergeur", "Localisation", "SLA", "Couverture"]]
         st.dataframe(hosting_view, width="stretch", height=_table_height(len(hosting_view), max_height=520))
 
-    fmap = folium.Map(location=[35, 5], zoom_start=2, tiles="CartoDB positron")
+    fmap = folium.Map(location=[35, 5], zoom_start=2, tiles=_folium_default_tiles())
     for _, row in locs.iterrows():
         folium.CircleMarker(
             location=[float(row["lat"]), float(row["lon"])],
@@ -18078,7 +18206,7 @@ def _render_adaptive_collected_data_views(df: pd.DataFrame, dataset_key: str, ap
         map_df[lon_col] = pd.to_numeric(map_df[lon_col], errors="coerce")
         map_df = map_df.dropna(subset=[lat_col, lon_col]).head(1500)
         if not map_df.empty:
-            fmap = folium.Map(location=[float(map_df[lat_col].mean()), float(map_df[lon_col].mean())], zoom_start=5, tiles="CartoDB positron")
+            fmap = folium.Map(location=[float(map_df[lat_col].mean()), float(map_df[lon_col].mean())], zoom_start=5, tiles=_folium_default_tiles())
             for _, row in map_df.iterrows():
                 tooltip_value = str(row.get(primary_cat, row.get("name", row.get("city", dataset_key))))
                 radius = 4
@@ -19721,6 +19849,7 @@ def render_map(store_daily: pd.DataFrame) -> None:
         tiles_sel = st.selectbox(
             "Fond de carte",
             ["CartoDB positron", "OpenStreetMap", "CartoDB dark_matter"],
+            index=2 if bool(st.session_state.get("ui_dark_mode", False)) else 0,
             key="spatial_map_tiles",
         )
     with g4:
@@ -22287,7 +22416,7 @@ def _spatial_points_map_html(df: pd.DataFrame, value_col: str, title_col: str, *
     tmp = df.dropna(subset=["lat", "lon"]).copy()
     if tmp.empty:
         return ""
-    m = folium.Map(location=[float(tmp["lat"].mean()), float(tmp["lon"].mean())], zoom_start=4, tiles="CartoDB positron")
+    m = folium.Map(location=[float(tmp["lat"].mean()), float(tmp["lon"].mean())], zoom_start=4, tiles=_folium_default_tiles())
     colors = {
         "High-High": "#b91c1c",
         "Low-Low": "#1d4ed8",
@@ -52844,6 +52973,7 @@ def main() -> None:
     st.sidebar.title(_t("navigation_title"))
 
     _apply_runtime_theme(bool(st.session_state.get("ui_dark_mode", False)))
+    _install_dark_plotly_renderer()
     _apply_ui_layout_preferences()
     _render_settings_dialog()
     _render_contact_dialog()
