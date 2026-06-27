@@ -2966,9 +2966,7 @@ def _render_feedback_fields() -> None:
 
     if email_ok or jira_ok:
         st.session_state["feedback_last_submit_at"] = now
-        st.success(
-            f"Merci, votre retour a été transmis. Référence: `{reference}`"
-        )
+        st.success("Merci, votre retour a été transmis.")
         if email_ok:
             st.caption(email_status)
         if jira_ok:
