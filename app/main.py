@@ -981,12 +981,50 @@ def _apply_runtime_theme(dark_mode: bool) -> None:
             box-shadow: inset 0 -2px 0 var(--dm-accent);
         }
         [data-testid="stDataFrame"] {
+            background: var(--dm-bg-1) !important;
             border-radius: 8px;
-            border: 1px solid var(--dm-border);
+            border: 1px solid var(--dm-border-strong);
             overflow: hidden;
+            color-scheme: dark;
         }
-        [data-testid="stDataFrame"] [role="grid"] {
-            background: var(--dm-bg-1);
+        [data-testid="stDataFrame"] > div,
+        [data-testid="stDataFrame"] [role="grid"],
+        [data-testid="stDataFrame"] [role="gridcell"],
+        [data-testid="stDataFrame"] [role="columnheader"] {
+            background-color: var(--dm-bg-1) !important;
+            color: var(--dm-text-soft) !important;
+            border-color: var(--dm-border) !important;
+        }
+        [data-testid="stDataFrame"] canvas {
+            filter: invert(0.82) hue-rotate(180deg);
+        }
+        [data-testid="stDataFrame"] input {
+            background: var(--dm-bg-2) !important;
+            color: var(--dm-text) !important;
+        }
+        [data-testid="stTable"],
+        [data-testid="stTable"] table,
+        .stTable,
+        .stTable table {
+            background: var(--dm-bg-1) !important;
+            color: var(--dm-text-soft) !important;
+            border-color: var(--dm-border-strong) !important;
+        }
+        [data-testid="stTable"] th,
+        .stTable th {
+            background: var(--dm-panel) !important;
+            color: var(--dm-text) !important;
+            border-color: var(--dm-border) !important;
+        }
+        [data-testid="stTable"] td,
+        .stTable td {
+            background: var(--dm-panel-inner) !important;
+            color: var(--dm-text-soft) !important;
+            border-color: var(--dm-border) !important;
+        }
+        [data-testid="stTable"] tr:nth-child(even) td,
+        .stTable tr:nth-child(even) td {
+            background: var(--dm-bg-1) !important;
         }
         [data-testid="stPlotlyChart"],
         [data-testid="stVegaLiteChart"],
@@ -1016,6 +1054,22 @@ def _apply_runtime_theme(dark_mode: bool) -> None:
             background: var(--dm-bg-1) !important;
             color-scheme: dark;
             border-radius: 8px;
+        }
+        [data-testid="stDialog"] button {
+            color: var(--dm-text) !important;
+        }
+        [data-testid="stDialog"] button svg,
+        [data-testid="stDialog"] button svg path {
+            color: var(--dm-text) !important;
+            fill: currentColor !important;
+            stroke: currentColor !important;
+        }
+        [data-testid="stDialog"] button[aria-label="Close"],
+        [data-testid="stDialog"] button[aria-label="Fermer"],
+        [data-testid="stDialog"] button[kind="header"] {
+            background: var(--dm-surface-raised) !important;
+            border: 1px solid var(--dm-border-strong) !important;
+            opacity: 1 !important;
         }
         [data-testid="stToolbar"] button {
             color: var(--dm-text-soft) !important;
@@ -3450,6 +3504,11 @@ def _render_html_fragment(html_content: object, *, height: int | None = None) ->
 
 def _folium_default_tiles() -> str:
     return "CartoDB dark_matter" if bool(st.session_state.get("ui_dark_mode", False)) else "CartoDB positron"
+
+
+def _render_folium_map(map_obj: folium.Map, *, height: int) -> None:
+    """Render Folium's full Leaflet document without its notebook trust wrapper."""
+    components.html(map_obj.get_root().render(), height=int(height), scrolling=False)
 
 
 def _scroll_to_top_on_navigation(section: str, subpage: str) -> None:
@@ -15304,7 +15363,7 @@ def _scraping_preview_dataset(api_name: str, df: pd.DataFrame) -> None:
                     tooltip=str(row.get("city", row.get("name", row.get("station_id", api_name)))),
                 ).add_to(fmap)
             with c1:
-                _render_html_fragment(fmap._repr_html_(), height=360)
+                _render_folium_map(fmap, height=360)
     date_cols = [c for c in df.columns if pd.api.types.is_datetime64_any_dtype(df[c])]
     if date_cols and numeric_cols:
         dt = date_cols[0]
@@ -17499,7 +17558,7 @@ def _render_scraping_infrastructure() -> None:
     st.markdown("##### Carte des hébergeurs et localisations")
     _, map_col, _ = st.columns([0.18, 0.64, 0.18])
     with map_col:
-        _render_html_fragment(fmap._repr_html_(), height=480)
+        _render_folium_map(fmap, height=480)
 
 
 def _render_scraping_catalog() -> None:
@@ -18294,7 +18353,7 @@ def _render_adaptive_collected_data_views(df: pd.DataFrame, dataset_key: str, ap
             with col:
                 if isinstance(chart, folium.Map):
                     st.markdown(f"##### {title}")
-                    _render_html_fragment(chart._repr_html_(), height=390)
+                    _render_folium_map(chart, height=390)
                 else:
                     st.plotly_chart(chart, width="stretch")
 
@@ -19978,7 +20037,7 @@ def render_map(store_daily: pd.DataFrame) -> None:
         if not heat_values.empty and float(heat_values["w"].max()) > 0.0:
             HeatMap(heat_values[["lat", "lon", "w"]].values.tolist(), radius=22, blur=18).add_to(m)
 
-    _render_html_fragment(m._repr_html_(), height=580)
+    _render_folium_map(m, height=580)
 
     focus_options = store_agg["store_id"].dropna().sort_values().unique().tolist()
     if not focus_options:
@@ -22412,10 +22471,10 @@ def _spatial_impacts_table(model_fit: dict[str, object], x_cols: list[str]) -> p
     return pd.DataFrame(rows)
 
 
-def _spatial_points_map_html(df: pd.DataFrame, value_col: str, title_col: str, *, cluster_col: str | None = None) -> str:
+def _spatial_points_map(df: pd.DataFrame, value_col: str, title_col: str, *, cluster_col: str | None = None) -> folium.Map | None:
     tmp = df.dropna(subset=["lat", "lon"]).copy()
     if tmp.empty:
-        return ""
+        return None
     m = folium.Map(location=[float(tmp["lat"].mean()), float(tmp["lon"].mean())], zoom_start=4, tiles=_folium_default_tiles())
     colors = {
         "High-High": "#b91c1c",
@@ -22444,7 +22503,7 @@ def _spatial_points_map_html(df: pd.DataFrame, value_col: str, title_col: str, *
             fill_opacity=0.72,
             tooltip=tooltip,
         ).add_to(m)
-    return m._repr_html_()
+    return m
 
 
 def _simple_spatial_pdf_bytes(title: str, lines: list[str]) -> bytes:
@@ -22723,10 +22782,10 @@ L'objectif est d'identifier si la cible dépend de son **voisinage**, si les err
         ),
         width="stretch",
     )
-    lisa_html = _spatial_points_map_html(lisa_df, target_col, "store_id", cluster_col="lisa_cluster")
-    if lisa_html:
+    lisa_map = _spatial_points_map(lisa_df, target_col, "store_id", cluster_col="lisa_cluster")
+    if lisa_map is not None:
         with use_block:
-            _render_html_fragment(lisa_html, height=520)
+            _render_folium_map(lisa_map, height=520)
 
     lm_show = lm_df.copy()
     lm_show["p-value"] = pd.to_numeric(lm_show["p-value"], errors="coerce").map(lambda v: "" if pd.isna(v) else f"{float(v):.4f}")
