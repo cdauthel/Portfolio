@@ -2564,6 +2564,14 @@ def _feedback_current_page() -> tuple[str, str]:
     return section, subpage
 
 
+def _feedback_page_options() -> list[str]:
+    return [
+        f"{section} · {subpage}"
+        for section, subpages in SECTIONS.items()
+        for subpage in subpages
+    ]
+
+
 def _build_feedback_email_body(feedback: dict[str, Any]) -> str:
     lines = [
         "Nouveau retour depuis le portfolio Streamlit.",
@@ -2581,8 +2589,6 @@ def _build_feedback_email_body(feedback: dict[str, Any]) -> str:
         lines.extend(["", "Étapes de reproduction:", str(feedback["reproduction_steps"])])
     if feedback.get("expected_result"):
         lines.extend(["", "Résultat attendu / recommandation:", str(feedback["expected_result"])])
-    if feedback.get("technical_context"):
-        lines.extend(["", "Contexte technique:", str(feedback["technical_context"])])
     lines.extend(
         [
             "",
@@ -2806,11 +2812,19 @@ def _render_feedback_fields() -> None:
                 ),
             )
         with top_3:
-            page = st.text_input(
+            page_options = _feedback_page_options()
+            default_page = (
+                detected_page
+                if detected_page in page_options
+                else page_options[0]
+            )
+            if st.session_state.get("feedback_page") not in page_options:
+                st.session_state["feedback_page"] = default_page
+            page = st.selectbox(
                 "Page concernée",
-                value=detected_page,
+                page_options,
                 key="feedback_page",
-                help="La page courante est détectée automatiquement et reste modifiable.",
+                help="La page courante est sélectionnée automatiquement.",
             )
 
         title = st.text_input(
@@ -2854,12 +2868,6 @@ def _render_feedback_fields() -> None:
                 key="feedback_expected_result",
             )
 
-        technical_context = st.text_input(
-            "Contexte technique (facultatif)",
-            placeholder="Navigateur, appareil, message d'erreur, modèle ou données utilisés...",
-            max_chars=600,
-            key="feedback_technical_context",
-        )
         identity_1, identity_2, identity_3 = st.columns([1.0, 1.15, 0.95])
         with identity_1:
             name = st.text_input(
@@ -2937,7 +2945,6 @@ def _render_feedback_fields() -> None:
         "description": str(description).strip(),
         "reproduction_steps": str(reproduction_steps).strip(),
         "expected_result": str(expected_result).strip(),
-        "technical_context": str(technical_context).strip(),
         "name": str(name).strip(),
         "email": str(email).strip(),
         "organization": str(organization).strip(),
@@ -18452,15 +18459,6 @@ def _assistant_provider_profiles() -> pd.DataFrame:
                 "Usage recommandé": "Assistant local privé avec clé API locale et serveur Jan Desktop.",
             },
             {
-                "Fournisseur": "LM Studio",
-                "Mode": "Local / serveur distant",
-                "Endpoint défaut": "http://localhost:1234/v1/chat/completions",
-                "Endpoints alternatifs": "http://localhost:1234/v1/chat/completions | http://127.0.0.1:1234/v1/chat/completions",
-                "Modèles suggérés": "modèles LLM téléchargés ou chargés dans LM Studio",
-                "Compatibilité": "REST v1 + OpenAI-compatible",
-                "Usage recommandé": "Local pour les tests; serveur HTTPS distant authentifié pour Streamlit Cloud.",
-            },
-            {
                 "Fournisseur": "Endpoint compatible",
                 "Mode": "Cloud / Proxy",
                 "Endpoint défaut": "https://proxy.example.com/v1/chat/completions",
@@ -18484,7 +18482,6 @@ def _read_assistant_local_config() -> dict[str, str]:
         "AI_TIMEOUT",
         "AI_TEMPERATURE",
         "OLLAMA_API_KEY",
-        "LM_STUDIO_API_TOKEN",
         "JAN_API_KEY",
         "OPENAI_COMPATIBLE_API_KEY",
     ]
@@ -18502,7 +18499,6 @@ def _read_assistant_local_config() -> dict[str, str]:
             "timeout": "AI_TIMEOUT",
             "temperature": "AI_TEMPERATURE",
             "ollama_api_key": "OLLAMA_API_KEY",
-            "lm_studio_api_token": "LM_STUDIO_API_TOKEN",
             "jan_api_key": "JAN_API_KEY",
             "openai_compatible_api_key": "OPENAI_COMPATIBLE_API_KEY",
         }
@@ -18527,7 +18523,6 @@ def _read_assistant_local_config() -> dict[str, str]:
 def _assistant_api_key(provider: str, config: dict[str, str]) -> str:
     provider_key_names = {
         "Ollama Cloud": "OLLAMA_API_KEY",
-        "LM Studio": "LM_STUDIO_API_TOKEN",
         "Jan.ai": "JAN_API_KEY",
         "Endpoint compatible": "OPENAI_COMPATIBLE_API_KEY",
     }
@@ -18580,40 +18575,13 @@ def _openai_models_url(base_url: str) -> str:
     return clean + "/v1/models"
 
 
-def _lm_studio_api_root(base_url: str) -> str:
-    clean = base_url.rstrip("/")
-    for suffix in [
-        "/v1/chat/completions",
-        "/v1/models",
-        "/api/v1/chat",
-        "/api/v1/models",
-        "/api/v0/chat/completions",
-        "/api/v0/models",
-    ]:
-        if clean.endswith(suffix):
-            return clean[: -len(suffix)]
-    return clean
-
-
 def _assistant_models_urls(provider: str, base_url: str) -> list[str]:
-    if provider == "LM Studio":
-        root = _lm_studio_api_root(base_url)
-        return [root + "/api/v1/models", root + "/v1/models"]
     if _assistant_uses_ollama_native_api(provider, base_url):
         return [_ollama_api_root(base_url) + "/tags"]
     return [_openai_models_url(base_url)]
 
 
 def _parse_assistant_models(provider: str, url: str, body: dict[str, object]) -> list[str]:
-    if provider == "LM Studio" and url.endswith("/api/v1/models"):
-        native_models = body.get("models", [])
-        if not isinstance(native_models, list):
-            return []
-        return [
-            str(item.get("key"))
-            for item in native_models
-            if isinstance(item, dict) and item.get("type") == "llm" and item.get("key")
-        ]
     if _assistant_uses_ollama_native_api(provider, url):
         ollama_models = body.get("models", [])
         if not isinstance(ollama_models, list):
@@ -18712,14 +18680,6 @@ def _assistant_runtime_status(provider: str) -> dict[str, object]:
             "Téléchargement modèle": "Hub Jan Desktop",
             "Stockage projet": "Géré par Jan Desktop",
         }
-    if provider == "LM Studio":
-        return {
-            "Runtime": "LM Studio",
-            "Exécutable": shutil.which("lms") or "App Desktop",
-            "Démarrage auto": "lms server start --port 1234 ou open -a LM Studio",
-            "Téléchargement modèle": "Catalogue LM Studio",
-            "Stockage projet": "Géré par LM Studio",
-        }
     return {
         "Runtime": provider,
         "Exécutable": "Non applicable",
@@ -18761,12 +18721,6 @@ def _start_assistant_runtime(provider: str) -> tuple[bool, str]:
         if system_name == "darwin" and shutil.which("open"):
             return _assistant_popen(["open", "-a", "Jan"])
         return False, "Jan.ai Desktop n'est pas lançable automatiquement depuis ce système. Ouvre Jan puis active le serveur API local."
-    if provider == "LM Studio":
-        if shutil.which("lms"):
-            return _assistant_popen(["lms", "server", "start", "--port", "1234"])
-        if system_name == "darwin" and shutil.which("open"):
-            return _assistant_popen(["open", "-a", "LM Studio"])
-        return False, "LM Studio n'est pas lançable automatiquement depuis ce système. Ouvre LM Studio puis démarre le serveur local."
     return False, "Aucun runtime local à démarrer pour un endpoint distant/proxy."
 
 
@@ -18784,8 +18738,6 @@ def _download_assistant_model(provider: str, model: str) -> tuple[bool, str]:
         return False, "Ollama Cloud gère les modèles côté service: aucun poids LLM ne doit être téléchargé dans le projet."
     if provider == "Jan.ai":
         return False, "Jan.ai gère les téléchargements via son Hub Desktop. L'app peut lancer Jan, puis les modèles sont détectés via `/v1/models`."
-    if provider == "LM Studio":
-        return False, "LM Studio gère les téléchargements depuis son interface. L'app détecte ensuite les modèles exposés par le serveur local."
     return False, "Pour un endpoint cloud/proxy, le modèle est géré côté fournisseur."
 
 
@@ -19471,13 +19423,6 @@ def _render_ai_chatbot_rag(data: dict[str, pd.DataFrame]) -> None:
         cfg.info(
             "Conseil: privilégier `gpt-oss:120b` avec Ollama Cloud pour cette app. C'est l'un des meilleurs compromis disponibles ici entre vitesse d'exécution, temps de calcul et d'affichage du résultat, et qualité de réponse."
         )
-    if provider == "LM Studio":
-        cfg.caption(
-            "LM Studio est interrogé via ses API officielles: découverte native `/api/v1/models`, "
-            "puis repli `/v1/models`, et génération OpenAI-compatible `/v1/chat/completions`. "
-            "Sur Streamlit Cloud, l'endpoint doit être un serveur HTTPS distant; `localhost` désigne "
-            "la machine cloud et ne peut pas joindre LM Studio installé sur un ordinateur personnel."
-        )
     probe_signature = "|".join(
         [
             provider,
@@ -19599,7 +19544,6 @@ def _render_ai_architecture() -> None:
                         "Ollama",
                         "Ollama Cloud",
                         "Jan.ai",
-                        "LM Studio",
                         "Proxy cloud",
                         "Réponse citée",
                     ],
@@ -19613,14 +19557,13 @@ def _render_ai_architecture() -> None:
                         "#0f766e",
                         "#7c3aed",
                         "#db2777",
-                        "#ea580c",
                         "#111827",
                     ],
                 ),
                 link=dict(
-                    source=[0, 1, 0, 2, 3, 4, 4, 4, 4, 4, 5, 6, 7, 8, 9],
-                    target=[2, 2, 3, 4, 10, 5, 6, 7, 8, 9, 10, 10, 10, 10, 10],
-                    value=[3, 2, 4, 3, 5, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1],
+                    source=[0, 1, 0, 2, 3, 4, 4, 4, 4, 5, 6, 7, 8],
+                    target=[2, 2, 3, 4, 9, 5, 6, 7, 8, 9, 9, 9, 9],
+                    value=[3, 2, 4, 3, 5, 2, 1, 1, 1, 2, 1, 1, 1],
                     color="rgba(37,99,235,.20)",
                 ),
             )
@@ -19631,7 +19574,7 @@ def _render_ai_architecture() -> None:
     cols = flow.columns(4)
     cols[0].markdown("**Interface**\n\nChat Streamlit, boutons exemples, export ChatMD, historique contrôlé.")
     cols[1].markdown("**RAG**\n\nPages de l'app, dictionnaire, schémas, datasets, README, exigences techniques.")
-    cols[2].markdown("**LLM**\n\nOllama local, Ollama Cloud, Jan.ai, LM Studio ou proxy OpenAI-compatible.")
+    cols[2].markdown("**LLM**\n\nOllama local, Ollama Cloud, Jan.ai ou proxy OpenAI-compatible.")
     cols[3].markdown("**Sécurité**\n\nSecrets locaux ignorés par Git, mot de passe ChatMD, proxy futur recommandé.")
 
     notes = flow.container(border=True)
@@ -19654,7 +19597,7 @@ def _render_ai_architecture() -> None:
     automation_df = pd.DataFrame(
         [
             {"Automatisation": "Endpoint", "Comportement": "Liste automatiquement les endpoints probables selon le fournisseur sélectionné; la session ne mélange plus endpoint local et endpoint cloud."},
-            {"Automatisation": "Modèles", "Comportement": "Interroge `/api/tags` pour Ollama natif ou `/v1/models` pour Jan/LM Studio/Ollama OpenAI-compatible/proxy; fallback sur modèles suggérés."},
+            {"Automatisation": "Modèles", "Comportement": "Interroge `/api/tags` pour Ollama natif ou `/v1/models` pour Jan/Ollama OpenAI-compatible/proxy; fallback sur modèles suggérés."},
             {"Automatisation": "RAG", "Comportement": "Construit l'index depuis navigation, datasets, README, requirements, pyproject et `docs/assistant_rag/`."},
             {"Automatisation": "Connexion", "Comportement": "Test LLM automatique avec prompt minimal dès que fournisseur, endpoint ou modèle change."},
             {"Automatisation": "Secrets", "Comportement": "Lecture via `st.secrets` pour Streamlit Cloud; fichier local ignoré par Git uniquement pour les tests."},
@@ -19668,7 +19611,6 @@ def _render_ai_architecture() -> None:
         """
 - [Jan.ai - Local API Server](https://www.jan.ai/docs/desktop/api-server)
 - [Ollama - API Reference](https://docs.ollama.com/api/introduction)
-- [LM Studio - Developer Docs](https://lmstudio.ai/docs/developer)
         """
     )
 
@@ -50274,57 +50216,196 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                 rhs_scalar_for_field: Callable[[float, float], float] | None = None
                 if model == "EDO d’ordre 1 général":
                     is_nonlinear = dynamic_type == "Non linéaire"
-                    param_box.caption(
-                        "Forme linéaire: y' = c0 + c1 y + A sin(ωt)."
-                        if not is_nonlinear
-                        else "Forme non linéaire: y' = c0 + c1 y + c2 y² + A sin(ωt), proche d'une Riccati forcée."
-                    )
-                    g1, g2, g3 = param_box.columns(3)
-                    with g1:
-                        y0 = st.number_input("Condition initiale y(0)", value=1.0, step=0.25, key="phys_edo1_y0")
-                        c0 = st.number_input("c0 constant", value=0.0, step=0.05, key="phys_edo1_c0")
-                    with g2:
-                        c1_coef = st.number_input("c1 linéaire", value=-0.08, step=0.01, key="phys_edo1_c1")
-                        c2_coef = (
-                            st.number_input("c2 non linéaire", value=-0.015, step=0.005, key="phys_edo1_c2")
-                            if is_nonlinear
-                            else 0.0
+                    if not is_nonlinear:
+                        param_box.caption(
+                            "Forme linéaire générale à coefficients constants: "
+                            "a1 y' + a0 y = b0."
                         )
-                    with g3:
-                        force_amp = st.slider("Amplitude A", 0.0, 10.0, 0.6, 0.1, key="phys_edo1_amp")
-                        force_freq = st.slider("Fréquence ω", 0.0, 3.0, 0.35, 0.05, key="phys_edo1_freq")
+                        g1, g2, g3 = param_box.columns(3)
+                        with g1:
+                            a1 = st.number_input(
+                                "a1 devant y'",
+                                value=1.0,
+                                step=0.1,
+                                key="phys_edo1_a1",
+                            )
+                            y0 = st.number_input(
+                                "Condition initiale y(0)",
+                                value=1.0,
+                                step=0.25,
+                                key="phys_edo1_y0",
+                            )
+                        with g2:
+                            a0 = st.number_input(
+                                "a0 devant y",
+                                value=0.08,
+                                step=0.01,
+                                key="phys_edo1_a0",
+                            )
+                        with g3:
+                            b0 = st.number_input(
+                                "b0 second membre constant",
+                                value=0.0,
+                                step=0.05,
+                                key="phys_edo1_b0",
+                            )
+                        sim = _solve_constant_coeff_ode(
+                            order=1,
+                            coefficients_desc=[float(a1), float(a0)],
+                            initial_conditions=[float(y0)],
+                            t_max=float(t_max),
+                            forcing_constant=float(b0),
+                            forcing_amplitude=0.0,
+                            forcing_frequency=0.0,
+                        )
+                        sim = sim.rename(
+                            columns={"Forçage": "Second membre constant"}
+                        )
+                        lead = float(a1) if abs(float(a1)) > 1e-9 else 1.0
+                        rhs_scalar_for_field = (
+                            lambda _ti, yi: (float(b0) - float(a0) * float(yi))
+                            / lead
+                        )
+                        eqs = [r"a_1y'+a_0y=b_0"]
+                        sols = [
+                            r"y(t)=\frac{b_0}{a_0}"
+                            r"+\left(y_0-\frac{b_0}{a_0}\right)"
+                            r"e^{-\frac{a_0}{a_1}t}\quad(a_0\neq0)"
+                        ]
+                        notes = [
+                            "Ordre 1: une condition initiale y(0) suffit.",
+                            "a1, a0 et b0 sont constants; aucun forçage périodique n'est ajouté.",
+                        ]
+                    else:
+                        param_box.caption(
+                            "Forme non linéaire forcée: "
+                            "y' = c0 + c1 y + c2 y² + A sin(ωt), "
+                            "proche d'une Riccati forcée."
+                        )
+                        g1, g2, g3 = param_box.columns(3)
+                        with g1:
+                            y0 = st.number_input(
+                                "Condition initiale y(0)",
+                                value=1.0,
+                                step=0.25,
+                                key="phys_edo1_y0",
+                            )
+                            c0 = st.number_input(
+                                "c0 constant",
+                                value=0.0,
+                                step=0.05,
+                                key="phys_edo1_c0",
+                            )
+                        with g2:
+                            c1_coef = st.number_input(
+                                "c1 linéaire",
+                                value=-0.08,
+                                step=0.01,
+                                key="phys_edo1_c1",
+                            )
+                            c2_coef = st.number_input(
+                                "c2 non linéaire",
+                                value=-0.015,
+                                step=0.005,
+                                key="phys_edo1_c2",
+                            )
+                        with g3:
+                            force_amp = st.slider(
+                                "Amplitude A",
+                                0.0,
+                                10.0,
+                                0.6,
+                                0.1,
+                                key="phys_edo1_amp",
+                            )
+                            force_freq = st.slider(
+                                "Fréquence ω",
+                                0.0,
+                                3.0,
+                                0.35,
+                                0.05,
+                                key="phys_edo1_freq",
+                            )
 
-                    def rhs_first(ti: float, state: np.ndarray) -> list[float]:
-                        yi = float(state[0])
-                        return [c0 + c1_coef * yi + c2_coef * yi * yi + float(_physical_forcing(ti, 0.0, force_amp, force_freq))]
+                        def rhs_first(ti: float, state: np.ndarray) -> list[float]:
+                            yi = float(state[0])
+                            forcing = float(
+                                _physical_forcing(
+                                    ti,
+                                    0.0,
+                                    force_amp,
+                                    force_freq,
+                                )
+                            )
+                            return [
+                                c0
+                                + c1_coef * yi
+                                + c2_coef * yi * yi
+                                + forcing
+                            ]
 
-                    rhs_scalar_for_field = lambda ti, yi: c0 + c1_coef * yi + c2_coef * yi * yi + float(
-                        _physical_forcing(float(ti), 0.0, force_amp, force_freq)
-                    )
-                    sol = solve_ivp(rhs_first, [0, t_max], [float(y0)], t_eval=np.linspace(0, t_max, 520), rtol=1e-7, atol=1e-9)
-                    y = sol.y[0]
-                    dy = np.array([rhs_first(float(ti), np.array([yi]))[0] for ti, yi in zip(sol.t, y)], dtype=float)
-                    sim = pd.DataFrame({"t": sol.t, "État": y, "Dérivée 1": dy, "Forçage": _physical_forcing(sol.t, 0.0, force_amp, force_freq)})
-                    eqs = [
-                        r"\frac{dy}{dt}=c_0+c_1y+A\sin(\omega t)"
-                        if not is_nonlinear
-                        else r"\frac{dy}{dt}=c_0+c_1y+c_2y^2+A\sin(\omega t)"
-                    ]
-                    sols = [r"y(t)\ \mathrm{est\ calculée\ numériquement\ par\ intégration\ de}\ f(t,y)."]
-                    notes = [
-                        "Ordre 1 général: une seule condition initiale suffit.",
-                        (
-                            "Cas linéaire: superposition possible, réponse proportionnelle à l'état et au forçage externe."
-                            if not is_nonlinear
-                            else "Cas non linéaire: le terme y² peut créer saturation, emballement, seuils ou dynamique de type Riccati forcée."
-                        ),
-                    ]
+                        rhs_scalar_for_field = (
+                            lambda ti, yi: c0
+                            + c1_coef * yi
+                            + c2_coef * yi * yi
+                            + float(
+                                _physical_forcing(
+                                    float(ti),
+                                    0.0,
+                                    force_amp,
+                                    force_freq,
+                                )
+                            )
+                        )
+                        sol = solve_ivp(
+                            rhs_first,
+                            [0, t_max],
+                            [float(y0)],
+                            t_eval=np.linspace(0, t_max, 520),
+                            rtol=1e-7,
+                            atol=1e-9,
+                        )
+                        y = sol.y[0]
+                        dy = np.array(
+                            [
+                                rhs_first(float(ti), np.array([yi]))[0]
+                                for ti, yi in zip(sol.t, y)
+                            ],
+                            dtype=float,
+                        )
+                        sim = pd.DataFrame(
+                            {
+                                "t": sol.t,
+                                "État": y,
+                                "Dérivée 1": dy,
+                                "Forçage": _physical_forcing(
+                                    sol.t,
+                                    0.0,
+                                    force_amp,
+                                    force_freq,
+                                ),
+                            }
+                        )
+                        eqs = [
+                            r"\frac{dy}{dt}=c_0+c_1y+c_2y^2"
+                            r"+A\sin(\omega t)"
+                        ]
+                        sols = [
+                            r"y(t)\ \mathrm{est\ calculée\ numériquement\ "
+                            r"par\ intégration\ de}\ f(t,y)."
+                        ]
+                        notes = [
+                            "Ordre 1 non linéaire: une condition initiale suffit.",
+                            "Le terme y² peut créer saturation, emballement ou seuils; le terme sinusoïdal représente ici une excitation externe explicite.",
+                        ]
                 elif model == "EDO d’ordre 2 général":
                     is_nonlinear = dynamic_type == "Non linéaire"
                     param_box.caption(
-                        "Forme linéaire: a2 y'' + a1 y' + a0 y = b0 + A sin(ωt)."
+                        "Forme linéaire générale à coefficients constants: "
+                        "a2 y'' + a1 y' + a0 y = b0."
                         if not is_nonlinear
-                        else "Forme non linéaire: a2 y'' + a1 y' + a0 y + αy³ + βyy' = b0 + A sin(ωt), type Duffing/couplage dynamique."
+                        else "Forme non linéaire forcée: a2 y'' + a1 y' "
+                        "+ a0 y + αy³ + βyy' = b0 + A sin(ωt)."
                     )
                     a_col1, a_col2, a_col3 = param_box.columns(3)
                     with a_col1:
@@ -50336,13 +50417,29 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     with a_col3:
                         a0 = st.number_input("a0 devant y", value=1.25, step=0.05, key="phys_edo2_a0")
                         b0 = st.number_input("b0 constant", value=0.0, step=0.1, key="phys_edo2_b0")
-                    f_col1, f_col2 = param_box.columns(2)
-                    with f_col1:
-                        force_amp = st.slider("Amplitude A", 0.0, 20.0, 1.0, 0.1, key="phys_edo2_amp")
-                    with f_col2:
-                        force_freq = st.slider("Fréquence ω", 0.0, 5.0, 0.8, 0.05, key="phys_edo2_freq")
+                    force_amp = 0.0
+                    force_freq = 0.0
                     alpha_nl = beta_nl = 0.0
                     if is_nonlinear:
+                        f_col1, f_col2 = param_box.columns(2)
+                        with f_col1:
+                            force_amp = st.slider(
+                                "Amplitude A",
+                                0.0,
+                                20.0,
+                                1.0,
+                                0.1,
+                                key="phys_edo2_amp",
+                            )
+                        with f_col2:
+                            force_freq = st.slider(
+                                "Fréquence ω",
+                                0.0,
+                                5.0,
+                                0.8,
+                                0.05,
+                                key="phys_edo2_freq",
+                            )
                         nl1, nl2 = param_box.columns(2)
                         with nl1:
                             alpha_nl = st.number_input("α devant y³", value=0.08, step=0.01, key="phys_edo2_alpha")
@@ -50380,8 +50477,11 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                             forcing_amplitude=float(force_amp),
                             forcing_frequency=float(force_freq),
                         )
+                        sim = sim.rename(
+                            columns={"Forçage": "Second membre constant"}
+                        )
                     eqs = [
-                        r"a_2y''+a_1y'+a_0y=b_0+A\sin(\omega t)"
+                        r"a_2y''+a_1y'+a_0y=b_0"
                         if not is_nonlinear
                         else r"a_2y''+a_1y'+a_0y+\alpha y^3+\beta yy'=b_0+A\sin(\omega t)",
                         r"x_1=y,\quad x_2=y',\quad x_2'=f(x_1,x_2,t)",
@@ -50390,7 +50490,7 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     notes = [
                         "Ordre 2: il faut deux conditions initiales, y(0) et y'(0).",
                         (
-                            "Cas linéaire: dynamique de type oscillateur, circuit ou système amorti forcé."
+                            "Cas linéaire: a2, a1, a0 et b0 sont constants; le second membre ne varie pas avec le temps."
                             if not is_nonlinear
                             else "Cas non linéaire: les termes y³ et yy' peuvent produire durcissement, saturation, cycles limites ou bifurcations."
                         ),
@@ -50399,9 +50499,12 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     order_n = int(param_box.slider("Ordre n", 3, 8, 4, 1, key="phys_edon_order"))
                     is_nonlinear = dynamic_type == "Non linéaire"
                     param_box.caption(
-                        "Forme linéaire: a_n y⁽ⁿ⁾ + a_{n-1} y⁽ⁿ⁻¹⁾ + ... + a_0 y = b0 + A sin(ωt)."
+                        "Forme linéaire générale à coefficients constants: "
+                        "a_n y⁽ⁿ⁾ + a_{n-1} y⁽ⁿ⁻¹⁾ + ... + a_0 y = b0."
                         if not is_nonlinear
-                        else "Forme non linéaire: y⁽ⁿ⁾ = f(y, y', ..., y⁽ⁿ⁻¹⁾, t), avec termes croisés, saturation et forçage."
+                        else "Forme non linéaire forcée: y⁽ⁿ⁾ = "
+                        "f(y, y', ..., y⁽ⁿ⁻¹⁾, t), avec termes croisés, "
+                        "saturation et excitation périodique."
                     )
                     coeffs_desc: list[float] = []
                     coeff_cols = param_box.columns(3)
@@ -50424,14 +50527,31 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                         with init_cols[idx % 3]:
                             label = "y(0)" if idx == 0 else f"y^({idx})(0)"
                             initials.append(float(st.number_input(label, value=1.0 if idx == 0 else 0.0, step=0.25, key=f"phys_edon_init_{idx}")))
-                    f_col1, f_col2, f_col3 = param_box.columns(3)
+                    force_amp = 0.0
+                    force_freq = 0.0
+                    rhs_cols = param_box.columns(3 if is_nonlinear else 1)
+                    f_col1 = rhs_cols[0]
                     with f_col1:
                         b0 = st.number_input("b0 constant", value=0.0, step=0.1, key="phys_edon_b0")
-                    with f_col2:
-                        force_amp = st.slider("Amplitude A", 0.0, 20.0, 0.8, 0.1, key="phys_edon_amp")
-                    with f_col3:
-                        force_freq = st.slider("Fréquence ω", 0.0, 5.0, 0.6, 0.05, key="phys_edon_freq")
                     if is_nonlinear:
+                        with rhs_cols[1]:
+                            force_amp = st.slider(
+                                "Amplitude A",
+                                0.0,
+                                20.0,
+                                0.8,
+                                0.1,
+                                key="phys_edon_amp",
+                            )
+                        with rhs_cols[2]:
+                            force_freq = st.slider(
+                                "Fréquence ω",
+                                0.0,
+                                5.0,
+                                0.6,
+                                0.05,
+                                key="phys_edon_freq",
+                            )
                         nl1, nl2 = param_box.columns(2)
                         with nl1:
                             nl_strength = st.number_input("Intensité non linéaire", value=0.035, step=0.005, key="phys_edon_nl_strength")
@@ -50458,8 +50578,12 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                             forcing_amplitude=float(force_amp),
                             forcing_frequency=float(force_freq),
                         )
+                        sim = sim.rename(
+                            columns={"Forçage": "Second membre constant"}
+                        )
                     eqs = [
-                        r"a_ny^{(n)}+a_{n-1}y^{(n-1)}+\cdots+a_1y'+a_0y=b_0+A\sin(\omega t)"
+                        r"a_ny^{(n)}+a_{n-1}y^{(n-1)}"
+                        r"+\cdots+a_1y'+a_0y=b_0"
                         if not is_nonlinear
                         else r"F(t,y,y',y'',\ldots,y^{(n)})=0,\quad y^{(n)}=f(y,y',\ldots,y^{(n-1)},t)"
                     ]
@@ -50467,7 +50591,7 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     notes = [
                         f"Ordre {order_n}: {order_n} conditions initiales sont nécessaires.",
                         (
-                            "Cas linéaire: coefficients constants, superposition possible et interprétation par modes, pôles ou constantes de temps."
+                            "Cas linéaire: tous les coefficients ai et le second membre b0 sont constants; aucune excitation périodique n'est ajoutée."
                             if not is_nonlinear
                             else "Cas non linéaire: les interactions entre état, dérivées, termes croisés et saturations peuvent générer multistabilité, bifurcations ou chaos si la dimension est suffisante."
                         ),
@@ -50746,20 +50870,40 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     top_cols = param_box.columns(2)
                     dim = int(top_cols[0].slider("Nombre d'équations", 1, 8, 3, 1, key="phys_sys1_dim"))
                     param_box.caption(
-                        "Forme linéaire: x' = A x + b + F sin(ωt)."
+                        "Forme linéaire générale à coefficients constants: "
+                        "x' = A x + b."
                         if not is_nonlinear
-                        else "Forme non linéaire: x' = A x + b + q(x, x') + s(x) + F sin(ωt), avec interactions quadratiques et saturation."
+                        else "Forme non linéaire forcée: x' = A x + b "
+                        "+ q(x) + s(x) + F sin(ωt)."
                     )
                     with param_box.expander("Matrice d'interactions A", expanded=True):
                         a_mat = _render_physical_matrix_inputs("A", dim, "phys_sys1_a", default_diag=-0.10, default_offdiag=0.04, step=0.02)
                     v1, v2 = param_box.columns(2)
                     with v1:
                         x0_vec = _render_physical_vector_inputs("x(0)", dim, "phys_sys1_x0", default=1.0, step=0.25)
-                        b_vec = _render_physical_vector_inputs("b", dim, "phys_sys1_b", default=0.0, step=0.1)
                     with v2:
-                        force_vec = _render_physical_vector_inputs("F", dim, "phys_sys1_force", default=0.25, step=0.05)
-                        force_freq = st.slider("Fréquence ω", 0.0, 5.0, 0.45, 0.05, key="phys_sys1_freq")
+                        b_vec = _render_physical_vector_inputs("b", dim, "phys_sys1_b", default=0.0, step=0.1)
+                    force_vec = np.zeros(dim, dtype=float)
+                    force_freq = 0.0
                     if is_nonlinear:
+                        force_col, freq_col = param_box.columns(2)
+                        with force_col:
+                            force_vec = _render_physical_vector_inputs(
+                                "F",
+                                dim,
+                                "phys_sys1_force",
+                                default=0.25,
+                                step=0.05,
+                            )
+                        with freq_col:
+                            force_freq = st.slider(
+                                "Fréquence ω",
+                                0.0,
+                                5.0,
+                                0.45,
+                                0.05,
+                                key="phys_sys1_freq",
+                            )
                         nl1, nl2 = param_box.columns(2)
                         with nl1:
                             nl_strength = st.number_input("Intensité quadratique", value=0.025, step=0.005, key="phys_sys1_nl_strength")
@@ -50788,11 +50932,17 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                             forcing_amplitude=force_vec,
                             forcing_frequency=float(force_freq),
                         )
+                        sim = sim.rename(
+                            columns={
+                                f"Forçage_x{idx + 1}": f"Second_membre_x{idx + 1}"
+                                for idx in range(dim)
+                            }
+                        )
                     _render_physical_formula_panel(
                         formula_slot,
                         title="Formule",
                         equations=[
-                            r"\dot{\mathbf{x}}=A\mathbf{x}+\mathbf{b}+\mathbf{F}\sin(\omega t)"
+                            r"\dot{\mathbf{x}}=A\mathbf{x}+\mathbf{b}"
                             if not is_nonlinear
                             else r"\dot{\mathbf{x}}=A\mathbf{x}+\mathbf{b}+\mathbf{q}(\mathbf{x})+\mathbf{s}(\mathbf{x})+\mathbf{F}\sin(\omega t)"
                         ],
@@ -50800,15 +50950,21 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                         parameters=[
                             "`A`: matrice des interactions et effets propres entre états.",
                             "`b`: vecteur constant, entrée permanente du système.",
-                            "`F`: vecteur d'amplitude du forçage périodique.",
-                            "`ω`: fréquence du forçage.",
                             "`x(0)`: conditions initiales de chaque équation.",
-                            "`q(x)`, `s(x)`: termes quadratiques et saturation, seulement en type non linéaire.",
-                        ],
+                        ]
+                        + (
+                            [
+                                "`F`: vecteur d'amplitude du forçage périodique.",
+                                "`ω`: fréquence du forçage.",
+                                "`q(x)`, `s(x)`: termes quadratiques et saturation.",
+                            ]
+                            if is_nonlinear
+                            else []
+                        ),
                         notes=[
                             "Ordre 1: chaque variable possède une seule condition initiale.",
                             (
-                                "Cas linéaire: la matrice A encode les effets propres et les couplages croisés entre dimensions."
+                                "Cas linéaire: A et b sont constants; la matrice A encode les effets propres et les couplages croisés."
                                 if not is_nonlinear
                                 else "Cas non linéaire: les couplages peuvent générer seuils, saturation, multistabilité ou cycles selon les paramètres."
                             ),
@@ -50822,9 +50978,11 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     top_cols = param_box.columns(2)
                     dim = int(top_cols[0].slider("Nombre d'équations", 1, 6, 2, 1, key="phys_sys2_dim"))
                     param_box.caption(
-                        "Forme linéaire: M x'' + C x' + K x = b + F sin(ωt)."
+                        "Forme linéaire générale à coefficients constants: "
+                        "M x'' + C x' + K x = b."
                         if not is_nonlinear
-                        else "Forme non linéaire: M x'' + C x' + K x + q(x,x') + s(x) = b + F sin(ωt)."
+                        else "Forme non linéaire forcée: M x'' + C x' "
+                        "+ K x + q(x,x') + s(x) = b + F sin(ωt)."
                     )
                     with param_box.expander("Matrice M devant x''", expanded=True):
                         m_mat = _render_physical_matrix_inputs("M", dim, "phys_sys2_m", default_diag=1.0, default_offdiag=0.0, step=0.05)
@@ -50838,9 +50996,27 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                         v0_vec = _render_physical_vector_inputs("x'(0)", dim, "phys_sys2_v0", default=0.0, step=0.25)
                     with v2:
                         b_vec = _render_physical_vector_inputs("b", dim, "phys_sys2_b", default=0.0, step=0.1)
-                        force_vec = _render_physical_vector_inputs("F", dim, "phys_sys2_force", default=0.35, step=0.05)
-                        force_freq = st.slider("Fréquence ω", 0.0, 5.0, 0.70, 0.05, key="phys_sys2_freq")
+                    force_vec = np.zeros(dim, dtype=float)
+                    force_freq = 0.0
                     if is_nonlinear:
+                        force_col, freq_col = param_box.columns(2)
+                        with force_col:
+                            force_vec = _render_physical_vector_inputs(
+                                "F",
+                                dim,
+                                "phys_sys2_force",
+                                default=0.35,
+                                step=0.05,
+                            )
+                        with freq_col:
+                            force_freq = st.slider(
+                                "Fréquence ω",
+                                0.0,
+                                5.0,
+                                0.70,
+                                0.05,
+                                key="phys_sys2_freq",
+                            )
                         nl1, nl2 = param_box.columns(2)
                         with nl1:
                             nl_strength = st.number_input("Intensité quadratique", value=0.030, step=0.005, key="phys_sys2_nl_strength")
@@ -50869,28 +51045,47 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                             forcing_amplitude=force_vec,
                             forcing_frequency=float(force_freq),
                         )
+                        sim = sim.rename(
+                            columns={
+                                f"Forçage_x{idx + 1}": f"Second_membre_x{idx + 1}"
+                                for idx in range(dim)
+                            }
+                        )
                     _render_physical_formula_panel(
                         formula_slot,
                         title="Formule",
                         equations=[
-                            r"M\mathbf{x}''+C\mathbf{x}'+K\mathbf{x}=\mathbf{b}+\mathbf{F}\sin(\omega t)"
+                            r"M\mathbf{x}''+C\mathbf{x}'+K\mathbf{x}=\mathbf{b}"
                             if not is_nonlinear
                             else r"M\mathbf{x}''+C\mathbf{x}'+K\mathbf{x}+\mathbf{q}(\mathbf{x},\mathbf{x}')+\mathbf{s}(\mathbf{x})=\mathbf{b}+\mathbf{F}\sin(\omega t)"
                         ],
-                        solutions=[r"\mathbf{x}''=M^{-1}\left(\mathbf{b}+\mathbf{F}\sin(\omega t)-C\mathbf{x}'-K\mathbf{x}-\mathbf{q}-\mathbf{s}\right)"],
+                        solutions=[
+                            r"\mathbf{x}''=M^{-1}"
+                            r"\left(\mathbf{b}-C\mathbf{x}'-K\mathbf{x}\right)"
+                            if not is_nonlinear
+                            else r"\mathbf{x}''=M^{-1}\left(\mathbf{b}"
+                            r"+\mathbf{F}\sin(\omega t)-C\mathbf{x}'"
+                            r"-K\mathbf{x}-\mathbf{q}-\mathbf{s}\right)"
+                        ],
                         parameters=[
                             "`M`: matrice d'inertie devant les accélérations.",
                             "`C`: matrice d'amortissement et de couplage sur les vitesses.",
                             "`K`: matrice de raideur et de rappel sur les positions.",
                             "`b`: vecteur constant externe.",
-                            "`F`, `ω`: amplitude et fréquence du forçage.",
                             "`x(0)`, `x'(0)`: positions et vitesses initiales.",
-                            "`q`, `s`: couplages non linéaires et saturation, seulement en type non linéaire.",
-                        ],
+                        ]
+                        + (
+                            [
+                                "`F`, `ω`: amplitude et fréquence du forçage.",
+                                "`q`, `s`: couplages non linéaires et saturation.",
+                            ]
+                            if is_nonlinear
+                            else []
+                        ),
                         notes=[
                             "Ordre 2: chaque variable a une position initiale et une vitesse initiale.",
                             (
-                                "Lecture linéaire: M inertie, C amortissement/couplage dynamique, K rappel/couplage structurel."
+                                "Lecture linéaire: M, C, K et b sont constants; M décrit l'inertie, C l'amortissement et K le rappel."
                                 if not is_nonlinear
                                 else "Lecture non linéaire: les termes ajoutés représentent frottements non linéaires, saturation, couplages internes ou rétroactions fortes."
                             ),
@@ -50906,9 +51101,12 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     order_n = int(top_cols[0].slider("Ordre n", 3, 5, 3, 1, key="phys_sysn_order"))
                     dim = int(top_cols[1].slider("Nombre d'équations", 1, 5, 2, 1, key="phys_sysn_dim"))
                     param_box.caption(
-                        "Forme linéaire: A_n x⁽ⁿ⁾ + A_{n-1} x⁽ⁿ⁻¹⁾ + ... + A_0 x = b + F sin(ωt)."
+                        "Forme linéaire générale à coefficients constants: "
+                        "A_n x⁽ⁿ⁾ + A_{n-1} x⁽ⁿ⁻¹⁾ + ... + A_0 x = b."
                         if not is_nonlinear
-                        else "Forme non linéaire: x⁽ⁿ⁾ = f(x, x', ..., x⁽ⁿ⁻¹⁾, t), avec couplages, saturation et forçage."
+                        else "Forme non linéaire forcée: x⁽ⁿ⁾ = "
+                        "f(x, x', ..., x⁽ⁿ⁻¹⁾, t), avec couplages, "
+                        "saturation et excitation périodique."
                     )
                     matrices_desc: list[np.ndarray] = []
                     for power in range(order_n, -1, -1):
@@ -50939,14 +51137,30 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                                     step=0.25,
                                 )
                             )
-                    v1, v2, v3 = param_box.columns(3)
+                    force_vec = np.zeros(dim, dtype=float)
+                    force_freq = 0.0
+                    rhs_cols = param_box.columns(3 if is_nonlinear else 1)
+                    v1 = rhs_cols[0]
                     with v1:
                         b_vec = _render_physical_vector_inputs("b", dim, "phys_sysn_b", default=0.0, step=0.1)
-                    with v2:
-                        force_vec = _render_physical_vector_inputs("F", dim, "phys_sysn_force", default=0.20, step=0.05)
-                    with v3:
-                        force_freq = st.slider("Fréquence ω", 0.0, 5.0, 0.50, 0.05, key="phys_sysn_freq")
                     if is_nonlinear:
+                        with rhs_cols[1]:
+                            force_vec = _render_physical_vector_inputs(
+                                "F",
+                                dim,
+                                "phys_sysn_force",
+                                default=0.20,
+                                step=0.05,
+                            )
+                        with rhs_cols[2]:
+                            force_freq = st.slider(
+                                "Fréquence ω",
+                                0.0,
+                                5.0,
+                                0.50,
+                                0.05,
+                                key="phys_sysn_freq",
+                            )
                         nl1, nl2 = param_box.columns(2)
                         with nl1:
                             nl_strength = st.number_input("Intensité quadratique", value=0.025, step=0.005, key="phys_sysn_nl_strength")
@@ -50975,11 +51189,19 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                             forcing_amplitude=force_vec,
                             forcing_frequency=float(force_freq),
                         )
+                        sim = sim.rename(
+                            columns={
+                                f"Forçage_x{idx + 1}": f"Second_membre_x{idx + 1}"
+                                for idx in range(dim)
+                            }
+                        )
                     _render_physical_formula_panel(
                         formula_slot,
                         title="Formule",
                         equations=[
-                            r"A_n\mathbf{x}^{(n)}+A_{n-1}\mathbf{x}^{(n-1)}+\cdots+A_0\mathbf{x}=\mathbf{b}+\mathbf{F}\sin(\omega t)"
+                            r"A_n\mathbf{x}^{(n)}"
+                            r"+A_{n-1}\mathbf{x}^{(n-1)}"
+                            r"+\cdots+A_0\mathbf{x}=\mathbf{b}"
                             if not is_nonlinear
                             else r"\mathbf{x}^{(n)}=\mathbf{f}(\mathbf{x},\mathbf{x}',\ldots,\mathbf{x}^{(n-1)},t)"
                         ],
@@ -50987,14 +51209,20 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                         parameters=[
                             "`A0...An`: matrices constantes associées à chaque ordre de dérivation.",
                             "`b`: vecteur constant externe.",
-                            "`F`, `ω`: amplitude et fréquence du forçage périodique.",
                             "`x(0)...x^(n-1)(0)`: conditions initiales nécessaires à l'ordre n.",
-                            "`q`, `s`: interactions non linéaires et saturation, seulement en type non linéaire.",
-                        ],
+                        ]
+                        + (
+                            [
+                                "`F`, `ω`: amplitude et fréquence du forçage périodique.",
+                                "`q`, `s`: interactions non linéaires et saturation.",
+                            ]
+                            if is_nonlinear
+                            else []
+                        ),
                         notes=[
                             f"Ordre {order_n}: il faut {order_n} vecteurs de conditions initiales.",
                             (
-                                "Cas linéaire: le système est converti en système d'ordre 1 de dimension n × d avant intégration numérique."
+                                "Cas linéaire: les matrices A0...An et le vecteur b sont constants; le système est converti en ordre 1 avant intégration."
                                 if not is_nonlinear
                                 else "Cas non linéaire: la formulation d'état permet d'étudier cycles limites, multistabilité, bifurcations et comportements chaotiques lorsque la dimension le permet."
                             ),
@@ -51799,7 +52027,6 @@ def _ops_references_catalog() -> pd.DataFrame:
         ("Deep Learning", "DL", "Séries temporelles", "Darts documentation", "Modèles profonds et classiques pour séries temporelles.", "https://unit8co.github.io/darts/", "time series, deep learning, forecasting", "Complémentaire"),
         ("Assistant IA", "IA", "LLM local", "Ollama API reference", "Connexion LLM locale/cloud, liste modèles, chat completions et embeddings.", "https://docs.ollama.com/api", "ollama, llm, api", "Essentielle"),
         ("Assistant IA", "IA", "LLM local", "Jan documentation", "Serveur local compatible OpenAI et modèles locaux Jan.", "https://jan.ai/docs", "jan, local llm, openai compatible", "Complémentaire"),
-        ("Assistant IA", "IA", "LLM local", "LM Studio developer docs", "Serveur local compatible OpenAI et gestion des modèles locaux.", "https://lmstudio.ai/docs/developer", "lm studio, local llm, openai compatible", "Complémentaire"),
         ("Assistant IA", "RAG", "ChatMD", "ChatMD documentation IA", "Configuration LLM, blocs !useLLM, RAG textuel et usage scénarisé.", "https://chatmd.forge.apps.education.fr/docs/?sec=7&subsec=1", "chatmd, rag, chatbot", "Essentielle"),
         ("Data et Cloud", "Cloud", "Déploiement", "Streamlit Community Cloud docs", "Déployer l'application depuis GitHub avec secrets et URL publique.", "https://docs.streamlit.io/deploy/streamlit-community-cloud", "streamlit cloud, github, deploy", "Essentielle"),
         ("Data et Cloud", "Cloud", "Transformation", "dbt documentation", "Sources, transformations SQL, tests, lineage et documentation DBT.", "https://docs.getdbt.com/docs/introduction", "dbt, lineage, transformations", "Essentielle"),
@@ -52546,6 +52773,12 @@ def main() -> None:
     ):
         st.session_state["ui_settings_open"] = False
         st.session_state["contact_dialog_open"] = False
+        feedback_section, feedback_subpage = _feedback_current_page()
+        detected_feedback_page = " · ".join(
+            part for part in [feedback_section, feedback_subpage] if part
+        )
+        if detected_feedback_page in _feedback_page_options():
+            st.session_state["feedback_page"] = detected_feedback_page
         st.session_state["feedback_dialog_open"] = True
     st.sidebar.title(_t("navigation_title"))
 
