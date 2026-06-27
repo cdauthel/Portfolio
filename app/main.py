@@ -46958,6 +46958,60 @@ Bon usage:
             design["type_plan"] = "D-efficient approximatif"
             design_resolution = "D-optimal approx."
 
+        level_symbols = [f"L_{{{idx}}}" for idx in range(1, len(factor_names) + 1)]
+        if plan_type == "Plan complet (factoriel)":
+            plan_formula = (
+                rf"\mathcal{{D}} = {' \\times '.join(level_symbols)},"
+                rf"\qquad N_{{cellules}} = \prod_{{i=1}}^{{{len(factor_names)}}}|L_i| = {len(design)}"
+            )
+            plan_formula_note = "Toutes les combinaisons des modalités sont présentes."
+        elif plan_type == "Plan fractionnaire (1/2, résolution III)":
+            plan_formula = r"X_{3}=X_{1}X_{2},\qquad I=X_{1}X_{2}X_{3}"
+            plan_formula_note = "Le générateur conserve une demi-fraction du plan complet; les effets principaux peuvent être aliasés avec des interactions d'ordre 2."
+        elif plan_type == "Plan fractionnaire (1/2, résolution IV)":
+            plan_formula = r"X_{4}=X_{1}X_{2}X_{3},\qquad I=X_{1}X_{2}X_{3}X_{4}"
+            plan_formula_note = "Le générateur conserve une demi-fraction; les effets principaux ne sont pas aliasés avec les interactions d'ordre 2."
+        elif plan_type == "Plan fractionnaire (1/2, résolution V)":
+            plan_formula = r"X_{5}=X_{1}X_{2}X_{3}X_{4},\qquad I=X_{1}X_{2}X_{3}X_{4}X_{5}"
+            plan_formula_note = "Le générateur conserve une demi-fraction et sépare les effets principaux des interactions d'ordre 2."
+        elif plan_type == "Plan fractionnaire (1/4, résolution III)":
+            plan_formula = r"X_{4}=X_{1}X_{2},\qquad X_{5}=X_{1}X_{3}"
+            plan_formula_note = "Deux générateurs définissent un quart du plan complet, avec un compromis fort entre charge expérimentale et aliasage."
+        elif plan_type == "Plan fractionnaire (1/2, résolution VI)":
+            plan_formula = r"X_{6}=X_{1}X_{2}X_{3}X_{4}X_{5},\qquad I=X_{1}X_{2}X_{3}X_{4}X_{5}X_{6}"
+            plan_formula_note = "Le générateur conserve une demi-fraction avec une résolution élevée pour étudier les interactions."
+        elif plan_type == "Plan fractionnaire (1/4, résolution IV)":
+            plan_formula = r"X_{5}=X_{1}X_{2}X_{3},\qquad X_{6}=X_{2}X_{3}X_{4}"
+            plan_formula_note = "Deux générateurs définissent un quart du plan complet tout en protégeant les effets principaux des interactions d'ordre 2."
+        elif plan_type == "Plan de screening équilibré (2 niveaux)":
+            plan_formula = (
+                rf"\mathcal{{D}}_{{screen}} \subset \{{-1,+1\}}^{{{len(factor_names)}}},"
+                rf"\qquad N_{{cellules}}={len(design)}"
+            )
+            plan_formula_note = "Le sous-plan recherche une représentation équilibrée des deux niveaux de chaque facteur et une bonne couverture des couples."
+        elif plan_type == "Plan orthogonal équilibré (mixte)":
+            plan_formula = (
+                rf"\mathcal{{D}}_{{orth}} \subset {' \\times '.join(level_symbols)},"
+                r"\qquad X^{\mathsf{T}}X \approx \operatorname{diag}(X^{\mathsf{T}}X)"
+            )
+            plan_formula_note = "Le sous-plan équilibre les modalités et réduit les corrélations entre colonnes de la matrice expérimentale."
+        else:
+            plan_formula = (
+                r"\mathcal{D}^{*}=\underset{\mathcal{D}}{\arg\max}\ "
+                r"\det\!\left(X_{\mathcal{D}}^{\mathsf{T}}X_{\mathcal{D}}\right)"
+            )
+            plan_formula_note = "Le plan D-efficient maximise approximativement l'information disponible pour estimer les coefficients."
+
+        formula_main = " + ".join([f"C({factor})" for factor in factor_names])
+        interaction_terms = [
+            f"C({left}):C({right})"
+            for idx, left in enumerate(factor_names)
+            for right in factor_names[idx + 1 :]
+        ]
+        analysis_formula = f"score ~ {formula_main}" + (
+            f" + {' + '.join(interaction_terms)}" if interaction_terms else ""
+        )
+
         rng = np.random.default_rng(random_seed)
         sim = design.loc[design.index.repeat(per_cell)].reset_index(drop=True)
         effect_map: dict[str, dict[str, float]] = {}
@@ -46987,11 +47041,17 @@ Bon usage:
             )
         sim["score"] = np.clip(sim["score_base"] + rng.normal(0, noise_sigma, len(sim)), 0, 10)
 
-        k1, k2, k3, k4 = st.columns(4)
-        k1.metric("Facteurs", f"{len(factor_names)}")
-        k2.metric("Cellules du plan", f"{len(design)}")
-        k3.metric("Observations simulées", f"{len(sim):,}")
-        k4.metric("Écart-type observé", f"{float(sim['score'].std(ddof=1)):.3f}" if len(sim) > 1 else "n/a")
+        _render_dataset_construction_stats(
+            st,
+            [
+                ("Facteurs", f"{len(factor_names)}"),
+                ("Cellules du plan", f"{len(design)}"),
+                ("Observations simulées", f"{len(sim):,}"),
+                ("Écart-type observé", f"{float(sim['score'].std(ddof=1)):.3f}" if len(sim) > 1 else "n/a"),
+            ],
+            compact_values=True,
+            value_font_size="1.32rem",
+        )
         plan_info_1, plan_info_2 = st.columns(2)
         reduction_ratio = (1.0 - (len(design) / max(full_cells, 1))) * 100.0
         plan_info_1.caption(
@@ -47000,6 +47060,22 @@ Bon usage:
         plan_info_2.caption(
             f"Réduction de charge expérimentale: **{reduction_ratio:.1f}%** (vs plan complet {full_cells} cellules)"
         )
+        try:
+            formula_block = st.container(border=True)
+        except TypeError:
+            formula_block = st.container()
+        formula_block.markdown("**Formule du plan**")
+        formula_block.latex(plan_formula)
+        formula_block.caption(plan_formula_note)
+        formula_block.markdown(
+            f"**Correspondance des facteurs**: "
+            + " · ".join(
+                f"$X_{{{idx}}}$ = `{factor}`"
+                for idx, factor in enumerate(factor_names, start=1)
+            )
+        )
+        formula_block.markdown("**Modèle d'analyse des effets et interactions**")
+        formula_block.code(analysis_formula, language="python")
 
         st.markdown("#### Plan expérimental (cellules)")
         st.dataframe(design, width="stretch", height=_table_height(len(design), max_height=340))
@@ -47084,9 +47160,7 @@ Bon usage:
                 txt = txt.replace("[T.", "=").replace("]", "")
                 return txt
 
-            formula_main = " + ".join([f"C({f})" for f in factor_names])
-            inter_terms = [f"C({a}):C({b})" for i, a in enumerate(factor_names) for b in factor_names[i + 1 :]]
-            formula = f"score ~ {formula_main}" + (f" + {' + '.join(inter_terms)}" if inter_terms else "")
+            formula = analysis_formula
             model = sm.formula.ols(formula, data=sim).fit()
             try:
                 model_block = simulated_case_block.container(border=True)
