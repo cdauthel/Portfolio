@@ -772,46 +772,43 @@ def _apply_runtime_theme(dark_mode: bool) -> None:
         """
         <style>
         :root {
-            --dm-bg-0: #101113;
-            --dm-bg-1: #151619;
-            --dm-bg-2: #1b1c20;
-            --dm-surface: #1e1f23;
-            --dm-surface-soft: rgba(31, 32, 36, 0.78);
-            --dm-surface-muted: rgba(42, 43, 48, 0.72);
-            --dm-border: rgba(214, 214, 218, 0.16);
-            --dm-border-strong: rgba(230, 230, 232, 0.24);
-            --dm-text: #e1e1e3;
-            --dm-text-soft: #b6b6ba;
-            --dm-text-muted: #8f9095;
-            --dm-accent: #a8a8ad;
-            --dm-accent-2: #d0d0d3;
+            /* Palette sombre issue des valeurs RVB normalisées demandées. */
+            --dm-bg-0: #1f2020;
+            --dm-bg-1: #22242a;
+            --dm-bg-2: #292b30;
+            --dm-surface: #303136;
+            --dm-surface-raised: #3c3c3c;
+            --dm-surface-soft: rgba(34, 36, 42, 0.92);
+            --dm-surface-muted: rgba(60, 60, 60, 0.78);
+            --dm-border: rgba(191, 191, 191, 0.18);
+            --dm-border-strong: rgba(191, 191, 191, 0.32);
+            --dm-text: #fefefe;
+            --dm-text-soft: #bfbfbf;
+            --dm-text-muted: #6f7073;
+            --dm-accent: #bfbfbf;
+            --dm-accent-2: #fefefe;
         }
         [data-testid="stAppViewContainer"] {
-            color: var(--dm-text);
-            background:
-                radial-gradient(860px 500px at -12% -10%, rgba(255, 255, 255, 0.045), transparent 62%),
-                radial-gradient(920px 520px at 108% -8%, rgba(255, 255, 255, 0.035), transparent 60%),
-                linear-gradient(180deg, var(--dm-bg-1) 0%, var(--dm-bg-0) 100%);
+            color: var(--dm-text-soft);
+            background: var(--dm-bg-0);
         }
         [data-testid="stHeader"] {
-            background: rgba(17, 18, 20, 0.74);
+            background: rgba(31, 32, 32, 0.94);
             backdrop-filter: blur(8px);
             border-bottom: 1px solid var(--dm-border);
         }
         section[data-testid="stSidebar"] > div:first-child {
-            background:
-                radial-gradient(460px 260px at 10% -10%, rgba(255, 255, 255, 0.04), transparent 55%),
-                linear-gradient(180deg, #151619 0%, #121315 100%);
+            background: var(--dm-bg-1);
             border-right: 1px solid var(--dm-border);
         }
         .main .block-container {
             max-width: 1360px;
         }
         .hero-card {
-            background: linear-gradient(115deg, #242529, #191a1d) !important;
+            background: var(--dm-bg-2) !important;
             color: var(--dm-text) !important;
             border: 1px solid var(--dm-border) !important;
-            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.20);
         }
         .hero-card * {
             color: var(--dm-text) !important;
@@ -819,43 +816,63 @@ def _apply_runtime_theme(dark_mode: bool) -> None:
         .small-note {
             color: var(--dm-text-soft) !important;
         }
-        h1, h2, h3, h4, h5, h6, p, li, label, span, div {
-            color: var(--dm-text);
-        }
-        [data-testid="stMarkdownContainer"] *,
-        [data-testid="stText"] * {
+        h1, h2, h3, h4, h5, h6 {
             color: var(--dm-text) !important;
         }
-        [data-testid="stCaptionContainer"] * {
+        p, li, label,
+        [data-testid="stMarkdownContainer"] p,
+        [data-testid="stMarkdownContainer"] li,
+        [data-testid="stText"] {
             color: var(--dm-text-soft) !important;
+        }
+        strong, b,
+        [data-testid="stMarkdownContainer"] strong {
+            color: var(--dm-text) !important;
+        }
+        [data-testid="stAppViewContainer"] [style*="color:#111827"],
+        [data-testid="stAppViewContainer"] [style*="color: #111827"] {
+            color: var(--dm-text) !important;
+        }
+        [data-testid="stAppViewContainer"] [style*="color:#374151"],
+        [data-testid="stAppViewContainer"] [style*="color: #374151"] {
+            color: var(--dm-text-soft) !important;
+        }
+        [data-testid="stCaptionContainer"] * {
+            color: var(--dm-text-muted) !important;
         }
         .stButton > button,
         [data-testid="stDownloadButton"] > button {
-            background: linear-gradient(180deg, #2a2b2f 0%, #232428 100%);
+            background: var(--dm-surface);
             color: var(--dm-text);
             border: 1px solid var(--dm-border-strong);
             border-radius: 8px;
-            box-shadow: 0 1px 0 rgba(255, 255, 255, 0.035), 0 6px 14px rgba(0, 0, 0, 0.16);
+            box-shadow: 0 1px 0 rgba(255, 255, 255, 0.025), 0 6px 14px rgba(0, 0, 0, 0.18);
             transition: all 0.18s ease;
+        }
+        .stButton > button p,
+        [data-testid="stDownloadButton"] > button p {
+            color: var(--dm-text) !important;
         }
         .stButton > button:hover,
         [data-testid="stDownloadButton"] > button:hover {
-            background: linear-gradient(180deg, #323338 0%, #2a2b30 100%);
-            border-color: rgba(235, 235, 238, 0.32);
+            background: var(--dm-surface-raised);
+            border-color: rgba(254, 254, 254, 0.38);
             transform: translateY(-1px);
             box-shadow: 0 8px 18px rgba(0, 0, 0, 0.20);
         }
         .stButton > button:disabled,
         [data-testid="stDownloadButton"] > button:disabled {
-            background: #202125 !important;
+            background: var(--dm-bg-1) !important;
             color: var(--dm-text-muted) !important;
-            border-color: rgba(214, 214, 218, 0.10) !important;
+            border-color: rgba(191, 191, 191, 0.10) !important;
             box-shadow: none !important;
             transform: none !important;
         }
-        [data-testid="stMetricValue"],
-        [data-testid="stMetricLabel"] {
+        [data-testid="stMetricValue"] {
             color: var(--dm-text) !important;
+        }
+        [data-testid="stMetricLabel"] {
+            color: var(--dm-text-soft) !important;
         }
         [data-testid="stMetric"] {
             background: var(--dm-surface-soft);
@@ -870,15 +887,25 @@ def _apply_runtime_theme(dark_mode: bool) -> None:
             border-radius: 8px;
         }
         [data-testid="stAlert"] {
-            background: rgba(36, 37, 41, 0.84);
+            background: var(--dm-bg-2);
             border: 1px solid var(--dm-border-strong);
             border-radius: 8px;
+        }
+        code, pre,
+        [data-testid="stCodeBlock"] {
+            color: var(--dm-text-soft) !important;
+            background: var(--dm-bg-1) !important;
+            border-color: var(--dm-border) !important;
+        }
+        [data-testid="stDialog"] [role="dialog"] {
+            background: var(--dm-bg-1) !important;
+            border: 1px solid var(--dm-border-strong);
         }
         .stTextInput input,
         .stNumberInput input,
         .stTextArea textarea,
         div[data-baseweb="input"] input {
-            background: #202125 !important;
+            background: var(--dm-bg-1) !important;
             color: var(--dm-text) !important;
             border-color: var(--dm-border-strong) !important;
             border-radius: 8px !important;
@@ -891,7 +918,7 @@ def _apply_runtime_theme(dark_mode: bool) -> None:
             opacity: 1;
         }
         div[data-baseweb="select"] > div {
-            background: #202125 !important;
+            background: var(--dm-bg-1) !important;
             border-color: var(--dm-border-strong) !important;
             border-radius: 8px !important;
             color: var(--dm-text) !important;
@@ -900,12 +927,12 @@ def _apply_runtime_theme(dark_mode: bool) -> None:
             color: var(--dm-text) !important;
         }
         div[data-baseweb="popover"] * {
-            color: var(--dm-text);
-            background-color: #202125;
+            color: var(--dm-text-soft);
+            background-color: var(--dm-bg-1);
             border-color: var(--dm-border-strong);
         }
         div[data-baseweb="menu"] {
-            background: #202125 !important;
+            background: var(--dm-bg-1) !important;
             border: 1px solid var(--dm-border-strong) !important;
         }
         div[data-baseweb="menu"] li,
@@ -915,7 +942,7 @@ def _apply_runtime_theme(dark_mode: bool) -> None:
         }
         div[data-baseweb="menu"] li:hover,
         div[data-baseweb="menu"] li[aria-selected="true"] {
-            background: #303136 !important;
+            background: var(--dm-surface-raised) !important;
         }
         [data-testid="stCheckbox"] label,
         [data-testid="stToggle"] label,
@@ -926,11 +953,11 @@ def _apply_runtime_theme(dark_mode: bool) -> None:
         }
         [data-baseweb="checkbox"] > div:first-child,
         [data-baseweb="radio"] > div:first-child {
-            background: #242529 !important;
+            background: var(--dm-bg-2) !important;
             border-color: var(--dm-border-strong) !important;
         }
         [data-baseweb="tag"] {
-            background: #303136 !important;
+            background: var(--dm-surface-raised) !important;
             border-color: var(--dm-border-strong) !important;
             color: var(--dm-text) !important;
         }
@@ -950,15 +977,15 @@ def _apply_runtime_theme(dark_mode: bool) -> None:
             overflow: hidden;
         }
         [data-testid="stDataFrame"] [role="grid"] {
-            background: rgba(27, 28, 32, 0.92);
+            background: var(--dm-bg-1);
         }
         [data-testid="stToolbar"] button {
             color: var(--dm-text-soft) !important;
         }
         [data-testid="stSidebar"] .stMarkdown a,
         .stMarkdown a {
-            color: #d0d0d3 !important;
-            text-decoration-color: rgba(208, 208, 211, 0.45) !important;
+            color: var(--dm-text-soft) !important;
+            text-decoration-color: rgba(191, 191, 191, 0.45) !important;
         }
         [data-testid="stSidebar"] hr,
         hr {
@@ -970,15 +997,15 @@ def _apply_runtime_theme(dark_mode: bool) -> None:
         }
         section[data-testid="stSidebar"] div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Menu"] label[data-baseweb="radio"]:hover,
         section[data-testid="stSidebar"] div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Menu"] [role="radio"]:hover {
-            background-color: #242529;
+            background-color: var(--dm-bg-2);
         }
         section[data-testid="stSidebar"] div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Menu"] label[data-baseweb="radio"]:has(input:checked) {
             border-left-color: var(--dm-accent);
-            background-color: #303136;
+            background-color: var(--dm-surface-raised);
         }
         section[data-testid="stSidebar"] div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Menu"] [role="radio"][aria-checked="true"] {
             border-left-color: var(--dm-accent);
-            background-color: #303136;
+            background-color: var(--dm-surface-raised);
         }
         div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Sous-menu"] label[data-baseweb="radio"]:has(input:checked)::after {
             border-bottom-color: var(--dm-accent);
@@ -991,7 +1018,7 @@ def _apply_runtime_theme(dark_mode: bool) -> None:
         }
         div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Réseaux de neurones"] label[data-baseweb="radio"]:hover,
         div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Réseaux de neurones"] [role="radio"]:hover {
-            background-color: rgba(214, 214, 218, 0.08);
+            background-color: rgba(191, 191, 191, 0.08);
         }
         div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Réseaux de neurones"] label[data-baseweb="radio"]:has(input:checked),
         div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Réseaux de neurones"] [role="radio"][aria-checked="true"] {
@@ -999,7 +1026,7 @@ def _apply_runtime_theme(dark_mode: bool) -> None:
             color: var(--dm-text) !important;
         }
         [data-testid="stProgressBar"] > div > div > div {
-            background: linear-gradient(90deg, #8e8f94 0%, #c9c9cc 100%) !important;
+            background: linear-gradient(90deg, var(--dm-text-muted) 0%, var(--dm-text-soft) 100%) !important;
         }
         </style>
         """,
@@ -1591,30 +1618,30 @@ def _apply_dark_plotly_layout(fig: Any) -> Any:
         out.update_layout(
             template="plotly_dark",
             paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="#1b1c20",
-            font=dict(color="#d8d8dc"),
-            title_font=dict(color="#e1e1e3"),
-            colorway=["#d0d0d3", "#a8a8ad", "#8f9095", "#eeeeef", "#73747a", "#bdbdc1"],
+            plot_bgcolor="#22242a",
+            font=dict(color="#bfbfbf"),
+            title_font=dict(color="#fefefe"),
+            colorway=["#fefefe", "#bfbfbf", "#929499", "#6f7073", "#d8d8d8", "#3c3c3c"],
             legend=dict(
-                bgcolor="rgba(31,32,36,0.72)",
-                bordercolor="rgba(214,214,218,0.16)",
+                bgcolor="rgba(41,43,48,0.88)",
+                bordercolor="rgba(191,191,191,0.18)",
                 borderwidth=1,
-                font=dict(color="#c8c8cc"),
+                font=dict(color="#bfbfbf"),
             ),
         )
         out.update_xaxes(
-            gridcolor="rgba(214,214,218,0.10)",
-            linecolor="rgba(214,214,218,0.22)",
-            zerolinecolor="rgba(214,214,218,0.16)",
-            tickfont=dict(color="#b6b6ba"),
-            title_font=dict(color="#d8d8dc"),
+            gridcolor="rgba(191,191,191,0.10)",
+            linecolor="rgba(191,191,191,0.24)",
+            zerolinecolor="rgba(191,191,191,0.18)",
+            tickfont=dict(color="#bfbfbf"),
+            title_font=dict(color="#fefefe"),
         )
         out.update_yaxes(
-            gridcolor="rgba(214,214,218,0.10)",
-            linecolor="rgba(214,214,218,0.22)",
-            zerolinecolor="rgba(214,214,218,0.16)",
-            tickfont=dict(color="#b6b6ba"),
-            title_font=dict(color="#d8d8dc"),
+            gridcolor="rgba(191,191,191,0.10)",
+            linecolor="rgba(191,191,191,0.24)",
+            zerolinecolor="rgba(191,191,191,0.18)",
+            tickfont=dict(color="#bfbfbf"),
+            title_font=dict(color="#fefefe"),
         )
         return out
     except Exception:
