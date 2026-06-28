@@ -782,8 +782,8 @@ def _apply_runtime_theme(dark_mode: bool) -> None:
             --dm-panel-inner: #3a3b40;
             --dm-surface-soft: rgba(34, 36, 42, 0.92);
             --dm-surface-muted: rgba(60, 60, 60, 0.78);
-            --dm-border: rgba(191, 191, 191, 0.18);
-            --dm-border-strong: rgba(191, 191, 191, 0.32);
+            --dm-border: rgba(254, 254, 254, 0.42);
+            --dm-border-strong: rgba(254, 254, 254, 0.68);
             --dm-text: #fefefe;
             --dm-text-soft: #bfbfbf;
             --dm-text-muted: #6f7073;
@@ -899,6 +899,21 @@ def _apply_runtime_theme(dark_mode: bool) -> None:
         [data-testid="stVerticalBlockBorderWrapper"]
         [data-testid="stVerticalBlockBorderWrapper"] {
             background: var(--dm-panel-inner) !important;
+        }
+        [data-testid="stAppViewContainer"] [data-testid="stVerticalBlockBorderWrapper"],
+        [data-testid="stAppViewContainer"] [data-testid="stMetric"],
+        [data-testid="stAppViewContainer"] [data-testid="stAlert"],
+        [data-testid="stAppViewContainer"] [data-testid="stExpander"] details,
+        [data-testid="stAppViewContainer"] [data-testid="stDataFrame"],
+        [data-testid="stAppViewContainer"] [data-testid="stPlotlyChart"],
+        [data-testid="stAppViewContainer"] [data-testid="stVegaLiteChart"],
+        [data-testid="stAppViewContainer"] [data-testid="stPyplot"],
+        [data-testid="stAppViewContainer"] [data-testid="stGraphVizChart"],
+        [data-testid="stAppViewContainer"] [data-testid="stDeckGlJsonChart"],
+        [data-testid="stAppViewContainer"] [style*="border: 1px"],
+        [data-testid="stAppViewContainer"] [style*="border:1px"],
+        [data-testid="stAppViewContainer"] [style*="border-width: 1px"] {
+            border-color: var(--dm-border-strong) !important;
         }
         [data-testid="stAlert"] {
             background: var(--dm-panel-inner);
@@ -1183,13 +1198,15 @@ def _apply_runtime_theme(dark_mode: bool) -> None:
             background-color: var(--dm-surface-raised);
         }
         div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Sous-menu"] label[data-baseweb="radio"]:has(input:checked)::after {
-            border-bottom-color: var(--dm-accent);
+            border-bottom: 3px solid var(--dm-accent-2);
+            box-shadow: 0 1px 0 rgba(254, 254, 254, 0.22);
         }
         div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Sous-menu"] [role="radio"][aria-checked="true"]::after {
-            border-bottom-color: var(--dm-accent);
+            border-bottom: 3px solid var(--dm-accent-2);
+            box-shadow: 0 1px 0 rgba(254, 254, 254, 0.22);
         }
         div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Réseaux de neurones"] {
-            border-bottom-color: var(--dm-border);
+            border-bottom-color: var(--dm-border-strong);
         }
         div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Réseaux de neurones"] label[data-baseweb="radio"]:hover,
         div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Réseaux de neurones"] [role="radio"]:hover {
@@ -1197,7 +1214,7 @@ def _apply_runtime_theme(dark_mode: bool) -> None:
         }
         div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Réseaux de neurones"] label[data-baseweb="radio"]:has(input:checked),
         div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Réseaux de neurones"] [role="radio"][aria-checked="true"] {
-            border-bottom-color: var(--dm-accent);
+            border-bottom-color: var(--dm-accent-2);
             color: var(--dm-text) !important;
         }
         [data-testid="stProgressBar"] > div > div > div {
