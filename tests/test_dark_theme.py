@@ -32,3 +32,47 @@ def test_dark_theme_covers_plotly_chart_families(monkeypatch) -> None:
             assert themed.layout.paper_bgcolor == "#22242a"
             assert themed.layout.plot_bgcolor == "#292b30"
             assert themed.layout.font.color == "#bfbfbf"
+
+
+def test_generated_chart_controls_and_shapes_follow_dark_theme(monkeypatch) -> None:
+    monkeypatch.setattr(main.st, "session_state", {"ui_dark_mode": True})
+    figure = go.Figure(go.Scatter(x=[1, 2], y=[1, 2]))
+    figure.update_layout(
+        template=main._plotly_template(),
+        plot_bgcolor=main._plotly_plot_bgcolor(),
+        updatemenus=[
+            {
+                "buttons": [
+                    {
+                        "label": "Exemple",
+                        "method": "update",
+                        "args": [{"visible": [True]}],
+                    }
+                ],
+                "bgcolor": "rgba(255,255,255,0.90)",
+            }
+        ],
+        shapes=[
+            {
+                "type": "rect",
+                "x0": 1,
+                "x1": 2,
+                "y0": 1,
+                "y1": 2,
+                "fillcolor": "#fffdf7",
+            }
+        ],
+    )
+
+    themed = main._apply_dark_plotly_layout(figure)
+
+    assert main._plotly_template() == "plotly_dark"
+    assert themed.layout.updatemenus[0].bgcolor == "#3a3b40"
+    assert themed.layout.shapes[0].fillcolor == "#3a3b40"
+
+
+def test_generated_chart_template_stays_light_in_light_mode(monkeypatch) -> None:
+    monkeypatch.setattr(main.st, "session_state", {"ui_dark_mode": False})
+
+    assert main._plotly_template() == "plotly_white"
+    assert main._plotly_plot_bgcolor() == "#fbfcff"

@@ -1759,6 +1759,44 @@ def _translate_metric_args(args: tuple[Any, ...], kwargs: dict[str, Any]) -> tup
     return args2, kwargs2
 
 
+def _plotly_template() -> str:
+    return "plotly_dark" if bool(st.session_state.get("ui_dark_mode", False)) else "plotly_white"
+
+
+def _plotly_plot_bgcolor() -> str:
+    return "#292b30" if bool(st.session_state.get("ui_dark_mode", False)) else "#fbfcff"
+
+
+def _plotly_overlay_bgcolor(alpha: float = 0.88) -> str:
+    if bool(st.session_state.get("ui_dark_mode", False)):
+        return f"rgba(58,59,64,{float(alpha):.2f})"
+    return f"rgba(255,255,255,{float(alpha):.2f})"
+
+
+def _plotly_panel_fillcolor() -> str:
+    return "#3a3b40" if bool(st.session_state.get("ui_dark_mode", False)) else "#fffdf7"
+
+
+def _plotly_text_color(*, muted: bool = False) -> str:
+    if bool(st.session_state.get("ui_dark_mode", False)):
+        return "#bfbfbf" if muted else "#fefefe"
+    return "#4b5563" if muted else "#111827"
+
+
+def _plotly_color_is_light(value: Any) -> bool:
+    normalized = str(value or "").strip().casefold().replace(" ", "")
+    if normalized in {"white", "#fff", "#ffffff", "#fffdf7", "#fbfcff"}:
+        return True
+    if normalized.startswith(("rgb(255,255,255)", "rgba(255,255,255,")):
+        if normalized.startswith("rgba("):
+            try:
+                return float(normalized.rstrip(")").split(",")[-1]) > 0.0
+            except (TypeError, ValueError):
+                return True
+        return True
+    return False
+
+
 def _apply_dark_plotly_layout(fig: Any) -> Any:
     if not bool(st.session_state.get("ui_dark_mode", False)):
         return fig
@@ -1901,6 +1939,30 @@ def _apply_dark_plotly_layout(fig: Any) -> Any:
             colorbar_outlinewidth=0,
         )
         out.update_annotations(font=dict(color="#bfbfbf"))
+        for menu in out.layout.updatemenus or ():
+            menu.bgcolor = "#3a3b40"
+            menu.bordercolor = "rgba(191,191,191,0.32)"
+            menu.font = dict(color="#fefefe", size=getattr(menu.font, "size", None) or 10)
+        for slider in out.layout.sliders or ():
+            slider.bgcolor = "#3a3b40"
+            slider.activebgcolor = "#4a4b50"
+            slider.bordercolor = "rgba(191,191,191,0.32)"
+            slider.font = dict(color="#fefefe")
+            try:
+                slider.currentvalue.font = dict(color="#fefefe")
+            except Exception:
+                pass
+        for annotation in out.layout.annotations or ():
+            if _plotly_color_is_light(getattr(annotation, "bgcolor", None)):
+                annotation.bgcolor = "#3a3b40"
+                annotation.bordercolor = "rgba(191,191,191,0.32)"
+            annotation.font = dict(
+                color="#bfbfbf",
+                size=getattr(annotation.font, "size", None),
+            )
+        for shape in out.layout.shapes or ():
+            if _plotly_color_is_light(getattr(shape, "fillcolor", None)):
+                shape.fillcolor = "#3a3b40"
         for trace in out.data:
             colorbar = getattr(trace, "colorbar", None)
             if colorbar is not None:
@@ -5588,8 +5650,8 @@ def _build_local_erd_figure(erd_model: ErdModel) -> go.Figure:
             x1=x1,
             y0=y0,
             y1=y1,
-            line=dict(color="#1f2937", width=1.2),
-            fillcolor="#fffdf7",
+            line=dict(color=_plotly_text_color(muted=True), width=1.2),
+            fillcolor=_plotly_panel_fillcolor(),
             layer="above",
         )
         fig.add_annotation(
@@ -5600,7 +5662,7 @@ def _build_local_erd_figure(erd_model: ErdModel) -> go.Figure:
             align="left",
             xanchor="left",
             yanchor="top",
-            font=dict(size=11, color="#111827"),
+            font=dict(size=11, color=_plotly_text_color()),
         )
 
     if erd_model.nodes:
@@ -5615,7 +5677,7 @@ def _build_local_erd_figure(erd_model: ErdModel) -> go.Figure:
     fig_height = int(max(560, min(1800, 360 + n_rows * 320)))
     fig.update_layout(
         title="Schéma relationnel",
-        template="plotly_white",
+        template=_plotly_template(),
         margin=dict(l=10, r=10, t=44, b=10),
         xaxis=dict(visible=False, range=[min_x, max_x]),
         yaxis=dict(visible=False, range=[min_y, max_y]),
@@ -8059,7 +8121,7 @@ def render_eda(data: dict[str, pd.DataFrame]) -> None:
         return
 
     _reduce_scatter_marker_size(fig, default_size=5.0)
-    fig.update_layout(template="plotly_white", margin=dict(l=20, r=20, t=60, b=20))
+    fig.update_layout(template=_plotly_template(), margin=dict(l=20, r=20, t=60, b=20))
     st.plotly_chart(fig, width="stretch")
 
     if table_view is not None and not table_view.empty:
@@ -9068,7 +9130,7 @@ def _build_dendrogram_figure(linkage_matrix: np.ndarray, title: str) -> go.Figur
         title=title,
         xaxis_title="Observations (ordre du dendrogramme)",
         yaxis_title="Distance",
-        template="plotly_white",
+        template=_plotly_template(),
         height=420,
     )
     return fig
@@ -9633,7 +9695,7 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
                         + (" ..." if len(skipped_groups) > 5 else "")
                     )
         _add_factor_crosshair(individuals_fig)
-        individuals_fig.update_layout(template="plotly_white")
+        individuals_fig.update_layout(template=_plotly_template())
         st.plotly_chart(individuals_fig, width="stretch")
 
         if color_mode == "cos² (Dim1+Dim2)":
@@ -9730,7 +9792,7 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
             title="ACP - Cercle des corrélations",
             xaxis=dict(title="Dim1", range=[-1.08, 1.08], zeroline=False),
             yaxis=dict(title="Dim2", range=[-1.08, 1.08], zeroline=False, scaleanchor="x", scaleratio=1),
-            template="plotly_white",
+            template=_plotly_template(),
             showlegend=False,
             height=760,
         )
@@ -9953,7 +10015,7 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
         if show_labels:
             fig.update_traces(text=ca_plot["label"], textposition="top center")
         _add_factor_crosshair(fig)
-        fig.update_layout(template="plotly_white")
+        fig.update_layout(template=_plotly_template())
         st.plotly_chart(fig, width="stretch")
 
         if contingency_mode == "% ligne":
@@ -9987,7 +10049,7 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
                 aspect="auto",
                 color_continuous_scale="Tealgrn",
             )
-            heat.update_layout(template="plotly_white")
+            heat.update_layout(template=_plotly_template())
             st.plotly_chart(heat, width="stretch")
         with c2:
             inertia_df = pd.DataFrame(
@@ -10270,7 +10332,7 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
                     )
                 )
         _add_factor_crosshair(ind_fig)
-        ind_fig.update_layout(template="plotly_white")
+        ind_fig.update_layout(template=_plotly_template())
         st.plotly_chart(ind_fig, width="stretch")
 
         modality_rows: list[dict[str, object]] = []
@@ -10351,7 +10413,7 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
                         font=dict(size=10, color="#111111"),
                     )
             _add_factor_crosshair(mod_fig)
-            mod_fig.update_layout(template="plotly_white")
+            mod_fig.update_layout(template=_plotly_template())
             st.plotly_chart(mod_fig, width="stretch")
 
         if "fa_mca_n_var_chart" not in st.session_state or not (2 <= int(st.session_state["fa_mca_n_var_chart"]) <= len(explained)):
@@ -10621,7 +10683,7 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
                     )
                 )
         _add_factor_crosshair(cluster_fig)
-        cluster_fig.update_layout(template="plotly_white")
+        cluster_fig.update_layout(template=_plotly_template())
         st.plotly_chart(cluster_fig, width="stretch")
 
         c1, c2 = st.columns([1.1, 1.2])
@@ -10630,7 +10692,7 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
             size_df["Classe_int"] = pd.to_numeric(size_df["Classe"], errors="coerce")
             size_df = size_df.sort_values("Classe_int").drop(columns=["Classe_int"])
             size_fig = px.bar(size_df, x="Classe", y="Effectif", text="Effectif", title="Effectifs par classe", color="Classe")
-            size_fig.update_layout(showlegend=False, template="plotly_white")
+            size_fig.update_layout(showlegend=False, template=_plotly_template())
             c1.plotly_chart(size_fig, width="stretch")
         with c2:
             profile_std = pd.DataFrame(x_model, columns=selected).assign(Classe=class_labels).groupby("Classe", as_index=True).mean()
@@ -11014,7 +11076,7 @@ def render_factor_analysis(data: dict[str, pd.DataFrame]) -> None:
                     )
                 )
         _add_factor_crosshair(afm_fig)
-        afm_fig.update_layout(template="plotly_white")
+        afm_fig.update_layout(template=_plotly_template())
         st.plotly_chart(afm_fig, width="stretch")
 
         if "fa_mfa_n_var_chart" not in st.session_state or not (2 <= int(st.session_state["fa_mfa_n_var_chart"]) <= len(explained)):
@@ -11400,7 +11462,7 @@ def _render_afmd_analysis(
                 )
             )
     _add_factor_crosshair(fig)
-    fig.update_layout(template="plotly_white")
+    fig.update_layout(template=_plotly_template())
     st.plotly_chart(fig, width="stretch")
 
     if "fa_famd_n_var_chart" not in st.session_state or not (2 <= int(st.session_state["fa_famd_n_var_chart"]) <= len(explained)):
@@ -11654,7 +11716,7 @@ def _qq_plot_figure(sample: pd.Series, title: str) -> go.Figure:
         title=title,
         xaxis_title="Quantiles théoriques (Normale)",
         yaxis_title="Quantiles observés",
-        template="plotly_white",
+        template=_plotly_template(),
     )
     return fig
 
@@ -12121,7 +12183,7 @@ def render_primary_tests(data: dict[str, pd.DataFrame]) -> None:
                                     tickvals=labels_order,
                                     ticktext=tick_text,
                                 )
-                                pfig.update_layout(xaxis_tickangle=-35, template="plotly_white")
+                                pfig.update_layout(xaxis_tickangle=-35, template=_plotly_template())
                                 st.plotly_chart(pfig, width="stretch")
 
                             if group_var == "Aucun":
@@ -12142,7 +12204,7 @@ def render_primary_tests(data: dict[str, pd.DataFrame]) -> None:
                                         bin_width = (float(series.max()) - float(series.min())) / 45 if float(series.max()) > float(series.min()) else 1.0
                                         yline = norm.pdf(xline, loc=mu, scale=sigma) * len(series) * bin_width
                                         hfig.add_trace(go.Scatter(x=xline, y=yline, mode="lines", name="Normale ajustée", line=dict(color="#bb3e03")))
-                                    hfig.update_layout(template="plotly_white")
+                                    hfig.update_layout(template=_plotly_template())
                                     st.plotly_chart(hfig, width="stretch")
                                 with g2:
                                     qq = _qq_plot_figure(series, title=f"QQ-plot - {preview_var}")
@@ -12176,7 +12238,7 @@ def render_primary_tests(data: dict[str, pd.DataFrame]) -> None:
                                             yaxis_title=preview_var,
                                             show_points=show_box_points,
                                         )
-                                        box.update_layout(template="plotly_white", xaxis_tickangle=-20)
+                                        box.update_layout(template=_plotly_template(), xaxis_tickangle=-20)
                                         st.plotly_chart(box, width="stretch")
                                     with g2:
                                         grp_series = pd.to_numeric(
@@ -12535,7 +12597,7 @@ def render_primary_tests(data: dict[str, pd.DataFrame]) -> None:
                                             yaxis_title=plot_var,
                                             show_points=show_box_points,
                                         )
-                                        box.update_layout(template="plotly_white", xaxis_tickangle=-20)
+                                        box.update_layout(template=_plotly_template(), xaxis_tickangle=-20)
                                         st.plotly_chart(box, width="stretch")
                                     with g2:
                                         var_df = (
@@ -12545,7 +12607,7 @@ def render_primary_tests(data: dict[str, pd.DataFrame]) -> None:
                                             .sort_values("variance", ascending=False)
                                         )
                                         bar = px.bar(var_df, x=group_col, y="variance", title=f"Variance par groupe - {plot_var}")
-                                        bar.update_layout(template="plotly_white", xaxis_tickangle=-20)
+                                        bar.update_layout(template=_plotly_template(), xaxis_tickangle=-20)
                                         st.plotly_chart(bar, width="stretch")
 
         st.markdown("### Explication")
@@ -12923,7 +12985,7 @@ def render_kpi_dashboard(data: dict[str, pd.DataFrame], store_daily: pd.DataFram
             },
         )
     )
-    gauge_fig.update_layout(template="plotly_white", margin=dict(l=8, r=8, t=64, b=10), height=245)
+    gauge_fig.update_layout(template=_plotly_template(), margin=dict(l=8, r=8, t=64, b=10), height=245)
 
     try:
         kpi_block = st.container(border=True)
@@ -12975,7 +13037,7 @@ def render_kpi_dashboard(data: dict[str, pd.DataFrame], store_daily: pd.DataFram
             )
             fig_pie_channel.update_layout(
                 title="Répartition du CA par canal (part + effectif)",
-                template="plotly_white",
+                template=_plotly_template(),
                 margin=dict(l=8, r=8, t=48, b=8),
                 height=300,
             )
@@ -13005,7 +13067,7 @@ def render_kpi_dashboard(data: dict[str, pd.DataFrame], store_daily: pd.DataFram
             )
             fig_pie_payment.update_layout(
                 title="Répartition des transactions par paiement (part + effectif)",
-                template="plotly_white",
+                template=_plotly_template(),
                 margin=dict(l=8, r=8, t=48, b=8),
                 height=300,
             )
@@ -13053,7 +13115,7 @@ def render_kpi_dashboard(data: dict[str, pd.DataFrame], store_daily: pd.DataFram
     )
     fig_revenue.update_layout(
         title="CA et marge dans le temps",
-        template="plotly_white",
+        template=_plotly_template(),
         yaxis=dict(title="CA"),
         yaxis2=dict(title="Marge", overlaying="y", side="right"),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0.0),
@@ -13064,7 +13126,7 @@ def render_kpi_dashboard(data: dict[str, pd.DataFrame], store_daily: pd.DataFram
     with b1:
         region_ts = current.groupby(["period", "region"], as_index=False)["revenue"].sum().sort_values(["period", "region"])
         fig_region = px.area(region_ts, x="period", y="revenue", color="region", title="Contribution au CA par région")
-        fig_region.update_layout(template="plotly_white")
+        fig_region.update_layout(template=_plotly_template())
         st.plotly_chart(fig_region, width="stretch")
     with b2:
         perf_agg = {"revenue": "sum", "txns": "sum"}
@@ -13086,14 +13148,14 @@ def render_kpi_dashboard(data: dict[str, pd.DataFrame], store_daily: pd.DataFram
             hover_data=["store_id", "city", "margin"],
             title="Performance stores: transactions vs panier moyen",
         )
-        fig_perf.update_layout(template="plotly_white")
+        fig_perf.update_layout(template=_plotly_template())
         st.plotly_chart(fig_perf, width="stretch")
 
     d1, d2 = st.columns(2)
     with d1:
         top = current.groupby(["store_id", "city"], as_index=False)["revenue"].sum().nlargest(12, "revenue").sort_values("revenue", ascending=True)
         fig_top = px.bar(top, y="store_id", x="revenue", color="city", orientation="h", title="Top 12 stores par CA")
-        fig_top.update_layout(template="plotly_white", yaxis_title="Store", xaxis_title="CA")
+        fig_top.update_layout(template=_plotly_template(), yaxis_title="Store", xaxis_title="CA")
         st.plotly_chart(fig_top, width="stretch")
     with d2:
         heat_df = current.copy()
@@ -13265,7 +13327,7 @@ Chaque proposition précise l'audience, les objectifs, les KPI, les graphiques, 
             color="Domaine",
             hover_name="Dashboard",
             hover_data=["Priorité", "Score priorité", "Audience"],
-            template="plotly_white",
+            template=_plotly_template(),
             title="Valeur business vs complexité",
         )
         scatter.update_layout(height=430, margin=dict(l=10, r=10, t=45, b=10))
@@ -13277,7 +13339,7 @@ Chaque proposition précise l'audience, les objectifs, les KPI, les graphiques, 
             y="Dashboard",
             color="Priorité",
             orientation="h",
-            template="plotly_white",
+            template=_plotly_template(),
             title="Classement des propositions",
         )
         bars.update_layout(height=430, margin=dict(l=10, r=10, t=45, b=10), yaxis_title="")
@@ -13692,7 +13754,7 @@ def render_basket(product_features: pd.DataFrame, affinity: pd.DataFrame, data: 
             labels={"date": "Date", "products_sold_qty": "Produits vendus (quantité)"},
             color_discrete_sequence=["#386fa4"],
         )
-        fig_products.update_layout(template="plotly_white")
+        fig_products.update_layout(template=_plotly_template())
         st.plotly_chart(fig_products, width="stretch")
     else:
         st.info("Aucune ligne de vente disponible pour tracer les produits vendus (jour).")
@@ -13745,7 +13807,7 @@ def render_basket(product_features: pd.DataFrame, affinity: pd.DataFrame, data: 
                 y=0.99,
                 xanchor="right",
                 x=0.99,
-                bgcolor="rgba(255,255,255,0.85)",
+                bgcolor=_plotly_overlay_bgcolor(0.85),
                 bordercolor="rgba(0,0,0,0.1)",
                 borderwidth=1,
             ),
@@ -13768,7 +13830,7 @@ def render_basket(product_features: pd.DataFrame, affinity: pd.DataFrame, data: 
             title="Top produits par CA",
             hover_data=hover_cols,
         )
-        fig_top_ca.update_layout(template="plotly_white", xaxis_title="Produit", yaxis_title="CA")
+        fig_top_ca.update_layout(template=_plotly_template(), xaxis_title="Produit", yaxis_title="CA")
         st.plotly_chart(fig_top_ca, width="stretch")
     with c2:
         cat_df = (
@@ -13806,7 +13868,7 @@ def render_basket(product_features: pd.DataFrame, affinity: pd.DataFrame, data: 
         )
         fig_pareto.update_layout(
             title="Courbe de Pareto du CA produit",
-            template="plotly_white",
+            template=_plotly_template(),
             xaxis_title="Rang produit",
             yaxis=dict(title="CA"),
             yaxis2=dict(title="% cumulé", overlaying="y", side="right", range=[0, 105]),
@@ -13826,7 +13888,7 @@ def render_basket(product_features: pd.DataFrame, affinity: pd.DataFrame, data: 
             color="category",
             title="Mix catégorie: unités vs CA (taille = marge)",
         )
-        fig_mix.update_layout(template="plotly_white")
+        fig_mix.update_layout(template=_plotly_template())
         st.plotly_chart(fig_mix, width="stretch")
 
     st.markdown("### Explications")
@@ -18434,7 +18496,7 @@ def _render_scraping_lineage() -> None:
     fig.add_trace(go.Scatter(x=list(range(len(nodes))), y=[1] * len(nodes), mode="markers+text", text=nodes["Zone"], textposition="bottom center", marker=dict(size=28, color="#0a9396")))
     for i in range(len(nodes) - 1):
         fig.add_annotation(x=i + 0.5, y=1, ax=i, ay=1, xref="x", yref="y", axref="x", ayref="y", showarrow=True, arrowhead=2)
-    fig.update_layout(template="plotly_white", title="Lineage interactif simplifié", yaxis=dict(visible=False), xaxis=dict(visible=False), height=300)
+    fig.update_layout(template=_plotly_template(), title="Lineage interactif simplifié", yaxis=dict(visible=False), xaxis=dict(visible=False), height=300)
     st.plotly_chart(fig, width="stretch")
 
 
@@ -20149,7 +20211,7 @@ def _render_ai_architecture() -> None:
             )
         ]
     )
-    sankey.update_layout(template="plotly_white", height=390, margin=dict(l=10, r=10, t=10, b=10))
+    sankey.update_layout(template=_plotly_template(), height=390, margin=dict(l=10, r=10, t=10, b=10))
     flow.plotly_chart(sankey, width="stretch")
     cols = flow.columns(4)
     cols[0].markdown("**Interface**\n\nChat Streamlit, boutons exemples, export ChatMD, historique contrôlé.")
@@ -21219,7 +21281,7 @@ def _render_spatial_overview(ctx: dict[str, pd.DataFrame | dict[str, float]]) ->
             hover_data=[c for c in ["store_id", "city", "store_type", "margin", "txns"] if c in store_profile.columns],
             title="Empreinte magasins (taille = CA total)",
         )
-        fig_store.update_layout(template="plotly_white", xaxis_title="Longitude", yaxis_title="Latitude")
+        fig_store.update_layout(template=_plotly_template(), xaxis_title="Longitude", yaxis_title="Latitude")
         c1.plotly_chart(fig_store, width="stretch")
     else:
         c1.info("Données magasins insuffisantes.")
@@ -21235,7 +21297,7 @@ def _render_spatial_overview(ctx: dict[str, pd.DataFrame | dict[str, float]]) ->
             hover_data=[c for c in ["customer_id", "loyalty_tier", "clv_proxy", "nearest_distance_km"] if c in sample.columns],
             opacity=0.55,
         )
-        fig_cust.update_layout(template="plotly_white", xaxis_title="Longitude", yaxis_title="Latitude")
+        fig_cust.update_layout(template=_plotly_template(), xaxis_title="Longitude", yaxis_title="Latitude")
         c2.plotly_chart(fig_cust, width="stretch")
     else:
         c2.info("Coordonnées clients indisponibles.")
@@ -21395,7 +21457,7 @@ def _render_spatial_proximity(ctx: dict[str, pd.DataFrame | dict[str, float]]) -
         )
         fig.update_layout(
             title="Desire lines (échantillon clients → magasins)",
-            template="plotly_white",
+            template=_plotly_template(),
             xaxis_title="Longitude",
             yaxis_title="Latitude",
         )
@@ -21519,7 +21581,7 @@ def _render_spatial_hotspots(ctx: dict[str, pd.DataFrame | dict[str, float]]) ->
             title=f"Carte de chaleur {selected_label} (grille clients)",
             text_auto=".1f",
         )
-        heat.update_layout(template="plotly_white", xaxis_title="Bin longitude", yaxis_title="Bin latitude")
+        heat.update_layout(template=_plotly_template(), xaxis_title="Bin longitude", yaxis_title="Bin latitude")
         c1.plotly_chart(heat, width="stretch")
     else:
         c1.info("Grille spatiale indisponible.")
@@ -21552,7 +21614,7 @@ def _render_spatial_hotspots(ctx: dict[str, pd.DataFrame | dict[str, float]]) ->
                 "Neutre": "#94a1b2",
             },
         )
-        fig.update_layout(template="plotly_white")
+        fig.update_layout(template=_plotly_template())
         c2.plotly_chart(fig, width="stretch")
     else:
         c2.info("Données stores insuffisantes.")
@@ -21829,7 +21891,7 @@ def _render_spatial_temporal(ctx: dict[str, pd.DataFrame | dict[str, float]]) ->
     month_agg = monthly_store.groupby("month", as_index=False).agg(revenue=("revenue", "sum"), margin=("margin", "sum"), txns=("txns", "sum"))
     c1, c2 = st.columns(2)
     line = px.line(month_agg, x="month", y=["revenue", "margin"], title="Évolution mensuelle CA / marge")
-    line.update_layout(template="plotly_white")
+    line.update_layout(template=_plotly_template())
     c1.plotly_chart(line, width="stretch")
 
     if "region" in monthly_store.columns:
@@ -21987,7 +22049,7 @@ def _render_spatial_segmentation(ctx: dict[str, pd.DataFrame | dict[str, float]]
         hover_data=[c for c in ["store_id", "city", "region", "store_type", "avg_distance_obs_km"] if c in tmp.columns],
         title="Carte des segments territoriaux",
     )
-    map_seg.update_layout(template="plotly_white", xaxis_title="Longitude", yaxis_title="Latitude")
+    map_seg.update_layout(template=_plotly_template(), xaxis_title="Longitude", yaxis_title="Latitude")
     c1.plotly_chart(map_seg, width="stretch")
 
     if not seg_profile.empty:
@@ -22068,7 +22130,7 @@ def _render_spatial_coverage(ctx: dict[str, pd.DataFrame | dict[str, float]]) ->
             hover_data=["store_a", "store_b", "shared_customers"],
             title="Cannibalisation potentielle (stores proches et clients partagés)",
         )
-        fig_pair.update_layout(template="plotly_white", xaxis_title="Distance inter-stores (km)", yaxis_title="Taux clients partagés")
+        fig_pair.update_layout(template=_plotly_template(), xaxis_title="Distance inter-stores (km)", yaxis_title="Taux clients partagés")
         c2.plotly_chart(fig_pair, width="stretch")
     else:
         c2.info("Aucune paire de cannibalisation interne détectée.")
@@ -22126,7 +22188,7 @@ def _render_spatial_coverage(ctx: dict[str, pd.DataFrame | dict[str, float]]) ->
         )
         fig.update_layout(
             title="Zones sous-couvertes (clients éloignés)",
-            template="plotly_white",
+            template=_plotly_template(),
             xaxis_title="Longitude",
             yaxis_title="Latitude",
         )
@@ -22280,7 +22342,7 @@ def _render_spatial_coverage(ctx: dict[str, pd.DataFrame | dict[str, float]]) ->
                     name="Store candidat",
                 )
             )
-            fig_cand.update_layout(template="plotly_white", title="Simulation d'implantation (point candidat optimisé)")
+            fig_cand.update_layout(template=_plotly_template(), title="Simulation d'implantation (point candidat optimisé)")
             st.plotly_chart(fig_cand, width="stretch")
             if city_candidates:
                 sim.markdown("##### Propositions par ville")
@@ -23068,7 +23130,7 @@ L'objectif est d'identifier si la cible dépend de son **voisinage**, si les err
             name="Observations",
         )
     )
-    conn_fig.update_layout(template="plotly_white", title="Carte des connexions spatiales", xaxis_title="Longitude", yaxis_title="Latitude", height=420)
+    conn_fig.update_layout(template=_plotly_template(), title="Carte des connexions spatiales", xaxis_title="Longitude", yaxis_title="Latitude", height=420)
     wc1.plotly_chart(conn_fig, width="stretch")
     wc2.plotly_chart(px.histogram(pd.DataFrame({"Voisins": neighbor_count}), x="Voisins", nbins=20, title="Nombre de voisins"), width="stretch")
     mat_preview = pd.DataFrame(w[: min(16, len(w)), : min(16, len(w))])
@@ -23132,10 +23194,10 @@ L'objectif est d'identifier si la cible dépend de son **voisinage**, si les err
     try:
         slope, intercept, *_ = linregress(moran_scatter["Cible centrée-réduite"], moran_scatter["Lag spatial de la cible"])
         xs = np.linspace(float(moran_scatter["Cible centrée-réduite"].min()), float(moran_scatter["Cible centrée-réduite"].max()), 60)
-        fig_moran.add_trace(go.Scatter(x=xs, y=intercept + slope * xs, mode="lines", name="Tendance", line=dict(color="#111827", width=1.6)))
+        fig_moran.add_trace(go.Scatter(x=xs, y=intercept + slope * xs, mode="lines", name="Tendance", line=dict(color=_plotly_text_color(muted=True), width=1.6)))
     except Exception:
         pass
-    fig_moran.update_layout(template="plotly_white")
+    fig_moran.update_layout(template=_plotly_template())
     sc1.plotly_chart(fig_moran, width="stretch")
     lisa_counts = lisa_df["lisa_cluster"].value_counts().rename_axis("Cluster").reset_index(name="Nombre")
     sc2.plotly_chart(
@@ -23348,7 +23410,7 @@ L'objectif est d'identifier si la cible dépend de son **voisinage**, si les err
             y=-0.12,
             xanchor="center",
             yanchor="top",
-            bgcolor="rgba(255,255,255,0.90)",
+            bgcolor=_plotly_overlay_bgcolor(0.90),
             font=dict(size=10),
         ),
         margin=dict(l=18, r=18, t=52, b=86),
@@ -24108,7 +24170,7 @@ couches raster ou couches vecteur. Il sert à enrichir des magasins, stations, v
         fig_vg = go.Figure()
         fig_vg.add_trace(go.Scatter(x=vgram["distance_km"], y=vgram["semivariance"], mode="markers", name="Variogramme empirique", marker=dict(color="#0a9396", size=7)))
         fig_vg.add_trace(go.Scatter(x=h_line, y=theo, mode="lines", name=f"Modèle {variogram_model}", line=dict(color="#bb3e03", width=2)))
-        fig_vg.update_layout(template="plotly_white", title="Analyse du variogramme", xaxis_title="Distance (km)", yaxis_title="Semi-variance")
+        fig_vg.update_layout(template=_plotly_template(), title="Analyse du variogramme", xaxis_title="Distance (km)", yaxis_title="Semi-variance")
         vg1.plotly_chart(fig_vg, width="stretch")
     else:
         vg1.info("Variogramme indisponible.")
@@ -24134,7 +24196,7 @@ couches raster ou couches vecteur. Il sert à enrichir des magasins, stations, v
         title=f"Raster interpolé - {target_var}",
         labels={"color": target_var, "x": "Longitude", "y": "Latitude"},
     )
-    heat.add_trace(go.Scatter(x=points["lon"], y=points["lat"], mode="markers", name="Points source", marker=dict(size=5, color="#111827", opacity=0.55)))
+    heat.add_trace(go.Scatter(x=points["lon"], y=points["lat"], mode="markers", name="Points source", marker=dict(size=5, color=_plotly_text_color(muted=True), opacity=0.55)))
     s1.plotly_chart(heat, width="stretch")
     contour = go.Figure(
         go.Contour(
@@ -24146,7 +24208,7 @@ couches raster ou couches vecteur. Il sert à enrichir des magasins, stations, v
             colorbar=dict(title=target_var),
         )
     )
-    contour.update_layout(template="plotly_white", title="Contours / isolignes", xaxis_title="Longitude", yaxis_title="Latitude")
+    contour.update_layout(template=_plotly_template(), title="Contours / isolignes", xaxis_title="Longitude", yaxis_title="Latitude")
     s2.plotly_chart(contour, width="stretch")
     s3, s4 = st.columns(2)
     s3.plotly_chart(px.imshow(uu, x=xx[0], y=yy[:, 0], origin="lower", color_continuous_scale="Magma", title="Raster de variance / incertitude"), width="stretch")
@@ -24209,7 +24271,7 @@ couches raster ou couches vecteur. Il sert à enrichir des magasins, stations, v
             hover_data=["Voisins", "Puissance", "Range km", "Nugget", "Δ RMSE vs best"],
             title="Classement LOOCV des configurations",
         )
-        rank_fig.update_layout(template="plotly_white")
+        rank_fig.update_layout(template=_plotly_template())
         opt_block.plotly_chart(rank_fig, width="stretch")
 
     try:
@@ -24571,7 +24633,7 @@ def render_animation(store_daily: pd.DataFrame) -> None:
     )
     fig.update_layout(
         height=640,
-        template="plotly_white",
+        template=_plotly_template(),
         margin=dict(l=14, r=14, t=92, b=20),
         paper_bgcolor="rgba(0,0,0,0)",
         title=dict(x=0.0, xanchor="left", y=0.98, yanchor="top", pad=dict(t=6, b=24)),
@@ -24587,9 +24649,9 @@ def _style_temporal_series_figure(
     line_width: float = 1.15,
 ) -> go.Figure:
     fig.update_layout(
-        template="plotly_white",
+        template=_plotly_template(),
         hovermode="x unified",
-        plot_bgcolor="#fbfcff",
+        plot_bgcolor=_plotly_plot_bgcolor(),
         paper_bgcolor="rgba(0,0,0,0)",
         margin=dict(l=24, r=24, t=90, b=34),
         legend=dict(orientation="h", yanchor="bottom", y=1.08, xanchor="left", x=0.0),
@@ -25021,7 +25083,7 @@ def render_temporal_overview(store_daily: pd.DataFrame) -> None:
         title="Carte de chaleur année x mois",
         labels={"x": "Mois", "y": "Année", "color": season_metric},
     )
-    heat.update_layout(template="plotly_white")
+    heat.update_layout(template=_plotly_template())
     st.plotly_chart(heat, width="stretch")
 
 
@@ -25643,7 +25705,7 @@ def _render_temporal_quick_forecasting_panel(store_daily: pd.DataFrame) -> None:
     _style_temporal_series_figure(err, xaxis_title="Pas d'horizon", yaxis_title="Erreur absolue")
     c1.plotly_chart(err, width="stretch")
     resid = px.histogram(result_df, x="residual", nbins=35, title="Distribution des résidus")
-    resid.update_layout(template="plotly_white")
+    resid.update_layout(template=_plotly_template())
     c2.plotly_chart(resid, width="stretch")
 
     with quick_block.expander("Informations détaillées", expanded=False):
@@ -26983,7 +27045,7 @@ def _render_temporal_modeling_scope(data: dict[str, pd.DataFrame], model_scope: 
         nbins=35,
         title="Distribution des résidus (test)",
     )
-    resid_fig.update_layout(template="plotly_white")
+    resid_fig.update_layout(template=_plotly_template())
     c2.plotly_chart(resid_fig, width="stretch")
 
     if model_tables:
@@ -27034,7 +27096,7 @@ def _render_temporal_modeling_scope(data: dict[str, pd.DataFrame], model_scope: 
                 hover_data=[c for c in ["p-value"] if c in plot_df.columns],
             )
             fig.update_layout(
-                template="plotly_white",
+                template=_plotly_template(),
                 height=max(330, min(620, 34 * len(plot_df) + 120)),
                 margin=dict(l=10, r=10, t=48, b=25),
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
@@ -34249,7 +34311,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                 title="Courbe ROC (train/test)",
                 xaxis_title="FPR",
                 yaxis_title="TPR",
-                template="plotly_white",
+                template=_plotly_template(),
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0.0),
             )
             pr_fig = go.Figure()
@@ -34275,7 +34337,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                 title="Courbe Precision-Recall (train/test)",
                 xaxis_title="Recall",
                 yaxis_title="Precision",
-                template="plotly_white",
+                template=_plotly_template(),
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0.0),
             )
             p1.plotly_chart(roc_fig, width="stretch")
@@ -34334,7 +34396,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                 title="Calibration plot (train/test)",
                 xaxis_title="Probabilité prédite",
                 yaxis_title="Fréquence observée",
-                template="plotly_white",
+                template=_plotly_template(),
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0.0),
             )
             st.plotly_chart(cal_fig, width="stretch")
@@ -34372,7 +34434,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     title="Vecteurs supports par classe",
                     hover_data={"Observations train": True, "Part supports (%)": ":.2f"},
                 )
-                support_fig.update_layout(template="plotly_white", coloraxis_colorbar_title="% supports")
+                support_fig.update_layout(template=_plotly_template(), coloraxis_colorbar_title="% supports")
                 svm_a.plotly_chart(support_fig, width="stretch")
 
                 if svm_margin_summary_df is not None and not svm_margin_summary_df.empty:
@@ -34386,7 +34448,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         title="Marge médiane selon exactitude",
                         color_discrete_map={"Oui": "#2563eb", "Non": "#ef4444"},
                     )
-                    margin_summary_fig.update_layout(template="plotly_white", yaxis_title="Marge absolue médiane")
+                    margin_summary_fig.update_layout(template=_plotly_template(), yaxis_title="Marge absolue médiane")
                     svm_b.plotly_chart(margin_summary_fig, width="stretch")
                 _render_collapsible_dataframe(
                     "Détail des vecteurs supports par classe",
@@ -34407,7 +34469,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     title="Distribution des marges absolues",
                     hover_data={"Correct": True, "Classe réelle": True},
                 )
-                margin_hist.update_layout(template="plotly_white")
+                margin_hist.update_layout(template=_plotly_template())
                 svm_c.plotly_chart(margin_hist, width="stretch")
 
                 margin_box = px.box(
@@ -34419,7 +34481,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     color_discrete_map=split_colors,
                     title="Marge des prédictions correctes vs erreurs",
                 )
-                margin_box.update_layout(template="plotly_white")
+                margin_box.update_layout(template=_plotly_template())
                 svm_d.plotly_chart(margin_box, width="stretch")
                 _render_collapsible_dataframe(
                     "Détail des marges SVM",
@@ -34439,7 +34501,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     hover_data={"Split": True, "Type": True},
                 )
                 proj_fig.update_traces(marker=dict(size=7), selector=dict(mode="markers"))
-                proj_fig.update_layout(template="plotly_white", legend=dict(orientation="v", x=1.02, y=1.0))
+                proj_fig.update_layout(template=_plotly_template(), legend=dict(orientation="v", x=1.02, y=1.0))
                 st.plotly_chart(proj_fig, width="stretch")
 
             if svm_linear_coef_df is not None and not svm_linear_coef_df.empty:
@@ -34453,7 +34515,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     color_continuous_scale="Teal",
                     title="Coefficients du SVM linéaire (top features)",
                 )
-                coef_fig.update_layout(template="plotly_white", yaxis_title="")
+                coef_fig.update_layout(template=_plotly_template(), yaxis_title="")
                 st.plotly_chart(coef_fig, width="stretch")
                 _render_collapsible_dataframe(
                     "Détail des coefficients SVM linéaire",
@@ -34597,7 +34659,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         y_pad = max(0.035, (y_max - y_min) * 0.18)
                         cal_nb_fig.update_xaxes(range=[max(0.0, x_min - x_pad), min(1.0, x_max + x_pad)])
                         cal_nb_fig.update_yaxes(range=[max(0.0, y_min - y_pad), min(1.0, y_max + y_pad)])
-                    cal_nb_fig.update_layout(template="plotly_white")
+                    cal_nb_fig.update_layout(template=_plotly_template())
                     st.plotly_chart(cal_nb_fig, width="stretch")
 
             if hasattr(est, "named_steps"):
@@ -34664,7 +34726,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         color_continuous_scale="RdBu",
                         title=f"Top features par classe ({view_cls})",
                     )
-                    imp_fig.update_layout(template="plotly_white")
+                    imp_fig.update_layout(template=_plotly_template())
                     st.plotly_chart(imp_fig, width="stretch")
                     _render_collapsible_dataframe(
                         "Détail de l'importance",
@@ -34781,7 +34843,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                 acc_fig = go.Figure()
                 acc_fig.add_trace(go.Scatter(x=knn_curve_df["k"], y=knn_curve_df["Accuracy train"], mode="lines+markers", name="Accuracy train", line=dict(color=split_colors["train"], width=2)))
                 acc_fig.add_trace(go.Scatter(x=knn_curve_df["k"], y=knn_curve_df["Accuracy test"], mode="lines+markers", name="Accuracy test", line=dict(color=split_colors["test"], width=2)))
-                acc_fig.update_layout(title="Accuracy vs k", xaxis_title="k", yaxis_title="Accuracy", template="plotly_white")
+                acc_fig.update_layout(title="Accuracy vs k", xaxis_title="k", yaxis_title="Accuracy", template=_plotly_template())
                 kf1.plotly_chart(acc_fig, width="stretch")
 
                 f1_fig = go.Figure()
@@ -34797,7 +34859,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                             line=dict(color="#6b7280", width=1.6, dash="dot"),
                         )
                 )
-                f1_fig.update_layout(title="F1 vs k", xaxis_title="k", yaxis_title="F1 pondéré", template="plotly_white")
+                f1_fig.update_layout(title="F1 vs k", xaxis_title="k", yaxis_title="F1 pondéré", template=_plotly_template())
                 kf2.plotly_chart(f1_fig, width="stretch")
                 _render_collapsible_dataframe(
                     "Détail des performances selon k",
@@ -34862,7 +34924,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     title="Frontière de décision 2D (projection PCA des features)",
                     xaxis_title="Composante PCA 1",
                     yaxis_title="Composante PCA 2",
-                    template="plotly_white",
+                    template=_plotly_template(),
                 )
                 st.plotly_chart(decision_fig, width="stretch")
 
@@ -34912,7 +34974,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     title="Profondeur vs performance (F1)",
                     xaxis_title="max_depth",
                     yaxis_title="F1 pondéré",
-                    template="plotly_white",
+                    template=_plotly_template(),
                 )
                 st.plotly_chart(td_fig, width="stretch")
             if tree_learning_curve_df is not None and not tree_learning_curve_df.empty:
@@ -34939,7 +35001,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     title="Learning curves (contrôle overfit)",
                     xaxis_title="Taille d'entraînement",
                     yaxis_title="F1 pondéré",
-                    template="plotly_white",
+                    template=_plotly_template(),
                 )
                 st.plotly_chart(lc_fig, width="stretch")
             if tree_decision_path_df is not None and not tree_decision_path_df.empty:
@@ -34974,7 +35036,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     title="Courbe OOB (score/erreur) vs n_estimators",
                     xaxis_title="n_estimators",
                     yaxis_title="Score / erreur",
-                    template="plotly_white",
+                    template=_plotly_template(),
                 )
                 st.plotly_chart(oob_fig, width="stretch")
                 _render_collapsible_dataframe(
@@ -35086,7 +35148,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     title="Score vs nombre d'arbres (F1)",
                     xaxis_title="n_estimators",
                     yaxis_title="F1 pondéré",
-                    template="plotly_white",
+                    template=_plotly_template(),
                 )
                 ab1.plotly_chart(ab_f1_fig, width="stretch")
 
@@ -35114,7 +35176,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     title="Performance test vs nombre d'arbres",
                     xaxis_title="n_estimators",
                     yaxis_title="Score",
-                    template="plotly_white",
+                    template=_plotly_template(),
                 )
                 ab2.plotly_chart(ab_acc_fig, width="stretch")
                 _render_collapsible_dataframe(
@@ -35171,7 +35233,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     title="Learning curve (score vs n_estimators)",
                     xaxis_title="n_estimators",
                     yaxis_title="F1 pondéré",
-                    template="plotly_white",
+                    template=_plotly_template(),
                 )
                 g1.plotly_chart(f1_fig, width="stretch")
                 perf_fig = go.Figure()
@@ -35198,7 +35260,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     title="Performance test vs n_estimators",
                     xaxis_title="n_estimators",
                     yaxis_title="Score",
-                    template="plotly_white",
+                    template=_plotly_template(),
                 )
                 g2.plotly_chart(perf_fig, width="stretch")
                 _render_collapsible_dataframe(
@@ -35229,7 +35291,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     title="Learning curves (train vs validation)",
                     xaxis_title="Taille d'entraînement",
                     yaxis_title="F1 pondéré",
-                    template="plotly_white",
+                    template=_plotly_template(),
                 )
                 st.plotly_chart(lc_fig, width="stretch")
             if gb_feat_importance_df is not None and not gb_feat_importance_df.empty:
@@ -35287,7 +35349,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     title="Gain chart",
                     xaxis_title="Décile (score décroissant)",
                     yaxis_title="Gain cumulé",
-                    template="plotly_white",
+                    template=_plotly_template(),
                 )
                 gl1.plotly_chart(gain_fig, width="stretch")
                 lift_fig = go.Figure()
@@ -35304,7 +35366,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     title="Lift chart",
                     xaxis_title="Décile (score décroissant)",
                     yaxis_title="Lift",
-                    template="plotly_white",
+                    template=_plotly_template(),
                 )
                 gl2.plotly_chart(lift_fig, width="stretch")
             if gb_shap_summary_df is not None and not gb_shap_summary_df.empty:
@@ -35359,7 +35421,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                 title="Projection discriminante des classes (train/test)",
             )
             proj_fig.update_traces(marker=dict(size=6.0, line=dict(color="#111111", width=0.5)))
-            proj_fig.update_layout(template="plotly_white")
+            proj_fig.update_layout(template=_plotly_template())
             dp1.plotly_chart(proj_fig, width="stretch")
 
             show_violin_points = _stats_box_points_toggle("discriminant_scores_violin_show_points", ui=dp2)
@@ -35374,7 +35436,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                 color_discrete_map=split_colors,
             )
             dist_fig = _add_violin_points_visibility_control(dist_fig)
-            dist_fig.update_layout(template="plotly_white")
+            dist_fig.update_layout(template=_plotly_template())
             dp2.plotly_chart(dist_fig, width="stretch")
 
             if discrim_cov_train is not None and discrim_cov_train.ndim == 2 and discrim_cov_train.size > 0:
@@ -35406,7 +35468,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         aspect="auto",
                     )
                     cov_fig.update_layout(
-                        template="plotly_white",
+                        template=_plotly_template(),
                         height=680,
                         margin=dict(t=72, b=170, l=120, r=40),
                         xaxis=dict(tickangle=-45, automargin=True, tickfont=dict(size=10)),
@@ -35457,7 +35519,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         color_continuous_scale="RdBu",
                         title=coef_title,
                     )
-                    coef_fig.update_layout(template="plotly_white")
+                    coef_fig.update_layout(template=_plotly_template())
 
                     odds_df = top_coef.copy()
                     odds_df["Odds ratio"] = np.exp(odds_df["Coefficient"])
@@ -35471,7 +35533,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         title="Régression logistique - Odds ratios",
                     )
                     odds_fig.add_vline(x=1.0, line_dash="dot", line_color="#6b7280")
-                    odds_fig.update_layout(template="plotly_white")
+                    odds_fig.update_layout(template=_plotly_template())
 
                     g1, g2 = st.columns(2)
                     g1.plotly_chart(coef_fig, width="stretch")
@@ -35550,14 +35612,14 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                             trendline_scope="trace",
                             opacity=0.55,
                             title="Residuals vs Fitted (train/test)",
-                        ).update_layout(template="plotly_white"),
+                        ).update_layout(template=_plotly_template()),
                         width="stretch",
                     )
                     qq_fig = _qq_plot_figure(
                         pd.Series(lin_resid_train_df["Résidu"]) if len(lin_resid_train_df) > 0 else pd.Series(dtype=float),
                         "QQ plot des résidus (train)",
                     )
-                    qq_fig.update_layout(template="plotly_white")
+                    qq_fig.update_layout(template=_plotly_template())
                     d2.plotly_chart(qq_fig, width="stretch")
 
                 if lin_leverage_df is not None and not lin_leverage_df.empty:
@@ -35572,7 +35634,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         title="Leverage plot (taille = Cook's distance)",
                     )
                     lev_fig.add_hline(y=0.0, line_dash="dot", line_color="#666")
-                    lev_fig.update_layout(template="plotly_white")
+                    lev_fig.update_layout(template=_plotly_template())
                     st.plotly_chart(lev_fig, width="stretch")
 
                 if lin_coef_df is not None and not lin_coef_df.empty:
@@ -35591,7 +35653,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         color_continuous_scale="RdBu",
                         title="Coefficients (top |coef|)",
                     )
-                    coef_fig.update_layout(template="plotly_white")
+                    coef_fig.update_layout(template=_plotly_template())
                     st.plotly_chart(coef_fig, width="stretch")
 
                     coef_cols = ["Feature", "Coefficient", "p-value"] if "p-value" in lin_coef_df.columns else ["Feature", "Coefficient"]
@@ -35620,7 +35682,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         title="Chemin des coefficients (selon alpha)",
                     )
                     path_fig.update_xaxes(type="log", title="alpha (échelle log)")
-                    path_fig.update_layout(template="plotly_white")
+                    path_fig.update_layout(template=_plotly_template())
                     st.plotly_chart(path_fig, width="stretch")
 
                 if lin_perf_alpha_df is not None and not lin_perf_alpha_df.empty:
@@ -35645,7 +35707,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         )
                     )
                     rmse_fig.update_xaxes(type="log", title="alpha (échelle log)")
-                    rmse_fig.update_layout(title="Performance vs alpha (RMSE)", template="plotly_white")
+                    rmse_fig.update_layout(title="Performance vs alpha (RMSE)", template=_plotly_template())
                     pa1.plotly_chart(rmse_fig, width="stretch")
 
                     r2_sparse_fig = go.Figure()
@@ -35670,7 +35732,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     )
                     r2_sparse_fig.update_layout(
                         title="Performance vs alpha (R²) et sparsité",
-                        template="plotly_white",
+                        template=_plotly_template(),
                         yaxis=dict(title="R² test"),
                         yaxis2=dict(title="Sparsité", overlaying="y", side="right"),
                     )
@@ -35721,7 +35783,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                     if np.isfinite(eps_val):
                         tube_fig.add_vline(x=-eps_val, line_dash="dot", line_color="#6b7280")
                         tube_fig.add_vline(x=eps_val, line_dash="dot", line_color="#6b7280")
-                    tube_fig.update_layout(template="plotly_white")
+                    tube_fig.update_layout(template=_plotly_template())
                     svr_r1.plotly_chart(tube_fig, width="stretch")
 
                     abs_fig = px.box(
@@ -35733,7 +35795,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         color_discrete_map=split_colors,
                         title="Erreurs absolues dans / hors tube epsilon",
                     )
-                    abs_fig.update_layout(template="plotly_white")
+                    abs_fig.update_layout(template=_plotly_template())
                     svr_r2.plotly_chart(abs_fig, width="stretch")
 
                     obs_svr_fig = px.scatter(
@@ -35758,7 +35820,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                                 line=dict(color="#6b7280", width=1.4, dash="dot"),
                             )
                         )
-                    obs_svr_fig.update_layout(template="plotly_white")
+                    obs_svr_fig.update_layout(template=_plotly_template())
                     st.plotly_chart(obs_svr_fig, width="stretch")
 
                     if svr_residual_summary_df is not None and not svr_residual_summary_df.empty:
@@ -35785,7 +35847,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         title="Projection PCA des observations et vecteurs supports",
                     )
                     proj_svr_fig.update_traces(marker=dict(size=7), selector=dict(mode="markers"))
-                    proj_svr_fig.update_layout(template="plotly_white", legend=dict(orientation="v", x=1.02, y=1.0))
+                    proj_svr_fig.update_layout(template=_plotly_template(), legend=dict(orientation="v", x=1.02, y=1.0))
                     st.plotly_chart(proj_svr_fig, width="stretch")
 
                 if svr_linear_coef_df is not None and not svr_linear_coef_df.empty:
@@ -35799,7 +35861,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         color_continuous_scale="RdBu",
                         title="SVR linéaire - coefficients (top features)",
                     )
-                    coef_svr_fig.update_layout(template="plotly_white")
+                    coef_svr_fig.update_layout(template=_plotly_template())
                     st.plotly_chart(coef_svr_fig, width="stretch")
                     _render_collapsible_dataframe(
                         "Détail des coefficients SVR linéaire",
@@ -35821,7 +35883,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         title="SVR tuning heatmap (CV RMSE)",
                         aspect="auto",
                     )
-                    heat_fig.update_layout(template="plotly_white")
+                    heat_fig.update_layout(template=_plotly_template())
                     st.plotly_chart(heat_fig, width="stretch")
                     best_cell = svr_tuning_heatmap_df.loc[svr_tuning_heatmap_df["RMSE CV"].idxmin()]
                     st.caption(
@@ -35850,7 +35912,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         hover_data={"epsilon": ":.4g"},
                     )
                     c_fig.update_xaxes(type="log")
-                    c_fig.update_layout(template="plotly_white")
+                    c_fig.update_layout(template=_plotly_template())
                     tune_c.plotly_chart(c_fig, width="stretch")
                     eps_fig = px.line(
                         best_by_eps,
@@ -35861,7 +35923,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         hover_data={"C": ":.4g"},
                     )
                     eps_fig.update_xaxes(type="log")
-                    eps_fig.update_layout(template="plotly_white")
+                    eps_fig.update_layout(template=_plotly_template())
                     tune_eps.plotly_chart(eps_fig, width="stretch")
                     _render_collapsible_dataframe(
                         "Détail du tuning SVR",
@@ -35920,7 +35982,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         title="Dispersion diagnostics: Pearson residual vs fitted",
                     )
                     disp_fig.add_hline(y=0.0, line_dash="dot", line_color="#6b7280")
-                    disp_fig.update_layout(template="plotly_white")
+                    disp_fig.update_layout(template=_plotly_template())
                     g1.plotly_chart(disp_fig, width="stretch")
 
                     resid_hist = px.histogram(
@@ -35932,7 +35994,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         color_discrete_map=split_colors,
                         title="Residual plots (train/test)",
                     )
-                    resid_hist.update_layout(template="plotly_white")
+                    resid_hist.update_layout(template=_plotly_template())
                     g2.plotly_chart(resid_hist, width="stretch")
 
                     if glm_calibration_df is not None and not glm_calibration_df.empty:
@@ -35969,7 +36031,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                             title="Calibration moyenne par bins de prédiction",
                             xaxis_title="Fitted moyen",
                             yaxis_title="Observé moyen",
-                            template="plotly_white",
+                            template=_plotly_template(),
                         )
                         c1.plotly_chart(cal_fig, width="stretch")
 
@@ -35984,7 +36046,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                             hover_data={"n": True, "Fitted moyen": ":.3f"},
                         )
                         pearson_bin_fig.add_hline(y=0.0, line_dash="dot", line_color="#6b7280")
-                        pearson_bin_fig.update_layout(template="plotly_white")
+                        pearson_bin_fig.update_layout(template=_plotly_template())
                         c2.plotly_chart(pearson_bin_fig, width="stretch")
 
                     if glm_residual_summary_df is not None and not glm_residual_summary_df.empty:
@@ -36005,7 +36067,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         color_continuous_scale="RdBu",
                         title="Coefficients GLM (top |coef|)",
                     )
-                    coef_glm_fig.update_layout(template="plotly_white")
+                    coef_glm_fig.update_layout(template=_plotly_template())
                     st.plotly_chart(coef_glm_fig, width="stretch")
                     _render_collapsible_dataframe(
                         "Détail des coefficients GLM",
@@ -36062,7 +36124,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         title="Quantile bands vs observed (test)",
                         xaxis_title="Index",
                         yaxis_title=target,
-                        template="plotly_white",
+                        template=_plotly_template(),
                     )
                     st.plotly_chart(q_fig, width="stretch")
 
@@ -36074,7 +36136,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                             nbins=32,
                             title="Distribution de largeur des bandes quantiles",
                             color_discrete_sequence=["#0a9396"],
-                        ).update_layout(template="plotly_white"),
+                        ).update_layout(template=_plotly_template()),
                         width="stretch",
                     )
                     q_tmp = qb.copy()
@@ -36086,7 +36148,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                             color="Couvert",
                             title="Couverture empirique de la bande",
                             color_discrete_map={"Oui": "#2563eb", "Non": "#ef4444"},
-                        ).update_layout(template="plotly_white"),
+                        ).update_layout(template=_plotly_template()),
                         width="stretch",
                     )
                     _render_collapsible_dataframe(
@@ -36134,7 +36196,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                             color="Importance",
                             color_continuous_scale="Tealgrn",
                             title="Feature importance (Decision Tree Regressor)",
-                        ).update_layout(template="plotly_white"),
+                        ).update_layout(template=_plotly_template()),
                         width="stretch",
                     )
                 if reg_tree_rules:
@@ -36171,7 +36233,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                             color="Importance",
                             color_continuous_scale="Tealgrn",
                             title="Feature importance (RF Regressor)",
-                        ).update_layout(template="plotly_white"),
+                        ).update_layout(template=_plotly_template()),
                         width="stretch",
                     )
                     if reg_rf_perm_importance_df is not None and not reg_rf_perm_importance_df.empty:
@@ -36185,7 +36247,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                                 color="Permutation importance",
                                 color_continuous_scale="RdBu",
                                 title="Permutation importance (RF Regressor)",
-                            ).update_layout(template="plotly_white"),
+                            ).update_layout(template=_plotly_template()),
                             width="stretch",
                         )
                     else:
@@ -36204,7 +36266,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                             facet_col="Feature",
                             facet_col_wrap=2,
                             title="PDP (Partial Dependence, top variables quantitatives)",
-                        ).update_layout(template="plotly_white"),
+                        ).update_layout(template=_plotly_template()),
                         width="stretch",
                     )
 
@@ -36219,7 +36281,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                             color="Mean |SHAP|",
                             color_continuous_scale="Viridis",
                             title="Importance explicative (RF Regressor)",
-                        ).update_layout(template="plotly_white"),
+                        ).update_layout(template=_plotly_template()),
                         width="stretch",
                     )
             if model_name == "Méthodes d'ensemble" and (ensemble_reg_type or st.session_state.get(f"{prefix}_ens_type")) == "KNN Regressor":
@@ -36266,7 +36328,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         title="Erreur vs k",
                         xaxis_title="k (n_neighbors)",
                         yaxis_title="RMSE",
-                        template="plotly_white",
+                        template=_plotly_template(),
                     )
                     c1.plotly_chart(rmse_fig, width="stretch")
 
@@ -36293,7 +36355,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         title="MAE vs k",
                         xaxis_title="k (n_neighbors)",
                         yaxis_title="MAE",
-                        template="plotly_white",
+                        template=_plotly_template(),
                     )
                     c2.plotly_chart(mae_fig, width="stretch")
                     st.dataframe(knnr_curve_df, width="stretch", hide_index=True, height=min(max(120, 36 * (len(knnr_curve_df) + 1)), 420))
@@ -36314,7 +36376,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         title=f"Lissage local des prédictions ({st.session_state.get(f'{prefix}_knnr_smooth_var', 'variable quantitative')})",
                         xaxis_title=st.session_state.get(f"{prefix}_knnr_smooth_var", "x"),
                         yaxis_title="Prédit (moyenne locale)",
-                        template="plotly_white",
+                        template=_plotly_template(),
                     )
                     st.plotly_chart(smooth_fig, width="stretch")
 
@@ -36346,7 +36408,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         title="Score vs n_estimators (RMSE train/test)",
                         xaxis_title="n_estimators",
                         yaxis_title="RMSE",
-                        template="plotly_white",
+                        template=_plotly_template(),
                     )
                     a1.plotly_chart(rmse_fig, width="stretch")
 
@@ -36364,7 +36426,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         title="Performance test vs n_estimators (R²)",
                         xaxis_title="n_estimators",
                         yaxis_title="R²",
-                        template="plotly_white",
+                        template=_plotly_template(),
                     )
                     a2.plotly_chart(score_fig, width="stretch")
                     _render_collapsible_dataframe(
@@ -36382,7 +36444,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                             color="Importance",
                             color_continuous_scale="Tealgrn",
                             title="Feature importance (AdaBoost Regressor)",
-                        ).update_layout(template="plotly_white"),
+                        ).update_layout(template=_plotly_template()),
                         width="stretch",
                     )
 
@@ -36422,7 +36484,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         title="Score vs n_estimators (RMSE train/test)",
                         xaxis_title="n_estimators",
                         yaxis_title="RMSE",
-                        template="plotly_white",
+                        template=_plotly_template(),
                     )
                     b1.plotly_chart(boost_rmse, width="stretch")
 
@@ -36451,7 +36513,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         xaxis_title="n_estimators",
                         yaxis=dict(title="MAE"),
                         yaxis2=dict(title="R²", overlaying="y", side="right"),
-                        template="plotly_white",
+                        template=_plotly_template(),
                     )
                     b2.plotly_chart(boost_perf, width="stretch")
                     _render_collapsible_dataframe(
@@ -36484,7 +36546,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         title="Learning curves (RMSE train/validation)",
                         xaxis_title="Taille d'entraînement",
                         yaxis_title="RMSE",
-                        template="plotly_white",
+                        template=_plotly_template(),
                     )
                     st.plotly_chart(lc_fig, width="stretch")
 
@@ -36498,7 +36560,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                             color="Importance",
                             color_continuous_scale="Tealgrn",
                             title="Feature importance (Boosting Regressor)",
-                        ).update_layout(template="plotly_white"),
+                        ).update_layout(template=_plotly_template()),
                         width="stretch",
                     )
 
@@ -36513,7 +36575,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                             color="Mean |SHAP|",
                             color_continuous_scale="Viridis",
                             title="Importance explicative (SHAP ou fallback)",
-                        ).update_layout(template="plotly_white"),
+                        ).update_layout(template=_plotly_template()),
                         width="stretch",
                     )
                 else:
@@ -36578,7 +36640,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         title="Résidus vs fitted",
                     )
                     resid_fit_fig.add_hline(y=0.0, line_dash="dot", line_color="#6b7280")
-                    resid_fit_fig.update_layout(template="plotly_white")
+                    resid_fit_fig.update_layout(template=_plotly_template())
                     nr1.plotly_chart(resid_fit_fig, width="stretch")
 
                     resid_abs_fig = px.histogram(
@@ -36591,7 +36653,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         color_discrete_map=split_colors,
                         title="Distribution des erreurs absolues",
                     )
-                    resid_abs_fig.update_layout(template="plotly_white")
+                    resid_abs_fig.update_layout(template=_plotly_template())
                     nr2.plotly_chart(resid_abs_fig, width="stretch")
 
                 if reg_nonlin_residual_bins_df is not None and not reg_nonlin_residual_bins_df.empty:
@@ -36630,7 +36692,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         title="Calibration moyenne par bins de fitted",
                         xaxis_title="Fitted moyen",
                         yaxis_title="Observé moyen",
-                        template="plotly_white",
+                        template=_plotly_template(),
                     )
                     nb1.plotly_chart(cal_nonlin_fig, width="stretch")
 
@@ -36644,7 +36706,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                         title="Erreur absolue moyenne par bin",
                         hover_data={"n": True, "Résidu moyen": ":.3f"},
                     )
-                    bin_err_fig.update_layout(template="plotly_white")
+                    bin_err_fig.update_layout(template=_plotly_template())
                     nb2.plotly_chart(bin_err_fig, width="stretch")
 
                 numeric_curve_candidates = [
@@ -36764,7 +36826,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                                 title=f"Fitted curve + confidence bands ({curve_feature})",
                                 xaxis_title=curve_feature,
                                 yaxis_title=target,
-                                template="plotly_white",
+                                template=_plotly_template(),
                                 legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0.0),
                             )
                             st.plotly_chart(curve_fig, width="stretch")
@@ -36819,7 +36881,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                                         facet_col="Variable",
                                         facet_col_wrap=2,
                                         title="Partial effects (top variables quantitatives)",
-                                    ).update_layout(template="plotly_white"),
+                                    ).update_layout(template=_plotly_template()),
                                     width="stretch",
                                 )
 
@@ -36834,7 +36896,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                             color="Importance permutation",
                             color_continuous_scale="Tealgrn",
                             title="Importance des termes (source)",
-                        ).update_layout(template="plotly_white"),
+                        ).update_layout(template=_plotly_template()),
                         width="stretch",
                     )
                 if reg_nonlin_term_df is not None and not reg_nonlin_term_df.empty:
@@ -36846,7 +36908,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                             nbins=48,
                             title="Distribution des coefficients transformés",
                             color_discrete_sequence=["#0a9396"],
-                        ).update_layout(template="plotly_white"),
+                        ).update_layout(template=_plotly_template()),
                         width="stretch",
                     )
                     top_terms = reg_nonlin_term_df.head(25).sort_values("Coefficient")
@@ -36859,7 +36921,7 @@ def _render_supervised_ml_mode(data: dict[str, pd.DataFrame], mode: str, prefix:
                             color="Coefficient",
                             color_continuous_scale="RdBu",
                             title="Top termes transformés (|coefficient|)",
-                        ).update_layout(template="plotly_white", yaxis_title=""),
+                        ).update_layout(template=_plotly_template(), yaxis_title=""),
                         width="stretch",
                     )
                     _render_collapsible_dataframe(
@@ -37362,7 +37424,7 @@ def _render_unsupervised_ml(data: dict[str, pd.DataFrame]) -> None:
         marker=dict(size=4, line=dict(color="rgba(17,17,17,0.35)", width=0.35)),
         selector=dict(mode="markers"),
     )
-    pca_fig.update_layout(template="plotly_white")
+    pca_fig.update_layout(template=_plotly_template())
     st.plotly_chart(
         pca_fig,
         width="stretch",
@@ -37393,7 +37455,7 @@ def _render_unsupervised_ml(data: dict[str, pd.DataFrame]) -> None:
         color_discrete_sequence=px.colors.qualitative.Set2,
     )
     size_fig.update_traces(textposition="outside", cliponaxis=False)
-    size_fig.update_layout(template="plotly_white", showlegend=False, yaxis_title="Observations")
+    size_fig.update_layout(template=_plotly_template(), showlegend=False, yaxis_title="Observations")
     v1.plotly_chart(size_fig, width="stretch")
 
     profile_heat = cluster_profile.set_index("cluster")[features].copy()
@@ -37410,7 +37472,7 @@ def _render_unsupervised_ml(data: dict[str, pd.DataFrame]) -> None:
             title="Profil moyen standardisé des clusters",
             labels={"x": "Variable", "y": "Cluster", "color": "Score z"},
         )
-        heat_fig.update_layout(template="plotly_white", xaxis_tickangle=-30)
+        heat_fig.update_layout(template=_plotly_template(), xaxis_tickangle=-30)
         v2.plotly_chart(heat_fig, width="stretch")
 
     if confidence is not None:
@@ -37424,7 +37486,7 @@ def _render_unsupervised_ml(data: dict[str, pd.DataFrame]) -> None:
             title="Distribution de la confiance d'affectation",
             color_discrete_sequence=px.colors.qualitative.Set2,
         )
-        conf_fig.update_layout(template="plotly_white", showlegend=False)
+        conf_fig.update_layout(template=_plotly_template(), showlegend=False)
         st.plotly_chart(conf_fig, width="stretch")
 
     if memberships_matrix is not None:
@@ -37438,7 +37500,7 @@ def _render_unsupervised_ml(data: dict[str, pd.DataFrame]) -> None:
             title="Appartenances floues moyennes",
             labels={"x": "Appartenance", "y": "Cluster assigné", "color": "Degré"},
         )
-        fuzzy_fig.update_layout(template="plotly_white", xaxis_tickangle=-25)
+        fuzzy_fig.update_layout(template=_plotly_template(), xaxis_tickangle=-25)
         st.plotly_chart(fuzzy_fig, width="stretch")
 
     if nb_model_artifact is not None and hasattr(nb_model_artifact, "theta_"):
@@ -37454,7 +37516,7 @@ def _render_unsupervised_ml(data: dict[str, pd.DataFrame]) -> None:
             title="Moyennes conditionnelles apprises par Bayes naïf",
             labels={"x": "Variable", "y": "Pseudo-classe", "color": "Moyenne"},
         )
-        nb_fig.update_layout(template="plotly_white", xaxis_tickangle=-30)
+        nb_fig.update_layout(template=_plotly_template(), xaxis_tickangle=-30)
         st.plotly_chart(nb_fig, width="stretch")
 
     if hmm_transition_df is not None and not hmm_transition_df.empty:
@@ -37466,7 +37528,7 @@ def _render_unsupervised_ml(data: dict[str, pd.DataFrame]) -> None:
             title="Matrice de transition des états cachés",
             labels={"x": "État suivant", "y": "État courant", "color": "Probabilité"},
         )
-        hmm_fig.update_layout(template="plotly_white")
+        hmm_fig.update_layout(template=_plotly_template())
         st.plotly_chart(hmm_fig, width="stretch")
 
     if mrf_neighbor_df is not None and not mrf_neighbor_df.empty:
@@ -37498,7 +37560,7 @@ def _render_unsupervised_ml(data: dict[str, pd.DataFrame]) -> None:
             color_discrete_sequence=px.colors.qualitative.Set2,
         )
         mrf_fig.update_traces(texttemplate="%{text:.2f}", textposition="outside", cliponaxis=False)
-        mrf_fig.update_layout(template="plotly_white", showlegend=False, yaxis_tickformat=".0%")
+        mrf_fig.update_layout(template=_plotly_template(), showlegend=False, yaxis_tickformat=".0%")
         st.plotly_chart(mrf_fig, width="stretch")
         mrf_cols = st.columns(2)
         if mrf_energy_df is not None and not mrf_energy_df.empty:
@@ -37527,7 +37589,7 @@ def _render_unsupervised_ml(data: dict[str, pd.DataFrame]) -> None:
                 xaxis_title="Itération",
                 yaxis=dict(title="Energie moyenne"),
                 yaxis2=dict(title="Cohérence", overlaying="y", side="right", tickformat=".0%"),
-                template="plotly_white",
+                template=_plotly_template(),
             )
             mrf_cols[0].plotly_chart(energy_fig, width="stretch")
         if mrf_cluster_graph_df is not None and not mrf_cluster_graph_df.empty:
@@ -37546,7 +37608,7 @@ def _render_unsupervised_ml(data: dict[str, pd.DataFrame]) -> None:
                 title="Transitions locales entre clusters voisins",
                 labels={"x": "Cluster voisin", "y": "Cluster", "color": "Part arêtes"},
             )
-            graph_fig.update_layout(template="plotly_white")
+            graph_fig.update_layout(template=_plotly_template())
             mrf_cols[1].plotly_chart(graph_fig, width="stretch")
         if mrf_node_df is not None and not mrf_node_df.empty:
             mrf_dist_fig = px.box(
@@ -37558,7 +37620,7 @@ def _render_unsupervised_ml(data: dict[str, pd.DataFrame]) -> None:
                 title="Distribution de cohérence locale par cluster",
                 color_discrete_map={"Oui": "#ef4444", "Non": "#2563eb"},
             )
-            mrf_dist_fig.update_layout(template="plotly_white", yaxis_tickformat=".0%")
+            mrf_dist_fig.update_layout(template=_plotly_template(), yaxis_tickformat=".0%")
             st.plotly_chart(mrf_dist_fig, width="stretch")
         _render_collapsible_dataframe("Détail énergie MRF", mrf_energy_df if mrf_energy_df is not None else pd.DataFrame(), hide_index=True)
         _render_collapsible_dataframe("Détail voisinage par cluster MRF", mrf_neighbor_df, hide_index=True)
@@ -37597,7 +37659,7 @@ def _render_unsupervised_ml(data: dict[str, pd.DataFrame]) -> None:
             title="Compacité locale du graphe spectral",
             color_discrete_sequence=px.colors.qualitative.Set2,
         )
-        spectral_fig.update_layout(template="plotly_white", showlegend=False)
+        spectral_fig.update_layout(template=_plotly_template(), showlegend=False)
         st.plotly_chart(spectral_fig, width="stretch")
         spec_cols = st.columns(2)
         if spectral_eigen_df is not None and not spectral_eigen_df.empty:
@@ -37621,13 +37683,13 @@ def _render_unsupervised_ml(data: dict[str, pd.DataFrame]) -> None:
                     line=dict(color="#ef4444", width=2, dash="dot"),
                 )
             )
-            eig_fig.add_vline(x=int(n_clusters), line_dash="dash", line_color="#111827")
+            eig_fig.add_vline(x=int(n_clusters), line_dash="dash", line_color=_plotly_text_color(muted=True))
             eig_fig.update_layout(
                 title="Spectre du Laplacien et eigengap",
                 xaxis_title="Rang de valeur propre",
                 yaxis=dict(title="Valeur propre"),
                 yaxis2=dict(title="Eigengap", overlaying="y", side="right"),
-                template="plotly_white",
+                template=_plotly_template(),
             )
             spec_cols[0].plotly_chart(eig_fig, width="stretch")
         if spectral_cluster_graph_df is not None and not spectral_cluster_graph_df.empty:
@@ -37646,7 +37708,7 @@ def _render_unsupervised_ml(data: dict[str, pd.DataFrame]) -> None:
                 title="Connectivité du graphe entre clusters",
                 labels={"x": "Cluster voisin", "y": "Cluster", "color": "Part arêtes"},
             )
-            spec_graph_fig.update_layout(template="plotly_white")
+            spec_graph_fig.update_layout(template=_plotly_template())
             spec_cols[1].plotly_chart(spec_graph_fig, width="stretch")
         if spectral_degree_df is not None and not spectral_degree_df.empty:
             degree_fig = px.bar(
@@ -37659,7 +37721,7 @@ def _render_unsupervised_ml(data: dict[str, pd.DataFrame]) -> None:
                 title="Degré pondéré moyen par cluster",
             )
             degree_fig.update_traces(textposition="outside", cliponaxis=False)
-            degree_fig.update_layout(template="plotly_white")
+            degree_fig.update_layout(template=_plotly_template())
             st.plotly_chart(degree_fig, width="stretch")
         _render_collapsible_dataframe("Détail compacité graphe spectral", spectral_knn_df.head(2000), hide_index=True)
         _render_collapsible_dataframe("Détail degré par cluster spectral", spectral_degree_df if spectral_degree_df is not None else pd.DataFrame(), hide_index=True)
@@ -37770,7 +37832,7 @@ def _render_unsupervised_ml(data: dict[str, pd.DataFrame]) -> None:
                     y=density_total,
                     mode="lines",
                     name="Distribution générale",
-                    line=dict(color="#111827", width=3.0),
+                    line=dict(color=_plotly_text_color(muted=True), width=3.0),
                 )
             )
             decomp_fig.update_layout(
@@ -37778,14 +37840,14 @@ def _render_unsupervised_ml(data: dict[str, pd.DataFrame]) -> None:
                 xaxis_title=f"{gmm_feature} (standardisée)",
                 yaxis_title="Densité",
                 barmode="overlay",
-                template="plotly_white",
+                template=_plotly_template(),
                 legend=dict(
                     orientation="v",
                     yanchor="middle",
                     y=0.5,
                     xanchor="left",
                     x=1.02,
-                    bgcolor="rgba(255,255,255,0.88)",
+                    bgcolor=_plotly_overlay_bgcolor(0.88),
                     bordercolor="rgba(15,23,42,0.10)",
                     borderwidth=1,
                 ),
@@ -38434,7 +38496,7 @@ def _render_reinforcement_ml(data: dict[str, pd.DataFrame]) -> None:
         title="Stabilité de la reward pendant l'apprentissage",
         xaxis_title="Episode",
         yaxis_title="Reward moyen",
-        template="plotly_white",
+        template=_plotly_template(),
     )
     r1.plotly_chart(reward_fig, width="stretch")
     r2.plotly_chart(
@@ -38446,7 +38508,7 @@ def _render_reinforcement_ml(data: dict[str, pd.DataFrame]) -> None:
             points=False,
             title="Distribution de reward par phase d'apprentissage",
             color_discrete_sequence=px.colors.qualitative.Set2,
-        ).update_layout(template="plotly_white", showlegend=False),
+        ).update_layout(template=_plotly_template(), showlegend=False),
         width="stretch",
     )
 
@@ -38464,7 +38526,7 @@ def _render_reinforcement_ml(data: dict[str, pd.DataFrame]) -> None:
             aspect="auto",
             title="Accord action idéale vs action apprise",
             labels={"x": "Action apprise", "y": "Action idéale", "color": "Part"},
-        ).update_layout(template="plotly_white"),
+        ).update_layout(template=_plotly_template()),
         width="stretch",
     )
     t2.plotly_chart(
@@ -38477,7 +38539,7 @@ def _render_reinforcement_ml(data: dict[str, pd.DataFrame]) -> None:
             hover_data={"État": True, "Regret moyen": ":.3f", "Accord action (%)": ":.1%"},
             title="États visités, reward et action dominante",
             color_discrete_sequence=px.colors.qualitative.Set2,
-        ).update_layout(template="plotly_white"),
+        ).update_layout(template=_plotly_template()),
         width="stretch",
     )
 
@@ -38489,7 +38551,7 @@ def _render_reinforcement_ml(data: dict[str, pd.DataFrame]) -> None:
             nbins=32,
             title="Distribution de l'entropie de politique",
             color_discrete_sequence=["#0a9396"],
-        ).update_layout(template="plotly_white"),
+        ).update_layout(template=_plotly_template()),
         width="stretch",
     )
     p2.plotly_chart(
@@ -38499,7 +38561,7 @@ def _render_reinforcement_ml(data: dict[str, pd.DataFrame]) -> None:
             nbins=32,
             title="Distribution de la marge entre les deux meilleures actions",
             color_discrete_sequence=["#2563eb"],
-        ).update_layout(template="plotly_white"),
+        ).update_layout(template=_plotly_template()),
         width="stretch",
     )
 
@@ -38516,7 +38578,7 @@ def _render_reinforcement_ml(data: dict[str, pd.DataFrame]) -> None:
                 points=False,
                 title="Distribution des probabilités d'action",
                 color_discrete_sequence=px.colors.qualitative.Set2,
-            ).update_layout(template="plotly_white", showlegend=False),
+            ).update_layout(template=_plotly_template(), showlegend=False),
             width="stretch",
         )
     else:
@@ -38532,7 +38594,7 @@ def _render_reinforcement_ml(data: dict[str, pd.DataFrame]) -> None:
                 points=False,
                 title="Distribution des valeurs action",
                 color_discrete_sequence=px.colors.qualitative.Set2,
-            ).update_layout(template="plotly_white", showlegend=False),
+            ).update_layout(template=_plotly_template(), showlegend=False),
             width="stretch",
         )
 
@@ -38710,7 +38772,7 @@ def _add_plotly_points_visibility_control(fig: go.Figure, point_trace_indices: l
             showactive=True,
             active=0,
             font=dict(size=9, color="#334155"),
-            bgcolor="rgba(255,255,255,0.90)",
+            bgcolor=_plotly_overlay_bgcolor(0.90),
             bordercolor="rgba(120,120,120,0.32)",
             borderwidth=1,
             pad={"r": 1, "t": 1, "b": 1, "l": 1},
@@ -38754,7 +38816,7 @@ def _add_violin_points_visibility_control(fig: go.Figure) -> go.Figure:
             showactive=True,
             font=dict(size=9, color="#334155"),
             active=0,
-            bgcolor="rgba(255,255,255,0.82)",
+            bgcolor=_plotly_overlay_bgcolor(0.82),
             bordercolor="rgba(120,120,120,0.32)",
             borderwidth=1,
             pad={"r": 2, "t": 2, "b": 2, "l": 2},
@@ -38840,7 +38902,7 @@ def _styled_stats_boxplot(
                     marker=dict(
                         color="rgba(37, 99, 235, 0.48)",
                         size=4,
-                        line=dict(color="#111827", width=0.35),
+                        line=dict(color=_plotly_text_color(muted=True), width=0.35),
                     ),
                     showlegend=show_obs_legend,
                     hovertemplate=f"{group_col}: {group}<br>{value_col}: %{{y:.4f}}<extra></extra>",
@@ -38858,7 +38920,7 @@ def _styled_stats_boxplot(
                     marker=dict(
                         color="rgba(220, 38, 38, 0.72)",
                         size=4,
-                        line=dict(color="#111827", width=0.35),
+                        line=dict(color=_plotly_text_color(muted=True), width=0.35),
                     ),
                     showlegend=show_extreme_legend,
                     hovertemplate=f"{group_col}: {group}<br>{value_col}: %{{y:.4f}}<extra></extra>",
@@ -38895,15 +38957,15 @@ def _styled_stats_boxplot(
             significant_pairs = sorted(significant_pairs, key=lambda item: (item[1] - item[0], item[2]))[:max_significance_bars]
             for level, (i, j, _pval, stars) in enumerate(significant_pairs):
                 y_bar = base_y + level * step_y
-                fig.add_shape(type="line", x0=i, x1=j, y0=y_bar, y1=y_bar, line=dict(color="#111827", width=1))
-                fig.add_shape(type="line", x0=i, x1=i, y0=y_bar, y1=y_bar - tick_h, line=dict(color="#111827", width=1))
-                fig.add_shape(type="line", x0=j, x1=j, y0=y_bar, y1=y_bar - tick_h, line=dict(color="#111827", width=1))
+                fig.add_shape(type="line", x0=i, x1=j, y0=y_bar, y1=y_bar, line=dict(color=_plotly_text_color(muted=True), width=1))
+                fig.add_shape(type="line", x0=i, x1=i, y0=y_bar, y1=y_bar - tick_h, line=dict(color=_plotly_text_color(muted=True), width=1))
+                fig.add_shape(type="line", x0=j, x1=j, y0=y_bar, y1=y_bar - tick_h, line=dict(color=_plotly_text_color(muted=True), width=1))
                 fig.add_annotation(
                     x=(i + j) / 2,
                     y=y_bar + 0.015 * y_span,
                     text=stars,
                     showarrow=False,
-                    font=dict(size=12, color="#111827"),
+                    font=dict(size=12, color=_plotly_text_color(muted=True)),
                     align="center",
                 )
             if significant_pairs:
@@ -38923,7 +38985,7 @@ def _styled_stats_boxplot(
 
     fig.update_layout(
         title=title,
-        template="plotly_white",
+        template=_plotly_template(),
         xaxis=dict(
             title=xaxis_title or group_col,
             tickmode="array",
@@ -39368,7 +39430,7 @@ def render_statistical_tests(data: dict[str, pd.DataFrame]) -> None:
                                     name="Valeur théorique",
                                 )
                             )
-                            fig.update_layout(template="plotly_white")
+                            fig.update_layout(template=_plotly_template())
                             st.plotly_chart(fig, width="stretch")
                             chart_drawn = True
 
@@ -39729,7 +39791,7 @@ def render_statistical_tests(data: dict[str, pd.DataFrame]) -> None:
                                     markers=True,
                                     title="Interaction plot (moyennes par combinaison de facteurs)",
                                 )
-                                fig.update_layout(template="plotly_white", xaxis_title=fac_a, yaxis_title=f"Moyenne {y_var}")
+                                fig.update_layout(template=_plotly_template(), xaxis_title=fac_a, yaxis_title=f"Moyenne {y_var}")
                                 st.plotly_chart(fig, width="stretch")
                                 chart_drawn = True
 
@@ -39827,7 +39889,7 @@ def render_statistical_tests(data: dict[str, pd.DataFrame]) -> None:
                         for trace in fig.data:
                             if getattr(trace, "mode", None) == "lines":
                                 trace.update(line=dict(color="#dc2626", width=3), name="Droite de régression (OLS)")
-                        fig.update_layout(template="plotly_white")
+                        fig.update_layout(template=_plotly_template())
                         st.plotly_chart(fig, width="stretch")
                         chart_drawn = True
 
@@ -39975,7 +40037,7 @@ def render_statistical_tests(data: dict[str, pd.DataFrame]) -> None:
                                     title="Résidus standardisés",
                                 )
                                 _add_heatmap_labels(res_fig, residuals, fmt=".2f", threshold_mode="abs")
-                                res_fig.update_layout(template="plotly_white", height=visual_height)
+                                res_fig.update_layout(template=_plotly_template(), height=visual_height)
                                 c_res.plotly_chart(res_fig, width="stretch")
                                 ct_values = ct.to_numpy(dtype=float)
                                 ct_fig = px.imshow(
@@ -39986,7 +40048,7 @@ def render_statistical_tests(data: dict[str, pd.DataFrame]) -> None:
                                     title="Table de contingence observée",
                                 )
                                 _add_heatmap_labels(ct_fig, ct_values, fmt=".0f", threshold_mode="positive")
-                                ct_fig.update_layout(template="plotly_white", height=visual_height)
+                                ct_fig.update_layout(template=_plotly_template(), height=visual_height)
                                 c_table.plotly_chart(ct_fig, width="stretch")
                                 chart_drawn = True
 
@@ -40203,7 +40265,7 @@ Le mode **Manuel** vous laisse forcer le test parmi ceux compatibles avec la str
 
                         means = tmp.groupby(g_var, as_index=False)[y_var].mean().sort_values(y_var, ascending=False)
                         fig = px.bar(means, x=g_var, y=y_var, title=f"Moyennes par groupe ({g_var})")
-                        fig.update_layout(template="plotly_white", xaxis_tickangle=-20)
+                        fig.update_layout(template=_plotly_template(), xaxis_tickangle=-20)
                         st.plotly_chart(fig, width="stretch")
 
                 elif context == "Kruskal-Wallis":
@@ -40406,7 +40468,7 @@ Le mode **Manuel** vous laisse forcer le test parmi ceux compatibles avec la str
                                     labels={"A": fac_a, "B": fac_b, "mean_y": f"Moyenne {y_var}"},
                                 )
                                 fig.update_layout(
-                                    template="plotly_white",
+                                    template=_plotly_template(),
                                     xaxis_title=fac_a,
                                     legend_title=fac_b,
                                 )
@@ -40472,7 +40534,7 @@ Le mode **Manuel** vous laisse forcer le test parmi ceux compatibles avec la str
                                 customdata=p_mat.values,
                                 hovertemplate="Ligne: %{y}<br>Colonne: %{x}<br>Différence moyenne: %{z:.4f}<br>p-value: %{customdata:.4g}<extra></extra>",
                             )
-                            hfig.update_layout(template="plotly_white")
+                            hfig.update_layout(template=_plotly_template())
                             st.plotly_chart(hfig, width="stretch")
                         else:
                             st.info("Aucune paire significative à afficher sur la carte.")
@@ -41669,7 +41731,7 @@ def _build_dl_network_diagram(
     )
     fig.update_layout(
         title=dict(text=title, x=0.01, xanchor="left", font=dict(size=15)),
-        template="plotly_white",
+        template=_plotly_template(),
         height=max(330, min(520, 285 + 16 * n_nodes)),
         margin=dict(l=20, r=20, t=54, b=64),
         legend=dict(orientation="h", yanchor="bottom", y=-0.18, xanchor="left", x=0),
@@ -41769,7 +41831,7 @@ def _render_dl_architecture_insights(
             color="Famille",
             title="Répartition des familles de couches",
         )
-        fig.update_layout(template="plotly_white", showlegend=False, height=max(260, 44 * len(fam_df) + 120))
+        fig.update_layout(template=_plotly_template(), showlegend=False, height=max(260, 44 * len(fam_df) + 120))
         c2.plotly_chart(fig, width="stretch", key=f"{key_prefix}_families")
 
 
@@ -41816,19 +41878,19 @@ def _render_dl_training_diagnostics(
     if loss_curve is not None and len(loss_curve) > 1:
         loss_df = pd.DataFrame({"Itération": np.arange(1, len(loss_curve) + 1), "Loss": pd.to_numeric(pd.Series(loss_curve), errors="coerce")})
         fig = px.line(loss_df, x="Itération", y="Loss", markers=False, title="Courbe de perte")
-        fig.update_layout(template="plotly_white")
+        fig.update_layout(template=_plotly_template())
         c1.plotly_chart(fig, width="stretch", key=f"{key_prefix}_loss")
     else:
         c1.caption("Courbe de perte indisponible pour ce solveur ou cet entraînement.")
     if validation_scores is not None and len(validation_scores) > 1:
         val_df = pd.DataFrame({"Itération": np.arange(1, len(validation_scores) + 1), "Score validation": pd.to_numeric(pd.Series(validation_scores), errors="coerce")})
         fig = px.line(val_df, x="Itération", y="Score validation", markers=False, title="Score validation interne")
-        fig.update_layout(template="plotly_white")
+        fig.update_layout(template=_plotly_template())
         c2.plotly_chart(fig, width="stretch", key=f"{key_prefix}_validation")
     else:
         depth_df = pd.DataFrame({"Couche": [f"H{i + 1}" for i in range(len(layers))], "Neurones": list(layers)})
         fig = px.bar(depth_df, x="Couche", y="Neurones", title="Largeur par couche exécutable", color="Neurones", color_continuous_scale="Tealgrn")
-        fig.update_layout(template="plotly_white", showlegend=False)
+        fig.update_layout(template=_plotly_template(), showlegend=False)
         c2.plotly_chart(fig, width="stretch", key=f"{key_prefix}_width")
     diag_box.caption(
         "Lecture: une loss qui descend puis stagne suggère une convergence correcte; un écart train/test élevé signale plutôt un réseau trop capacitaire, "
@@ -42558,7 +42620,7 @@ def _render_dl_timeseries_modeling(data: dict[str, pd.DataFrame]) -> None:
     _style_temporal_series_figure(err_fig, xaxis_title="Pas", yaxis_title="Erreur absolue")
     g1.plotly_chart(err_fig, width="stretch")
     resid_fig = px.histogram(result_df, x="Résidu", nbins=35, title="Distribution des résidus")
-    resid_fig.update_layout(template="plotly_white")
+    resid_fig.update_layout(template=_plotly_template())
     g2.plotly_chart(resid_fig, width="stretch")
 
     try:
@@ -42582,7 +42644,7 @@ def _render_dl_timeseries_modeling(data: dict[str, pd.DataFrame]) -> None:
                     color="Importance",
                     color_continuous_scale="Tealgrn",
                     title="Importance des variables temporelles (permutation)",
-                ).update_layout(template="plotly_white", height=max(420, min(760, 30 * len(imp_df) + 120))),
+                ).update_layout(template=_plotly_template(), height=max(420, min(760, 30 * len(imp_df) + 120))),
                 width="stretch",
             )
     except Exception:
@@ -43391,7 +43453,7 @@ def _render_dl_model_mode(data: dict[str, pd.DataFrame], mode: str, prefix: str)
             labels={"x": "Prédit", "y": "Réel", "color": "Effectif"},
             text_auto=True,
         )
-        cm_fig.update_layout(template="plotly_white")
+        cm_fig.update_layout(template=_plotly_template())
         c1.plotly_chart(cm_fig, width="stretch", key=f"{prefix}_confusion_matrix")
 
         if hasattr(pipe.named_steps["model"], "predict_proba") and len(classes) == 2:
@@ -43410,7 +43472,7 @@ def _render_dl_model_mode(data: dict[str, pd.DataFrame], mode: str, prefix: str)
                     title=f"Courbe ROC (classe positive: {pos_class})",
                     xaxis_title="FPR",
                     yaxis_title="TPR",
-                    template="plotly_white",
+                    template=_plotly_template(),
                 )
                 c2.plotly_chart(roc_fig, width="stretch", key=f"{prefix}_roc_curve")
             except Exception:
@@ -43447,7 +43509,7 @@ def _render_dl_model_mode(data: dict[str, pd.DataFrame], mode: str, prefix: str)
         min_v = float(min(y_test_plot.min(), y_pred_plot.min()))
         max_v = float(max(y_test_plot.max(), y_pred_plot.max()))
         scat.add_trace(go.Scatter(x=[min_v, max_v], y=[min_v, max_v], mode="lines", line=dict(dash="dash"), name="Référence y=x"))
-        scat.update_layout(template="plotly_white")
+        scat.update_layout(template=_plotly_template())
         c1.plotly_chart(scat, width="stretch", key=f"{prefix}_observed_predicted")
 
         res_fig = px.scatter(
@@ -43457,11 +43519,11 @@ def _render_dl_model_mode(data: dict[str, pd.DataFrame], mode: str, prefix: str)
             labels={"x": "Prédiction", "y": "Résidu"},
         )
         res_fig.add_hline(y=0.0, line_dash="dash")
-        res_fig.update_layout(template="plotly_white")
+        res_fig.update_layout(template=_plotly_template())
         c2.plotly_chart(res_fig, width="stretch", key=f"{prefix}_residuals_predicted")
 
         hist_res = px.histogram(resid, nbins=40, title="Distribution des résidus")
-        hist_res.update_layout(template="plotly_white")
+        hist_res.update_layout(template=_plotly_template())
         st.plotly_chart(hist_res, width="stretch", key=f"{prefix}_residuals_hist")
 
         result_df = pd.DataFrame(
@@ -43877,7 +43939,7 @@ def render_dl_anomalies(data: dict[str, pd.DataFrame]) -> None:
         title=f"Projection PCA des anomalies ({method})",
         color_discrete_map={"Normal": "#0a9396", "Anomalie": "#bb3e03"},
     )
-    scat.update_layout(template="plotly_white")
+    scat.update_layout(template=_plotly_template())
     c1.plotly_chart(scat, width="stretch")
 
     hist = px.histogram(
@@ -43891,7 +43953,7 @@ def render_dl_anomalies(data: dict[str, pd.DataFrame]) -> None:
         color_discrete_map={"Normal": "#0a9396", "Anomalie": "#bb3e03"},
     )
     hist.add_vline(x=threshold, line_dash="dash", line_color="#d62828")
-    hist.update_layout(template="plotly_white")
+    hist.update_layout(template=_plotly_template())
     c2.plotly_chart(hist, width="stretch")
 
     if date_col != "Aucune" and date_col in result.columns:
@@ -46113,7 +46175,7 @@ def _render_client_clv_profitability(ctx: dict[str, pd.DataFrame]) -> None:
             },
         )
         fig_new_clients.update_traces(mode="lines", line=dict(width=1.6))
-        fig_new_clients.update_layout(template="plotly_white")
+        fig_new_clients.update_layout(template=_plotly_template())
         st.plotly_chart(fig_new_clients, width="stretch")
 
     c1, c2 = st.columns(2)
@@ -46495,7 +46557,7 @@ def _render_client_satisfaction(ctx: dict[str, pd.DataFrame]) -> None:
                     hover_data=["reponses", "nps"],
                     title="Satisfaction moyenne par motif d'incident (Retours, incidents et qualité perçue)",
                 )
-                fig_issue.update_layout(template="plotly_white", xaxis_tickangle=-20)
+                fig_issue.update_layout(template=_plotly_template(), xaxis_tickangle=-20)
                 p1.plotly_chart(fig_issue, width="stretch")
             else:
                 p1.info("Motifs d'incident indisponibles.")
@@ -46565,7 +46627,7 @@ def _render_client_satisfaction(ctx: dict[str, pd.DataFrame]) -> None:
                 )
                 fig_trend.update_layout(
                     title="Évolution satisfaction / NPS / taux de retour",
-                    template="plotly_white",
+                    template=_plotly_template(),
                     yaxis=dict(title="Satisfaction / NPS"),
                     yaxis2=dict(title="Taux de retour (%)", overlaying="y", side="right"),
                     legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0.0),
@@ -46593,7 +46655,7 @@ def _render_client_satisfaction(ctx: dict[str, pd.DataFrame]) -> None:
                     title="Satisfaction moyenne par canal (couleur: taux de retour)",
                     hover_data=["reponses", "nps"],
                 )
-                fig_channel.update_layout(template="plotly_white")
+                fig_channel.update_layout(template=_plotly_template())
                 c2.plotly_chart(fig_channel, width="stretch")
             else:
                 c2.info("Comparaison canal indisponible.")
@@ -46639,7 +46701,7 @@ def _render_client_satisfaction(ctx: dict[str, pd.DataFrame]) -> None:
                 trace.showlegend = True
                 regression_idx += 1
             fig_ret_scatter.update_layout(
-                template="plotly_white",
+                template=_plotly_template(),
                 xaxis_title="Taux de retour",
                 yaxis_title="Satisfaction globale",
                 legend_title_text="return_group",
@@ -46690,7 +46752,7 @@ def _render_client_satisfaction(ctx: dict[str, pd.DataFrame]) -> None:
                         hover_data=["reponses", "satisfaction", "nps", "churn_intent"],
                         title="Top segments prioritaires (score composite)",
                     )
-                    fig_focus.update_layout(template="plotly_white", xaxis_tickangle=-25)
+                    fig_focus.update_layout(template=_plotly_template(), xaxis_tickangle=-25)
                     focus_block.plotly_chart(fig_focus, width="stretch")
                     with focus_block.expander("Table détaillée des priorités", expanded=False):
                         st.dataframe(
@@ -46845,7 +46907,7 @@ def _render_client_satisfaction(ctx: dict[str, pd.DataFrame]) -> None:
                                 name="Valeur cible",
                             )
                         )
-                        fig.update_layout(template="plotly_white")
+                        fig.update_layout(template=_plotly_template())
                         test_block.plotly_chart(fig, width="stretch")
 
             elif test_mode == "Corrélation (2 variables quantitatives)":
@@ -47615,7 +47677,7 @@ def _render_client_experimentation(ctx: dict[str, pd.DataFrame]) -> None:
                     visible=True,
                 )
             )
-            fig_rates.update_layout(template="plotly_white", showlegend=False)
+            fig_rates.update_layout(template=_plotly_template(), showlegend=False)
             g1.plotly_chart(fig_rates, width="stretch")
 
             fig_delta = go.Figure(
@@ -47627,7 +47689,7 @@ def _render_client_experimentation(ctx: dict[str, pd.DataFrame]) -> None:
                     title={"text": "Écart B vs A"},
                 )
             )
-            fig_delta.update_layout(template="plotly_white", height=320, margin=dict(l=10, r=10, t=60, b=10))
+            fig_delta.update_layout(template=_plotly_template(), height=320, margin=dict(l=10, r=10, t=60, b=10))
             g2.plotly_chart(fig_delta, width="stretch")
             g2.caption(
                 f"Delta absolu: {delta_rate * 100.0:+.2f} pts | IC95%: [{delta_ci_low * 100.0:+.2f}; {delta_ci_high * 100.0:+.2f}] pts."
@@ -48106,7 +48168,7 @@ Bon usage:
                 title="Effets principaux estimés",
                 color_continuous_scale=factorial_soft_scale,
             )
-            fig_main.update_layout(template="plotly_white", coloraxis_showscale=False)
+            fig_main.update_layout(template=_plotly_template(), coloraxis_showscale=False)
             fig_main.update_traces(marker=dict(opacity=0.96, line=dict(color="rgba(17,17,17,0.22)", width=0.35)))
             g1.plotly_chart(fig_main, width="stretch")
         if len(factor_names) >= 2:
@@ -48119,7 +48181,7 @@ Bon usage:
                 title=f"Interaction moyenne: {f1} × {f2}",
                 color_continuous_scale=factorial_soft_scale,
             )
-            fig_heat.update_layout(template="plotly_white")
+            fig_heat.update_layout(template=_plotly_template())
             fig_heat.update_traces(opacity=0.96)
             g2.plotly_chart(fig_heat, width="stretch")
 
@@ -48134,7 +48196,7 @@ Bon usage:
             color="score",
             color_continuous_scale=factorial_soft_scale,
         )
-        fig_combo.update_layout(template="plotly_white", xaxis_tickangle=-25, coloraxis_showscale=False)
+        fig_combo.update_layout(template=_plotly_template(), xaxis_tickangle=-25, coloraxis_showscale=False)
         fig_combo.update_traces(marker=dict(opacity=0.96, line=dict(color="rgba(17,17,17,0.20)", width=0.3)))
         simulated_case_block.plotly_chart(fig_combo, width="stretch")
 
@@ -49458,7 +49520,7 @@ def _make_physical_slope_field(
             )
     fig.update_layout(
         title="Champ de pentes",
-        template="plotly_white",
+        template=_plotly_template(),
         height=360,
         margin=dict(l=10, r=10, t=50, b=10),
         xaxis_title="Temps",
@@ -49475,8 +49537,8 @@ def _make_physical_equilibrium_plot(sim: pd.DataFrame) -> go.Figure | None:
         return None
     phase_df = phase_df.sort_values("État")
     fig = px.line(phase_df, x="État", y="Dérivée 1", title="Diagramme d'équilibre: dérivée selon l'état")
-    fig.add_hline(y=0, line_color="#111827", line_width=1, line_dash="dot", annotation_text="Équilibre local")
-    fig.update_layout(template="plotly_white", height=340, margin=dict(l=10, r=10, t=50, b=10))
+    fig.add_hline(y=0, line_color=_plotly_text_color(muted=True), line_width=1, line_dash="dot", annotation_text="Équilibre local")
+    fig.update_layout(template=_plotly_template(), height=340, margin=dict(l=10, r=10, t=50, b=10))
     return fig
 
 
@@ -49503,11 +49565,11 @@ def _make_physical_phase_density(sim: pd.DataFrame, x_col: str, y_col: str, *, t
             x=phase_df[x_col],
             y=phase_df[y_col],
             mode="lines",
-            line=dict(color="#111827", width=1.4),
+            line=dict(color=_plotly_text_color(muted=True), width=1.4),
             name="Trajectoire",
         )
     )
-    fig.update_layout(template="plotly_white", title=title, height=360, xaxis_title=x_col, yaxis_title=y_col, margin=dict(l=10, r=10, t=50, b=10))
+    fig.update_layout(template=_plotly_template(), title=title, height=360, xaxis_title=x_col, yaxis_title=y_col, margin=dict(l=10, r=10, t=50, b=10))
     return fig
 
 
@@ -49517,7 +49579,7 @@ def _make_lotka_nullclines(alpha: float, beta: float, delta: float, gamma: float
     fig = px.line(sim, x="Proies", y="Prédateurs", title="Nullclines et cycle proies-prédateurs")
     fig.add_vline(x=gamma / max(delta, 1e-9), line_color="#2563eb", line_dash="dash", annotation_text="dPrédateurs/dt = 0")
     fig.add_hline(y=alpha / max(beta, 1e-9), line_color="#dc2626", line_dash="dash", annotation_text="dProies/dt = 0")
-    fig.update_layout(template="plotly_white", height=380, xaxis_range=[0, x_max], yaxis_range=[0, y_max], margin=dict(l=10, r=10, t=50, b=10))
+    fig.update_layout(template=_plotly_template(), height=380, xaxis_range=[0, x_max], yaxis_range=[0, y_max], margin=dict(l=10, r=10, t=50, b=10))
     return fig
 
 
@@ -49526,7 +49588,7 @@ def _make_physical_cobweb(r_value: float, x0: float, n_iter: int = 45) -> go.Fig
     f_grid = float(r_value) * x_grid * (1 - x_grid)
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=x_grid, y=f_grid, mode="lines", name="f(x)=r x(1-x)", line=dict(color="#2563eb", width=2)))
-    fig.add_trace(go.Scatter(x=x_grid, y=x_grid, mode="lines", name="y=x", line=dict(color="#111827", width=1.2, dash="dot")))
+    fig.add_trace(go.Scatter(x=x_grid, y=x_grid, mode="lines", name="y=x", line=dict(color=_plotly_text_color(muted=True), width=1.2, dash="dot")))
     xcur = float(x0)
     xs: list[float] = []
     ys: list[float] = []
@@ -49538,7 +49600,7 @@ def _make_physical_cobweb(r_value: float, x0: float, n_iter: int = 45) -> go.Fig
         ys.extend([ynext, ynext])
         xcur = ynext
     fig.add_trace(go.Scatter(x=xs, y=ys, mode="lines", name="Cobweb", line=dict(color="#dc2626", width=1.15)))
-    fig.update_layout(template="plotly_white", title="Cobweb: itérations successives", height=380, xaxis_title="x_t", yaxis_title="x_{t+1}", margin=dict(l=10, r=10, t=50, b=10))
+    fig.update_layout(template=_plotly_template(), title="Cobweb: itérations successives", height=380, xaxis_title="x_t", yaxis_title="x_{t+1}", margin=dict(l=10, r=10, t=50, b=10))
     return fig
 
 
@@ -49580,7 +49642,7 @@ def _make_physical_causal_network(labels: list[str], source: list[int], target: 
     )
     fig.update_layout(
         title=title,
-        template="plotly_white",
+        template=_plotly_template(),
         height=390,
         xaxis=dict(visible=False),
         yaxis=dict(visible=False, scaleanchor="x", scaleratio=1),
@@ -49603,7 +49665,7 @@ def _make_physical_waterfall(labels: list[str], values: list[float], *, title: s
             decreasing=dict(marker=dict(color="#dc2626")),
         )
     )
-    fig.update_layout(template="plotly_white", title=title, height=340, margin=dict(l=10, r=10, t=50, b=10), yaxis_title="Flux")
+    fig.update_layout(template=_plotly_template(), title=title, height=340, margin=dict(l=10, r=10, t=50, b=10), yaxis_title="Flux")
     return fig
 
 
@@ -51384,16 +51446,16 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
             with c2:
                 edo_figures: list[tuple[go.Figure, str]] = []
                 fig = px.line(sim, x="t", y="État", title=f"Solution temporelle - {model}")
-                fig.update_layout(template="plotly_white", xaxis_title="Temps", yaxis_title="État")
+                fig.update_layout(template=_plotly_template(), xaxis_title="Temps", yaxis_title="État")
                 edo_figures.append((fig, "phys_edo_solution"))
                 derivative_cols = [col for col in sim.columns if col.startswith("Dérivée")]
                 if derivative_cols:
                     dfig = px.line(sim, x="t", y=derivative_cols, title="Dérivées / dynamique instantanée")
-                    dfig.update_layout(template="plotly_white")
+                    dfig.update_layout(template=_plotly_template())
                     edo_figures.append((dfig, "phys_edo_derivative"))
                 if "Forçage" in sim.columns:
                     ffig = px.line(sim, x="t", y="Forçage", title="Forçage externe")
-                    ffig.update_layout(template="plotly_white")
+                    ffig.update_layout(template=_plotly_template())
                     edo_figures.append((ffig, "phys_edo_forcing"))
                 y_state = pd.to_numeric(sim["État"], errors="coerce")
                 y_min = float(y_state.min()) if y_state.notna().any() else -1.0
@@ -51415,7 +51477,7 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     edo_figures.append((slope_fig, "phys_edo_slope_field"))
                 elif "Dérivée 1" in sim.columns:
                     phase = px.line(sim, x="État", y="Dérivée 1", title="Portrait de phase réduit")
-                    phase.update_layout(template="plotly_white", height=360, margin=dict(l=10, r=10, t=50, b=10))
+                    phase.update_layout(template=_plotly_template(), height=360, margin=dict(l=10, r=10, t=50, b=10))
                     edo_figures.append((phase, "phys_edo_phase_reduced"))
                 equilibrium_fig = _make_physical_equilibrium_plot(sim)
                 if equilibrium_fig is not None:
@@ -51832,10 +51894,10 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
             with c2:
                 system_figures: list[tuple[go.Figure, str]] = []
                 fig = px.line(sim, x="t", y=y_cols, title=f"Trajectoires temporelles - {model}")
-                fig.update_layout(template="plotly_white", xaxis_title="Temps")
+                fig.update_layout(template=_plotly_template(), xaxis_title="Temps")
                 system_figures.append((fig, "phys_system_time"))
                 phase = px.line(sim, x=phase_x, y=phase_y, title="Portrait de phase")
-                phase.update_layout(template="plotly_white")
+                phase.update_layout(template=_plotly_template())
                 system_figures.append((phase, "phys_system_phase"))
                 phase_density = _make_physical_phase_density(sim, phase_x, phase_y)
                 if phase_density is not None:
@@ -51853,14 +51915,14 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     energy_df = sim[["t", "Énergie"]].copy()
                     energy_df["Énergie normalisée"] = energy_df["Énergie"] / max(float(energy_df["Énergie"].iloc[0]), 1e-9)
                     efig = px.line(energy_df, x="t", y="Énergie normalisée", title="Énergie normalisée")
-                    efig.update_layout(template="plotly_white", height=360, margin=dict(l=10, r=10, t=50, b=10))
+                    efig.update_layout(template=_plotly_template(), height=360, margin=dict(l=10, r=10, t=50, b=10))
                     system_figures.append((efig, "phys_system_energy_norm"))
                 else:
                     corr_cols = [col for col in y_cols if col in sim.columns]
                     if len(corr_cols) >= 2:
                         corr = sim[corr_cols].corr(numeric_only=True).fillna(0.0)
                         hfig = px.imshow(corr, text_auto=".2f", color_continuous_scale="RdBu", zmin=-1, zmax=1, title="Couplage observé entre états")
-                        hfig.update_layout(template="plotly_white", height=360, margin=dict(l=10, r=10, t=50, b=10))
+                        hfig.update_layout(template=_plotly_template(), height=360, margin=dict(l=10, r=10, t=50, b=10))
                         system_figures.append((hfig, "phys_system_state_corr"))
                 _render_plotly_grid(system_figures)
                 _render_collapsible_dataframe("Détail simulation système EDO", sim, hide_index=True)
@@ -51911,13 +51973,13 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                         labels={"x": "Espace / sous-jacent", "y": "Temps", "color": pde_result["field_label"]},
                         title=f"Heatmap - {pde_model}",
                     )
-                    heat.update_layout(template="plotly_white", height=360, margin=dict(l=10, r=10, t=50, b=10))
+                    heat.update_layout(template=_plotly_template(), height=360, margin=dict(l=10, r=10, t=50, b=10))
                     pde_figures.append((heat, f"phys_pde_heat_{pde_slug}"))
                     idx_25 = max(0, min(len(times) - 1, int(len(times) * 0.25)))
                     idx_50 = max(0, min(len(times) - 1, int(len(times) * 0.50)))
                     profile_df = pd.DataFrame({"x": x, "t0": hist[0], "t25%": hist[idx_25], "t50%": hist[idx_50], "t100%": hist[-1]})
                     prof = px.line(profile_df, x="x", y=["t0", "t25%", "t50%", "t100%"], title="Profils à différents temps")
-                    prof.update_layout(template="plotly_white", legend_title_text="", height=360, margin=dict(l=10, r=10, t=50, b=10))
+                    prof.update_layout(template=_plotly_template(), legend_title_text="", height=360, margin=dict(l=10, r=10, t=50, b=10))
                     pde_figures.append((prof, f"phys_pde_profiles_{pde_slug}"))
                     contour = go.Figure(
                         go.Contour(
@@ -51931,7 +51993,7 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     )
                     contour.update_layout(
                         title="Isolignes espace-temps",
-                        template="plotly_white",
+                        template=_plotly_template(),
                         height=360,
                         xaxis_title="Espace / sous-jacent",
                         yaxis_title="Temps",
@@ -51949,7 +52011,7 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                             labels={"x": "Prix S", "y": "Temps restant", "color": pde_result.get("aux_label", "Aux")},
                             title="Sensibilité Delta",
                         )
-                        aux_fig.update_layout(template="plotly_white", height=360, margin=dict(l=10, r=10, t=50, b=10))
+                        aux_fig.update_layout(template=_plotly_template(), height=360, margin=dict(l=10, r=10, t=50, b=10))
                         pde_figures.append((aux_fig, f"phys_pde_aux_{pde_slug}"))
                     else:
                         dx = float(x[1] - x[0]) if len(x) > 1 else 1.0
@@ -51965,7 +52027,7 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                             }
                         )
                         diag_fig = px.line(diag_df, x="Temps", y=["Masse / énergie totale", "Gradient bord gauche", "Gradient bord droit"], title="Conservation et gradients aux bords")
-                        diag_fig.update_layout(template="plotly_white", height=360, margin=dict(l=10, r=10, t=50, b=10), legend_title_text="")
+                        diag_fig.update_layout(template=_plotly_template(), height=360, margin=dict(l=10, r=10, t=50, b=10), legend_title_text="")
                         pde_figures.append((diag_fig, f"phys_pde_mass_flux_{pde_slug}"))
                 else:
                     x = np.asarray(pde_result["x"], dtype=float)
@@ -51981,11 +52043,11 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                         labels={"x": "x", "y": "y", "color": pde_result["field_label"]},
                         title=f"Champ final - {pde_model}",
                     )
-                    fig_final.update_layout(template="plotly_white", height=360, margin=dict(l=10, r=10, t=50, b=10))
+                    fig_final.update_layout(template=_plotly_template(), height=360, margin=dict(l=10, r=10, t=50, b=10))
                     pde_figures.append((fig_final, f"phys_pde_2d_field_{pde_slug}"))
                     if pde_type == "vector2d":
                         aux_fig = px.imshow(aux, x=x, y=y, origin="lower", color_continuous_scale="RdBu", labels={"color": pde_result.get("aux_label", "Aux")}, title=pde_result.get("aux_label", "Champ auxiliaire"))
-                        aux_fig.update_layout(template="plotly_white", height=360, margin=dict(l=10, r=10, t=50, b=10))
+                        aux_fig.update_layout(template=_plotly_template(), height=360, margin=dict(l=10, r=10, t=50, b=10))
                         pde_figures.append((aux_fig, f"phys_pde_2d_aux_{pde_slug}"))
                         u = np.asarray(pde_result["u"], dtype=float)
                         v = np.asarray(pde_result["v"], dtype=float)
@@ -52003,14 +52065,14 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                                         hoverinfo="skip",
                                     )
                                 )
-                        qfig.update_layout(title="Champ vectoriel simplifié", template="plotly_white", height=360, margin=dict(l=10, r=10, t=50, b=10), xaxis=dict(range=[0, 1]), yaxis=dict(range=[0, 1], scaleanchor="x", scaleratio=1))
+                        qfig.update_layout(title="Champ vectoriel simplifié", template=_plotly_template(), height=360, margin=dict(l=10, r=10, t=50, b=10), xaxis=dict(range=[0, 1]), yaxis=dict(range=[0, 1], scaleanchor="x", scaleratio=1))
                         pde_figures.append((qfig, f"phys_pde_vector_{pde_slug}"))
                     else:
                         aux_fig = px.imshow(aux, x=x, y=y, origin="lower", color_continuous_scale="Viridis", labels={"color": pde_result.get("aux_label", "Aux")}, title=pde_result.get("aux_label", "Champ auxiliaire"))
-                        aux_fig.update_layout(template="plotly_white", height=360, margin=dict(l=10, r=10, t=50, b=10))
+                        aux_fig.update_layout(template=_plotly_template(), height=360, margin=dict(l=10, r=10, t=50, b=10))
                         pde_figures.append((aux_fig, f"phys_pde_2d_aux_{pde_slug}"))
                         surf = go.Figure(go.Surface(x=x, y=y, z=field, colorscale="Viridis", showscale=False))
-                        surf.update_layout(title="Surface 3D", template="plotly_white", height=360, margin=dict(l=10, r=10, t=50, b=10))
+                        surf.update_layout(title="Surface 3D", template=_plotly_template(), height=360, margin=dict(l=10, r=10, t=50, b=10))
                         pde_figures.append((surf, f"phys_pde_2d_surface_{pde_slug}"))
                 _render_plotly_grid(pde_figures)
                 summary_rows = [
@@ -52059,7 +52121,7 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                 discrete_figures: list[tuple[go.Figure, str]] = []
                 if y_cols:
                     fig = px.line(sim, x="t", y=y_cols, title=f"Séries discrètes - {discrete_model}")
-                    fig.update_layout(template="plotly_white", legend_title_text="", xaxis_title="Période", height=360, margin=dict(l=10, r=10, t=50, b=10))
+                    fig.update_layout(template=_plotly_template(), legend_title_text="", xaxis_title="Période", height=360, margin=dict(l=10, r=10, t=50, b=10))
                     discrete_figures.append((fig, f"phys_discrete_series_{dslug}"))
                 if discrete_result.get("cobweb"):
                     r_val = float(discrete_result["cobweb"]["r"])
@@ -52077,7 +52139,7 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     bif = pd.DataFrame(bif_rows)
                     bfig = px.scatter(bif, x="r", y="x", opacity=0.35, title="Diagramme de bifurcation", render_mode="webgl")
                     bfig.update_traces(marker=dict(size=2))
-                    bfig.update_layout(template="plotly_white", height=360, margin=dict(l=10, r=10, t=50, b=10))
+                    bfig.update_layout(template=_plotly_template(), height=360, margin=dict(l=10, r=10, t=50, b=10))
                     discrete_figures.append((bfig, f"phys_discrete_bif_{dslug}"))
                     discrete_figures.append((_make_physical_cobweb(r_val, x0), f"phys_discrete_cobweb_{dslug}"))
                     lyap_values = []
@@ -52096,11 +52158,11 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                             link=dict(source=sk["source"], target=sk["target"], value=sk["values"]),
                         )
                     )
-                    sankey_fig.update_layout(title="Flux compartimentaux finaux", height=360, template="plotly_white")
+                    sankey_fig.update_layout(title="Flux compartimentaux finaux", height=360, template=_plotly_template())
                     discrete_figures.append((sankey_fig, f"phys_discrete_sankey_{dslug}"))
                 elif len(y_cols) >= 2:
                     phase = px.line(sim, x=y_cols[0], y=y_cols[1], title="Portrait discret")
-                    phase.update_layout(template="plotly_white", height=360, margin=dict(l=10, r=10, t=50, b=10))
+                    phase.update_layout(template=_plotly_template(), height=360, margin=dict(l=10, r=10, t=50, b=10))
                     discrete_figures.append((phase, f"phys_discrete_phase_{dslug}"))
                 _render_plotly_grid(discrete_figures)
                 if discrete_result.get("cobweb"):
@@ -52146,7 +52208,7 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                 chaos_figures: list[tuple[go.Figure, str]] = []
                 if chaos_result["type"] == "1d":
                     series_fig = px.line(sim, x="t", y="x", title=f"Série chaotique - {chaos_model}")
-                    series_fig.update_layout(template="plotly_white", height=360, margin=dict(l=10, r=10, t=50, b=10))
+                    series_fig.update_layout(template=_plotly_template(), height=360, margin=dict(l=10, r=10, t=50, b=10))
                     chaos_figures.append((series_fig, f"phys_chaos_series_{cslug}"))
                     bif_rows = []
                     for r in np.linspace(2.6, 4.0, 260):
@@ -52161,7 +52223,7 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     bif = pd.DataFrame(bif_rows)
                     bfig = px.scatter(bif, x="r", y="x", opacity=0.35, title="Bifurcation - Logistic Map", render_mode="webgl")
                     bfig.update_traces(marker=dict(size=2))
-                    bfig.update_layout(template="plotly_white", height=360, margin=dict(l=10, r=10, t=50, b=10))
+                    bfig.update_layout(template=_plotly_template(), height=360, margin=dict(l=10, r=10, t=50, b=10))
                     chaos_figures.append((bfig, f"phys_chaos_bif_{cslug}"))
                     if chaos_result.get("cobweb"):
                         cob = chaos_result["cobweb"]
@@ -52169,7 +52231,7 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                 elif chaos_result["type"] == "2d":
                     fig = px.scatter(sim, x="x", y="y", opacity=0.52, title=f"Attracteur 2D - {chaos_model}", render_mode="webgl")
                     fig.update_traces(marker=dict(size=2))
-                    fig.update_layout(template="plotly_white", height=360, xaxis_title="x", yaxis_title="y", margin=dict(l=10, r=10, t=50, b=10))
+                    fig.update_layout(template=_plotly_template(), height=360, xaxis_title="x", yaxis_title="y", margin=dict(l=10, r=10, t=50, b=10))
                     chaos_figures.append((fig, f"phys_chaos_attr2d_{cslug}"))
                     dens = _make_physical_phase_density(sim, "x", "y", title="Densité de l'attracteur")
                     if dens is not None:
@@ -52185,13 +52247,13 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                             name=chaos_model,
                         )
                     )
-                    fig3d.update_layout(title=f"Attracteur 3D - {chaos_model}", template="plotly_white", height=420, margin=dict(l=0, r=0, t=50, b=0))
+                    fig3d.update_layout(title=f"Attracteur 3D - {chaos_model}", template=_plotly_template(), height=420, margin=dict(l=0, r=0, t=50, b=0))
                     chaos_figures.append((fig3d, f"phys_chaos_attr3d_{cslug}"))
                     proj_xy = px.line(sim, x="x", y="y", title="Projection x-y")
-                    proj_xy.update_layout(template="plotly_white", height=360, margin=dict(l=10, r=10, t=50, b=10))
+                    proj_xy.update_layout(template=_plotly_template(), height=360, margin=dict(l=10, r=10, t=50, b=10))
                     chaos_figures.append((proj_xy, f"phys_chaos_proj_xy_{cslug}"))
                     proj_xz = px.line(sim, x="x", y="z", title="Projection x-z")
-                    proj_xz.update_layout(template="plotly_white", height=360, margin=dict(l=10, r=10, t=50, b=10))
+                    proj_xz.update_layout(template=_plotly_template(), height=360, margin=dict(l=10, r=10, t=50, b=10))
                     chaos_figures.append((proj_xz, f"phys_chaos_proj_xz_{cslug}"))
                 _render_plotly_grid(chaos_figures)
                 regime = "chaotique probable" if np.isfinite(lyap) and lyap > 0 else "stable / périodique probable"
@@ -52247,20 +52309,20 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                 fig = go.Figure()
                 for j in range(min(18, int(paths.shape[1]))):
                     fig.add_trace(go.Scatter(x=np.arange(paths.shape[0]), y=paths[:, j], mode="lines", line=dict(width=1, color="rgba(70,130,180,0.25)"), showlegend=False))
-                fig.add_trace(go.Scatter(x=fan["t"], y=fan["q50"], mode="lines", name="Médiane", line=dict(color="#111827", width=2.5)))
-                fig.update_layout(title=f"Réalisations stochastiques - {stoch_model}", template="plotly_white", xaxis_title="Temps", yaxis_title="X", height=360, margin=dict(l=10, r=10, t=50, b=10))
+                fig.add_trace(go.Scatter(x=fan["t"], y=fan["q50"], mode="lines", name="Médiane", line=dict(color=_plotly_text_color(muted=True), width=2.5)))
+                fig.update_layout(title=f"Réalisations stochastiques - {stoch_model}", template=_plotly_template(), xaxis_title="Temps", yaxis_title="X", height=360, margin=dict(l=10, r=10, t=50, b=10))
                 stoch_figures.append((fig, f"phys_stoch_paths_{sslug}"))
                 fan_fig = go.Figure()
                 fan_fig.add_trace(go.Scatter(x=fan["t"], y=fan["q95"], mode="lines", line=dict(width=0), showlegend=False))
                 fan_fig.add_trace(go.Scatter(x=fan["t"], y=fan["q05"], mode="lines", fill="tonexty", fillcolor="rgba(14,165,233,0.18)", line=dict(width=0), name="90%"))
                 fan_fig.add_trace(go.Scatter(x=fan["t"], y=fan["q75"], mode="lines", line=dict(width=0), showlegend=False))
                 fan_fig.add_trace(go.Scatter(x=fan["t"], y=fan["q25"], mode="lines", fill="tonexty", fillcolor="rgba(14,165,233,0.28)", line=dict(width=0), name="50%"))
-                fan_fig.add_trace(go.Scatter(x=fan["t"], y=fan["q50"], mode="lines", name="Médiane", line=dict(color="#0f172a", width=2)))
-                fan_fig.update_layout(title="Fan chart quantile", template="plotly_white", height=360, margin=dict(l=10, r=10, t=50, b=10))
+                fan_fig.add_trace(go.Scatter(x=fan["t"], y=fan["q50"], mode="lines", name="Médiane", line=dict(color=_plotly_text_color(muted=True), width=2)))
+                fan_fig.update_layout(title="Fan chart quantile", template=_plotly_template(), height=360, margin=dict(l=10, r=10, t=50, b=10))
                 stoch_figures.append((fan_fig, f"phys_stoch_fan_{sslug}"))
                 terminal = pd.DataFrame({"X final": paths[-1, :]})
                 hist_fig = px.histogram(terminal, x="X final", nbins=28, marginal="box", title="Distribution terminale des trajectoires")
-                hist_fig.update_layout(template="plotly_white", height=360, margin=dict(l=10, r=10, t=50, b=10))
+                hist_fig.update_layout(template=_plotly_template(), height=360, margin=dict(l=10, r=10, t=50, b=10))
                 stoch_figures.append((hist_fig, f"phys_stoch_terminal_distribution_{sslug}"))
                 terminal_mean = float(np.mean(paths[-1, :]))
                 terminal_std = float(np.std(paths[-1, :], ddof=1)) if paths.shape[1] > 1 else 0.0
@@ -52270,7 +52332,7 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     if "t" in extra_df.columns:
                         extra_y = [col for col in extra_df.columns if col != "t"]
                         extra_fig = px.line(extra_df, x="t", y=extra_y, title="Indicateurs auxiliaires")
-                        extra_fig.update_layout(template="plotly_white", legend_title_text="", height=360, margin=dict(l=10, r=10, t=50, b=10))
+                        extra_fig.update_layout(template=_plotly_template(), legend_title_text="", height=360, margin=dict(l=10, r=10, t=50, b=10))
                         stoch_figures.append((extra_fig, f"phys_stoch_extra_{sslug}"))
                 _render_plotly_grid(stoch_figures)
                 try:
@@ -52524,7 +52586,7 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
         line_cols = result["line_cols"]
         if line_cols:
             fig = px.line(sim, x="t", y=line_cols[: min(7, len(line_cols))], title=f"Évolution des stocks et flux - {model_name}")
-            fig.update_layout(template="plotly_white", xaxis_title="Période", yaxis_title="Valeur", legend_title_text="")
+            fig.update_layout(template=_plotly_template(), xaxis_title="Période", yaxis_title="Valeur", legend_title_text="")
             st.plotly_chart(fig, width="stretch", key=f"phys_comp_portfolio_line_{model_name}")
         if result["sankey_labels"] and sum(result["sankey_values"]) > 0:
             sankey = go.Figure(
@@ -52538,7 +52600,7 @@ Ici, l'objectif est de montrer comment passer d'une intuition métier à un mod�
                     ),
                 )
             )
-            sankey.update_layout(title="Flux finaux du modèle", height=390, template="plotly_white", margin=dict(l=10, r=10, t=55, b=10))
+            sankey.update_layout(title="Flux finaux du modèle", height=390, template=_plotly_template(), margin=dict(l=10, r=10, t=55, b=10))
             st.plotly_chart(sankey, width="stretch", key=f"phys_comp_portfolio_sankey_{model_name}")
         visual_cols = st.columns(2)
         target_labels = [
