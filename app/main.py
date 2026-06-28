@@ -777,9 +777,9 @@ def _apply_runtime_theme(dark_mode: bool) -> None:
             --dm-bg-1: #22242a;
             --dm-bg-2: #292b30;
             --dm-surface: #303136;
-            --dm-surface-raised: #3c3c3c;
-            --dm-panel: #35363b;
-            --dm-panel-inner: #292b30;
+            --dm-surface-raised: #4a4b50;
+            --dm-panel: #424348;
+            --dm-panel-inner: #3a3b40;
             --dm-surface-soft: rgba(34, 36, 42, 0.92);
             --dm-surface-muted: rgba(60, 60, 60, 0.78);
             --dm-border: rgba(191, 191, 191, 0.18);
@@ -807,7 +807,7 @@ def _apply_runtime_theme(dark_mode: bool) -> None:
             max-width: 1360px;
         }
         .hero-card {
-            background: var(--dm-bg-2) !important;
+            background: var(--dm-panel) !important;
             color: var(--dm-text) !important;
             border: 1px solid var(--dm-border) !important;
             box-shadow: 0 10px 24px rgba(0, 0, 0, 0.20);
@@ -877,10 +877,11 @@ def _apply_runtime_theme(dark_mode: bool) -> None:
             color: var(--dm-text-soft) !important;
         }
         [data-testid="stMetric"] {
-            background: var(--dm-panel-inner);
-            border: 1px solid var(--dm-border);
+            background: var(--dm-surface-raised);
+            border: 1px solid var(--dm-border-strong);
             border-radius: 8px;
             padding: 0.5rem 0.65rem;
+            box-shadow: 0 1px 0 rgba(254, 254, 254, 0.035) inset;
         }
         [data-testid="stExpander"] details {
             background: var(--dm-panel-inner);
@@ -895,8 +896,12 @@ def _apply_runtime_theme(dark_mode: bool) -> None:
                 0 1px 0 rgba(254, 254, 254, 0.035) inset,
                 0 8px 20px rgba(0, 0, 0, 0.16);
         }
+        [data-testid="stVerticalBlockBorderWrapper"]
+        [data-testid="stVerticalBlockBorderWrapper"] {
+            background: var(--dm-panel-inner) !important;
+        }
         [data-testid="stAlert"] {
-            background: var(--dm-bg-2);
+            background: var(--dm-panel-inner);
             border: 1px solid var(--dm-border-strong);
             border-radius: 8px;
         }
@@ -1026,6 +1031,20 @@ def _apply_runtime_theme(dark_mode: bool) -> None:
         .stTable tr:nth-child(even) td {
             background: var(--dm-bg-1) !important;
         }
+        [data-testid="stAppViewContainer"] [style*="background:#f4f8fa"],
+        [data-testid="stAppViewContainer"] [style*="background: #f4f8fa"],
+        [data-testid="stAppViewContainer"] [style*="background:rgba(250,250,250"],
+        [data-testid="stAppViewContainer"] [style*="background: rgba(250,250,250"],
+        [data-testid="stAppViewContainer"] [style*="rgba(248,250,252"],
+        [data-testid="stAppViewContainer"] [style*="rgba(248, 250, 252"],
+        [data-testid="stAppViewContainer"] [style*="rgba(239,246,255"],
+        [data-testid="stAppViewContainer"] [style*="rgba(239, 246, 255"],
+        [data-testid="stAppViewContainer"] [style*="rgba(249,250,251"],
+        [data-testid="stAppViewContainer"] [style*="rgba(249, 250, 251"] {
+            background: var(--dm-panel-inner) !important;
+            color: var(--dm-text-soft) !important;
+            border-color: var(--dm-border-strong) !important;
+        }
         [data-testid="stPlotlyChart"],
         [data-testid="stVegaLiteChart"],
         [data-testid="stPyplot"],
@@ -1049,6 +1068,23 @@ def _apply_runtime_theme(dark_mode: bool) -> None:
         }
         [data-testid="stPlotlyChart"] .modebar-btn path {
             fill: var(--dm-text-soft) !important;
+        }
+        [data-testid="stHtml"] svg {
+            background: var(--dm-bg-1) !important;
+            color-scheme: dark;
+        }
+        [data-testid="stHtml"] svg rect[fill="white"],
+        [data-testid="stHtml"] svg rect[fill="#fff"],
+        [data-testid="stHtml"] svg rect[fill="#ffffff"],
+        [data-testid="stHtml"] svg polygon[fill="white"],
+        [data-testid="stHtml"] svg polygon[fill="#fff"],
+        [data-testid="stHtml"] svg polygon[fill="#ffffff"] {
+            fill: var(--dm-panel-inner) !important;
+        }
+        [data-testid="stHtml"] svg text[fill="black"],
+        [data-testid="stHtml"] svg text[fill="#000"],
+        [data-testid="stHtml"] svg text[fill="#000000"] {
+            fill: var(--dm-text) !important;
         }
         iframe {
             background: var(--dm-bg-1) !important;
@@ -1785,6 +1821,64 @@ def _apply_dark_plotly_layout(fig: Any) -> Any:
             tickfont=dict(color="#bfbfbf"),
             title_font=dict(color="#fefefe"),
         )
+        out.update_polars(
+            bgcolor="#292b30",
+            angularaxis_gridcolor="rgba(191,191,191,0.12)",
+            angularaxis_linecolor="rgba(191,191,191,0.24)",
+            angularaxis_tickfont_color="#bfbfbf",
+            radialaxis_gridcolor="rgba(191,191,191,0.12)",
+            radialaxis_linecolor="rgba(191,191,191,0.24)",
+            radialaxis_tickfont_color="#bfbfbf",
+        )
+        out.update_scenes(
+            bgcolor="#292b30",
+            xaxis_backgroundcolor="#292b30",
+            xaxis_gridcolor="rgba(191,191,191,0.12)",
+            xaxis_linecolor="rgba(191,191,191,0.24)",
+            yaxis_backgroundcolor="#292b30",
+            yaxis_gridcolor="rgba(191,191,191,0.12)",
+            yaxis_linecolor="rgba(191,191,191,0.24)",
+            zaxis_backgroundcolor="#292b30",
+            zaxis_gridcolor="rgba(191,191,191,0.12)",
+            zaxis_linecolor="rgba(191,191,191,0.24)",
+        )
+        out.update_geos(
+            bgcolor="#22242a",
+            landcolor="#3a3b40",
+            lakecolor="#22242a",
+            oceancolor="#1f2020",
+            coastlinecolor="rgba(191,191,191,0.28)",
+            subunitcolor="rgba(191,191,191,0.18)",
+            showland=True,
+            showlakes=True,
+            showocean=True,
+        )
+        out.update_ternaries(
+            bgcolor="#292b30",
+            aaxis_gridcolor="rgba(191,191,191,0.12)",
+            aaxis_linecolor="rgba(191,191,191,0.24)",
+            aaxis_tickfont_color="#bfbfbf",
+            baxis_gridcolor="rgba(191,191,191,0.12)",
+            baxis_linecolor="rgba(191,191,191,0.24)",
+            baxis_tickfont_color="#bfbfbf",
+            caxis_gridcolor="rgba(191,191,191,0.12)",
+            caxis_linecolor="rgba(191,191,191,0.24)",
+            caxis_tickfont_color="#bfbfbf",
+        )
+        out.update_mapboxes(
+            style="carto-darkmatter",
+        )
+        out.update_maps(
+            style="carto-darkmatter",
+        )
+        out.update_coloraxes(
+            colorbar_bgcolor="rgba(41,43,48,0.88)",
+            colorbar_bordercolor="rgba(191,191,191,0.18)",
+            colorbar_borderwidth=1,
+            colorbar_tickfont_color="#bfbfbf",
+            colorbar_title_font_color="#fefefe",
+            colorbar_outlinewidth=0,
+        )
         out.update_annotations(font=dict(color="#bfbfbf"))
         for trace in out.data:
             colorbar = getattr(trace, "colorbar", None)
@@ -1793,6 +1887,16 @@ def _apply_dark_plotly_layout(fig: Any) -> Any:
                     colorbar.tickfont = dict(color="#bfbfbf")
                     colorbar.title.font = dict(color="#fefefe")
                     colorbar.outlinewidth = 0
+                except Exception:
+                    pass
+            marker = getattr(trace, "marker", None)
+            marker_colorbar = getattr(marker, "colorbar", None) if marker is not None else None
+            if marker_colorbar is not None:
+                try:
+                    marker_colorbar.tickfont = dict(color="#bfbfbf")
+                    marker_colorbar.title.font = dict(color="#fefefe")
+                    marker_colorbar.outlinewidth = 0
+                    marker_colorbar.bgcolor = "rgba(41,43,48,0.88)"
                 except Exception:
                     pass
         return out
@@ -3508,7 +3612,40 @@ def _folium_default_tiles() -> str:
 
 def _render_folium_map(map_obj: folium.Map, *, height: int) -> None:
     """Render Folium's full Leaflet document without its notebook trust wrapper."""
-    components.html(map_obj.get_root().render(), height=int(height), scrolling=False)
+    map_html = map_obj.get_root().render()
+    if bool(st.session_state.get("ui_dark_mode", False)):
+        dark_leaflet_css = """
+        <style>
+        html, body { background:#22242a !important; color:#bfbfbf !important; }
+        .leaflet-container { background:#22242a !important; }
+        .leaflet-control,
+        .leaflet-control a,
+        .leaflet-bar a {
+            background:#3a3b40 !important;
+            color:#fefefe !important;
+            border-color:rgba(191,191,191,.32) !important;
+        }
+        .leaflet-control a:hover,
+        .leaflet-bar a:hover { background:#4a4b50 !important; }
+        .leaflet-popup-content-wrapper,
+        .leaflet-popup-tip {
+            background:#3a3b40 !important;
+            color:#fefefe !important;
+        }
+        .leaflet-tooltip {
+            background:#3a3b40 !important;
+            color:#fefefe !important;
+            border-color:rgba(191,191,191,.32) !important;
+        }
+        .leaflet-control-attribution {
+            background:rgba(34,36,42,.88) !important;
+            color:#bfbfbf !important;
+        }
+        .leaflet-control-attribution a { color:#fefefe !important; }
+        </style>
+        """
+        map_html = map_html.replace("</head>", f"{dark_leaflet_css}</head>", 1)
+    components.html(map_html, height=int(height), scrolling=False)
 
 
 def _scroll_to_top_on_navigation(section: str, subpage: str) -> None:
