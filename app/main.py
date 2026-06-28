@@ -3069,6 +3069,123 @@ def _jira_default_issue_type() -> dict[str, str]:
     }
 
 
+def _jira_cloud_id(base_url: str) -> str | None:
+    configured = _secret_value("JIRA_CLOUD_ID")
+    if configured:
+        return str(configured).strip()
+    try:
+        response = requests.get(
+            f"{base_url.rstrip('/')}/_edge/tenant_info",
+            headers={"Accept": "application/json"},
+            timeout=15,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        cloud_id = payload.get("cloudId") or payload.get("id")
+        return str(cloud_id).strip() if cloud_id else None
+    except Exception:
+        return None
+
+
+def _jira_request_candidates(
+    base_url: str,
+    email: str,
+    api_token: str,
+) -> list[dict[str, Any]]:
+    candidates: list[dict[str, Any]] = [
+        {
+            "label": "site/basic",
+            "api_base": f"{base_url.rstrip('/')}/rest/api/3",
+            "auth": (email, api_token),
+            "headers": {},
+        }
+    ]
+    cloud_id = _jira_cloud_id(base_url)
+    if cloud_id:
+        gateway_base = f"https://api.atlassian.com/ex/jira/{cloud_id}/rest/api/3"
+        candidates.extend(
+            [
+                {
+                    "label": "gateway/basic",
+                    "api_base": gateway_base,
+                    "auth": (email, api_token),
+                    "headers": {},
+                },
+                {
+                    "label": "gateway/bearer",
+                    "api_base": gateway_base,
+                    "auth": None,
+                    "headers": {"Authorization": f"Bearer {api_token}"},
+                },
+            ]
+        )
+    return candidates
+
+
+def _jira_project_issue_type(
+    candidate: dict[str, Any],
+    project_key: str,
+    preferred_name: str,
+) -> dict[str, str] | None:
+    try:
+        response = requests.get(
+            f"{candidate['api_base']}/issue/createmeta/{project_key}/issuetypes",
+            auth=candidate["auth"],
+            headers={
+                "Accept": "application/json",
+                **dict(candidate["headers"]),
+            },
+            timeout=20,
+        )
+        response.raise_for_status()
+        issue_types = response.json().get("issueTypes", [])
+    except Exception:
+        return None
+    if not isinstance(issue_types, list):
+        return None
+
+    preferred = str(preferred_name).strip().casefold()
+    aliases = {preferred}
+    if preferred in {"task", "tâche", "tache"}:
+        aliases.update({"task", "tâche", "tache"})
+    elif preferred in {"bug", "bogue"}:
+        aliases.update({"bug", "bogue"})
+
+    usable = [item for item in issue_types if isinstance(item, dict) and not bool(item.get("subtask"))]
+    selected = next(
+        (
+            item
+            for item in usable
+            if str(item.get("name") or "").strip().casefold() in aliases
+        ),
+        None,
+    )
+    if selected is None and preferred not in {"bug", "bogue"}:
+        selected = next(
+            (
+                item
+                for item in usable
+                if str(item.get("name") or "").strip().casefold()
+                in {"story", "histoire", "improvement", "amélioration", "amelioration"}
+            ),
+            None,
+        )
+    if selected is None and usable:
+        selected = usable[0]
+    issue_type_id = str((selected or {}).get("id") or "").strip()
+    return {"id": issue_type_id} if issue_type_id else None
+
+
+def _jira_response_detail(response: requests.Response, candidate_label: str) -> str:
+    detail = ""
+    try:
+        detail = response.text[:900].strip()
+    except Exception:
+        pass
+    suffix = f" · {detail}" if detail else ""
+    return f"{candidate_label}: HTTP {response.status_code}{suffix}"
+
+
 def _create_feedback_jira_issue(
     feedback: dict[str, Any],
 ) -> tuple[bool, str, str | None]:
@@ -3101,45 +3218,54 @@ def _create_feedback_jira_issue(
             ],
         }
     }
-    try:
-        response = requests.post(
-            f"{base_url}/rest/api/3/issue",
-            auth=(email, api_token),
-            headers={"Accept": "application/json", "Content-Type": "application/json"},
-            json=payload,
-            timeout=25,
-        )
-        if (
-            response.status_code == 400
-            and feedback.get("category") == "Bug / dysfonctionnement"
-            and payload["fields"]["issuetype"] != _jira_default_issue_type()
-        ):
-            payload["fields"]["issuetype"] = _jira_default_issue_type()
+    errors: list[str] = []
+    preferred_issue_type = str(payload["fields"]["issuetype"].get("name") or "")
+    for candidate in _jira_request_candidates(base_url, email, api_token):
+        candidate_payload = json.loads(json.dumps(payload))
+        try:
             response = requests.post(
-                f"{base_url}/rest/api/3/issue",
-                auth=(email, api_token),
+                f"{candidate['api_base']}/issue",
+                auth=candidate["auth"],
                 headers={
                     "Accept": "application/json",
                     "Content-Type": "application/json",
+                    **dict(candidate["headers"]),
                 },
-                json=payload,
+                json=candidate_payload,
                 timeout=25,
             )
-        response.raise_for_status()
-        response_data = response.json()
-        issue_key = str(response_data.get("key") or "")
-        issue_url = f"{base_url}/browse/{issue_key}" if issue_key else None
-        return True, f"Ticket Jira {issue_key or 'créé'}.", issue_url
-    except requests.HTTPError as exc:
-        detail = ""
-        try:
-            detail = response.text[:900]
-        except Exception:
-            pass
-        suffix = f" · {detail}" if detail else ""
-        return False, f"Création Jira impossible: {exc}{suffix}", None
-    except Exception as exc:
-        return False, f"Création Jira impossible: {exc}", None
+            if response.status_code == 400:
+                detected_type = _jira_project_issue_type(
+                    candidate,
+                    project_key,
+                    preferred_issue_type,
+                )
+                if detected_type and candidate_payload["fields"]["issuetype"] != detected_type:
+                    candidate_payload["fields"]["issuetype"] = detected_type
+                    response = requests.post(
+                        f"{candidate['api_base']}/issue",
+                        auth=candidate["auth"],
+                        headers={
+                            "Accept": "application/json",
+                            "Content-Type": "application/json",
+                            **dict(candidate["headers"]),
+                        },
+                        json=candidate_payload,
+                        timeout=25,
+                    )
+            if response.ok:
+                response_data = response.json()
+                issue_key = str(response_data.get("key") or "")
+                issue_url = f"{base_url}/browse/{issue_key}" if issue_key else None
+                return True, f"Ticket Jira {issue_key or 'créé'}.", issue_url
+            errors.append(_jira_response_detail(response, str(candidate["label"])))
+            if response.status_code not in {401, 403, 404}:
+                break
+        except Exception as exc:
+            errors.append(f"{candidate['label']}: {exc}")
+
+    detail = " | ".join(errors[-3:]) if errors else "aucune réponse exploitable"
+    return False, f"Création Jira impossible: {detail}", None
 
 
 def _feedback_mailto_link(feedback: dict[str, Any]) -> str:
@@ -3361,6 +3487,7 @@ def _render_feedback_fields() -> None:
                 "L'email a été transmis, mais le ticket Jira n'a pas pu "
                 "être créé automatiquement."
             )
+            st.caption(jira_status)
     else:
         st.error("Le retour n'a pas pu être transmis automatiquement.")
         st.caption(
