@@ -1432,17 +1432,35 @@ def _activate_sidebar_section(section_name: str, group_name: str | None = None) 
     st.session_state["_explicit_sidebar_navigation"] = True
     st.session_state["menu_section"] = section_name
     st.session_state["sidebar_open_nav_group"] = group_name
+    subpages = SECTIONS.get(section_name, [])
+    saved_by_section = st.session_state.get("subpage_by_section", {})
+    saved_subpage = saved_by_section.get(section_name) if isinstance(saved_by_section, dict) else None
+    selected_subpage = saved_subpage if saved_subpage in subpages else (subpages[0] if subpages else "")
+    if selected_subpage:
+        st.session_state[f"submenu_{section_name}"] = selected_subpage
+        st.session_state["_stable_menu_section"] = section_name
+        st.session_state["_stable_subpage"] = selected_subpage
 
 
-def _mark_explicit_subpage_navigation() -> None:
+def _mark_explicit_subpage_navigation(section_name: str) -> None:
     st.session_state["_explicit_subpage_navigation"] = True
+    subpages = SECTIONS.get(section_name, [])
+    selected_subpage = st.session_state.get(f"submenu_{section_name}")
+    if selected_subpage not in subpages:
+        return
+    st.session_state["menu_section"] = section_name
+    st.session_state.setdefault("subpage_by_section", {})
+    st.session_state["subpage_by_section"][section_name] = selected_subpage
+    st.session_state["_stable_menu_section"] = section_name
+    st.session_state["_stable_subpage"] = selected_subpage
 
 
 def _restore_navigation_after_non_nav_rerun(sections: list[str]) -> None:
-    if st.session_state.pop("_explicit_sidebar_navigation", False):
-        return
-    if st.session_state.pop("_explicit_subpage_navigation", False):
-        return
+    # Explicit callbacks update the stable target before the script reruns.
+    # Pop their markers, then restore from that authoritative target exactly
+    # as for any filter-triggered rerun.
+    st.session_state.pop("_explicit_sidebar_navigation", False)
+    st.session_state.pop("_explicit_subpage_navigation", False)
     if st.session_state.get("pending_navigation") is not None:
         return
     stable_section = st.session_state.get("_stable_menu_section")
@@ -3475,10 +3493,23 @@ def _render_feedback_fields() -> None:
     if email_ok or jira_ok:
         st.session_state["feedback_last_submit_at"] = now
         st.success("Merci, votre retour a été transmis.")
-        if email_ok:
+        if email_ok and jira_ok:
+            feedback_email = (
+                _secret_value(
+                    "FEEDBACK_TO_EMAIL",
+                    "CONTACT_TO_EMAIL",
+                    "SMTP_TO_EMAIL",
+                    default=CONTACT_OWNER_EMAIL,
+                )
+                or CONTACT_OWNER_EMAIL
+            )
+            st.caption(
+                f"Email envoyé à {feedback_email} et Ticket Jira généré."
+            )
+        elif email_ok:
             st.caption(email_status)
-        if jira_ok:
-            st.caption(jira_status)
+        elif jira_ok:
+            st.caption("Ticket Jira généré.")
         if not email_ok:
             st.warning(
                 "Le ticket Jira a été créé, mais la copie email n'a pas pu "
@@ -53577,6 +53608,7 @@ def main() -> None:
         key=subpage_key,
         format_func=_display_subpage_label,
         on_change=_mark_explicit_subpage_navigation,
+        args=(section,),
     )
     st.session_state["subpage_by_section"][section] = subpage
     _remember_rendered_navigation(section, subpage)
