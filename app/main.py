@@ -1000,8 +1000,27 @@ def _apply_runtime_theme(dark_mode: bool) -> None:
             color: var(--dm-text-soft) !important;
             border-color: var(--dm-border) !important;
         }
-        [data-testid="stDataFrame"] canvas {
-            filter: invert(0.82) hue-rotate(180deg);
+        [data-testid="stDataFrame"] canvas,
+        [data-testid="stDataFrame"] canvas[data-testid="data-grid-canvas"],
+        [data-testid="stDataFrame"] .stDataFrameGlideDataEditor canvas,
+        [data-testid="stDataFrame"] .dvn-scroller canvas {
+            filter: invert(0.82) hue-rotate(180deg) !important;
+        }
+        [data-testid="stDataFrameResizable"] {
+            background: var(--dm-bg-1) !important;
+            border-color: var(--dm-border-strong) !important;
+            color-scheme: dark;
+        }
+        [data-testid="stDataFrame"] .dvn-underlay,
+        [data-testid="stDataFrame"] .dvn-scroller {
+            background: transparent !important;
+        }
+        [data-testid="stDataFrame"] [data-testid="stElementToolbar"],
+        [data-testid="stDataFrame"] [data-testid="stElementToolbarButtonContainer"],
+        [data-testid="stDataFrame"] [data-testid="stBaseButton-elementToolbar"] {
+            color: var(--dm-text-soft) !important;
+            background: var(--dm-bg-1) !important;
+            border-color: var(--dm-border) !important;
         }
         [data-testid="stDataFrame"] input {
             background: var(--dm-bg-2) !important;
@@ -1029,6 +1048,34 @@ def _apply_runtime_theme(dark_mode: bool) -> None:
         }
         [data-testid="stTable"] tr:nth-child(even) td,
         .stTable tr:nth-child(even) td {
+            background: var(--dm-bg-1) !important;
+        }
+        [data-testid="stMarkdownContainer"] table,
+        [data-testid="stHtml"] table,
+        table.dataframe {
+            width: 100%;
+            background: var(--dm-bg-1) !important;
+            color: var(--dm-text-soft) !important;
+            border-color: var(--dm-border-strong) !important;
+            border-collapse: collapse;
+        }
+        [data-testid="stMarkdownContainer"] table th,
+        [data-testid="stHtml"] table th,
+        table.dataframe th {
+            background: var(--dm-panel) !important;
+            color: var(--dm-text) !important;
+            border-color: var(--dm-border) !important;
+        }
+        [data-testid="stMarkdownContainer"] table td,
+        [data-testid="stHtml"] table td,
+        table.dataframe td {
+            background: var(--dm-panel-inner) !important;
+            color: var(--dm-text-soft) !important;
+            border-color: var(--dm-border) !important;
+        }
+        [data-testid="stMarkdownContainer"] table tr:nth-child(even) td,
+        [data-testid="stHtml"] table tr:nth-child(even) td,
+        table.dataframe tr:nth-child(even) td {
             background: var(--dm-bg-1) !important;
         }
         [data-testid="stAppViewContainer"] [style*="background:#f4f8fa"],
