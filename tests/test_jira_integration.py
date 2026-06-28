@@ -46,7 +46,7 @@ def test_jira_scoped_gateway_fallback(monkeypatch) -> None:
         "JIRA_BASE_URL": "https://portfolio-test.atlassian.net",
         "JIRA_EMAIL": "owner@example.com",
         "JIRA_API_TOKEN": "secret-token",
-        "JIRA_PROJECT_KEY": "PORT",
+        "JIRA_PROJECT_KEY": "scrum",
         "JIRA_DEFAULT_ISSUE_TYPE": "Task",
     }
     monkeypatch.setattr(
@@ -67,19 +67,27 @@ def test_jira_scoped_gateway_fallback(monkeypatch) -> None:
     )
     called_urls: list[str] = []
 
-    def fake_post(url: str, **_kwargs):
+    submitted_projects: list[str] = []
+
+    def fake_post(url: str, **kwargs):
         called_urls.append(url)
+        submitted_projects.append(kwargs["json"]["fields"]["project"]["key"])
         if url.startswith("https://portfolio-test.atlassian.net"):
-            return _FakeResponse(401, {}, '{"message":"Unauthorized"}')
-        return _FakeResponse(201, {"key": "PORT-42"})
+            return _FakeResponse(
+                400,
+                {},
+                '{"errors":{"project":"The target project does not exist"}}',
+            )
+        return _FakeResponse(201, {"key": "SCRUM-42"})
 
     monkeypatch.setattr(main.requests, "post", fake_post)
 
     ok, status, issue_url = main._create_feedback_jira_issue(_feedback())
 
     assert ok is True
-    assert status == "Ticket Jira PORT-42."
-    assert issue_url == "https://portfolio-test.atlassian.net/browse/PORT-42"
+    assert status == "Ticket Jira SCRUM-42."
+    assert issue_url == "https://portfolio-test.atlassian.net/browse/SCRUM-42"
+    assert submitted_projects == ["SCRUM", "SCRUM"]
     assert any("/ex/jira/cloud-123/rest/api/3/issue" in url for url in called_urls)
 
 

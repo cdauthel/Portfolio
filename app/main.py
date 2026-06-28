@@ -3194,7 +3194,7 @@ def _create_feedback_jira_issue(
     base_url = str(_secret_value("JIRA_BASE_URL") or "").rstrip("/")
     email = str(_secret_value("JIRA_EMAIL") or "")
     api_token = str(_secret_value("JIRA_API_TOKEN") or "")
-    project_key = str(_secret_value("JIRA_PROJECT_KEY") or "")
+    project_key = str(_secret_value("JIRA_PROJECT_KEY") or "").strip().upper()
     category_slug = re.sub(
         r"[^a-z0-9]+",
         "-",
@@ -3259,7 +3259,9 @@ def _create_feedback_jira_issue(
                 issue_url = f"{base_url}/browse/{issue_key}" if issue_key else None
                 return True, f"Ticket Jira {issue_key or 'créé'}.", issue_url
             errors.append(_jira_response_detail(response, str(candidate["label"])))
-            if response.status_code not in {401, 403, 404}:
+            # A 400 from the site URL can mean that a scoped token must use
+            # the Atlassian API gateway. No issue was created, so retrying is safe.
+            if response.status_code not in {400, 401, 403, 404}:
                 break
         except Exception as exc:
             errors.append(f"{candidate['label']}: {exc}")
