@@ -1131,6 +1131,15 @@ def _apply_runtime_theme(dark_mode: bool) -> None:
         [data-testid="stPlotlyChart"] .modebar-btn path {
             fill: var(--dm-text-soft) !important;
         }
+        [data-testid="stPlotlyChart"] g.legend text.legendtext,
+        [data-testid="stPlotlyChart"] g.legend text.legendtitletext {
+            font-size: 9px !important;
+        }
+        [data-testid="stPlotlyChart"] g.legend rect.bg {
+            fill: rgba(41, 43, 48, 0.94) !important;
+            stroke: var(--dm-border) !important;
+            stroke-width: 1px !important;
+        }
         [data-testid="stHtml"] svg {
             background: var(--dm-bg-1) !important;
             color-scheme: dark;
@@ -1882,7 +1891,11 @@ def _apply_dark_plotly_layout(fig: Any) -> Any:
                 bgcolor="rgba(41,43,48,0.88)",
                 bordercolor="rgba(191,191,191,0.18)",
                 borderwidth=1,
-                font=dict(color="#bfbfbf"),
+                font=dict(color="#bfbfbf", size=9),
+                title=dict(font=dict(color="#fefefe", size=9)),
+                itemsizing="constant",
+                itemwidth=30,
+                tracegroupgap=3,
             ),
             polar=dict(
                 bgcolor="#292b30",
@@ -1944,6 +1957,60 @@ def _apply_dark_plotly_layout(fig: Any) -> Any:
             tickfont=dict(color="#bfbfbf"),
             title_font=dict(color="#fefefe"),
         )
+        legend_traces = [
+            trace
+            for trace in out.data
+            if getattr(trace, "showlegend", None) is not False
+            and bool(str(getattr(trace, "name", "") or "").strip())
+        ]
+        legend_is_visible = (
+            out.layout.showlegend is not False
+            and (
+                len(legend_traces) >= 2
+                or any(getattr(trace, "showlegend", None) is True for trace in legend_traces)
+            )
+        )
+        if legend_is_visible:
+            legend = out.layout.legend
+            orientation = str(legend.orientation or "v").lower()
+            current_margin = out.layout.margin
+            margin_left = int(current_margin.l or 0)
+            margin_right = int(current_margin.r or 0)
+            margin_top = int(current_margin.t or 0)
+            margin_bottom = int(current_margin.b or 0)
+            longest_label = max(
+                (len(str(getattr(trace, "name", "") or "")) for trace in legend_traces),
+                default=12,
+            )
+            if orientation == "h":
+                legend.x = 0.0
+                legend.xanchor = "left"
+                if legend.y is not None and float(legend.y) < 0:
+                    legend.y = min(float(legend.y), -0.16)
+                    legend.yanchor = "top"
+                    margin_bottom = max(margin_bottom, 82)
+                else:
+                    legend.y = max(float(legend.y or 1.02), 1.02)
+                    legend.yanchor = "bottom"
+                    margin_top = max(margin_top, 92)
+            else:
+                legend.orientation = "v"
+                legend.x = 1.02
+                legend.xanchor = "left"
+                legend.y = 1.0
+                legend.yanchor = "top"
+                margin_right = max(
+                    margin_right,
+                    min(170, max(105, 48 + longest_label * 5)),
+                )
+            out.update_layout(
+                margin=dict(
+                    l=margin_left,
+                    r=margin_right,
+                    t=margin_top,
+                    b=margin_bottom,
+                )
+            )
         out.update_polars(
             bgcolor="#292b30",
             angularaxis_gridcolor="rgba(191,191,191,0.12)",
@@ -2054,9 +2121,41 @@ def _apply_dark_plotly_layout(fig: Any) -> Any:
 def _install_dark_plotly_renderer() -> None:
     """Apply the active dark theme to every Plotly chart rendered by Streamlit."""
     try:
+        import plotly.io as pio
         from streamlit.delta_generator import DeltaGenerator
     except Exception:
         return
+
+    try:
+        pio.templates["plotly_dark"].layout.legend.update(
+            font={"color": "#bfbfbf", "size": 9},
+            title={"font": {"color": "#fefefe", "size": 9}},
+            itemsizing="constant",
+            itemwidth=30,
+            tracegroupgap=3,
+        )
+    except Exception:
+        pass
+
+    module_current = getattr(st, "plotly_chart", None)
+    if callable(module_current) and not bool(
+        getattr(module_current, "_portfolio_dark_chart_renderer", False)
+    ):
+        module_original = module_current
+
+        def streamlit_plotly_chart(*args: Any, **kwargs: Any) -> Any:
+            updated_args = list(args)
+            if updated_args:
+                updated_args[0] = _apply_dark_plotly_layout(updated_args[0])
+            elif "figure_or_data" in kwargs:
+                kwargs = dict(kwargs)
+                kwargs["figure_or_data"] = _apply_dark_plotly_layout(
+                    kwargs["figure_or_data"]
+                )
+            return module_original(*updated_args, **kwargs)
+
+        setattr(streamlit_plotly_chart, "_portfolio_dark_chart_renderer", True)
+        setattr(st, "plotly_chart", streamlit_plotly_chart)
 
     current = getattr(DeltaGenerator, "plotly_chart", None)
     if not callable(current) or bool(getattr(current, "_portfolio_dark_chart_renderer", False)):

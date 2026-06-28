@@ -71,6 +71,42 @@ def test_generated_chart_controls_and_shapes_follow_dark_theme(monkeypatch) -> N
     assert themed.layout.shapes[0].fillcolor == "#3a3b40"
 
 
+def test_dark_theme_compacts_and_moves_visible_legends_outside_plot(monkeypatch) -> None:
+    monkeypatch.setattr(main.st, "session_state", {"ui_dark_mode": True})
+    figure = go.Figure(
+        [
+            go.Scatter(x=[1, 2], y=[1, 2], name="Série observée"),
+            go.Scatter(x=[1, 2], y=[2, 1], name="Série prédite"),
+        ]
+    )
+    figure.update_layout(legend={"x": 0.98, "y": 0.98})
+
+    themed = main._apply_dark_plotly_layout(figure)
+
+    assert themed.layout.legend.font.size == 9
+    assert themed.layout.legend.x == 1.02
+    assert themed.layout.legend.xanchor == "left"
+    assert themed.layout.legend.y == 1.0
+    assert themed.layout.margin.r >= 105
+
+
+def test_dark_theme_reserves_space_for_horizontal_legends(monkeypatch) -> None:
+    monkeypatch.setattr(main.st, "session_state", {"ui_dark_mode": True})
+    figure = go.Figure(
+        [
+            go.Bar(x=["A"], y=[1], name="Groupe A"),
+            go.Bar(x=["A"], y=[2], name="Groupe B"),
+        ]
+    )
+    figure.update_layout(legend={"orientation": "h", "y": 1.02})
+
+    themed = main._apply_dark_plotly_layout(figure)
+
+    assert themed.layout.legend.orientation == "h"
+    assert themed.layout.legend.yanchor == "bottom"
+    assert themed.layout.margin.t >= 92
+
+
 def test_generated_chart_template_stays_light_in_light_mode(monkeypatch) -> None:
     monkeypatch.setattr(main.st, "session_state", {"ui_dark_mode": False})
 
