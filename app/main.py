@@ -1173,6 +1173,9 @@ def _apply_ui_layout_preferences() -> None:
         section[data-testid="stSidebar"] > div:first-child {{
             padding-top: 0.6rem;
         }}
+        .st-key-contact_message {{
+            margin-top: -0.55rem;
+        }}
         </style>
         """,
         unsafe_allow_html=True,
@@ -2314,6 +2317,8 @@ CONTACT_TIMEZONES = [
 
 def _close_contact_dialog() -> None:
     st.session_state["contact_dialog_open"] = False
+    st.session_state.pop("_contact_default_date_initialized", None)
+    st.session_state.pop("contact_date", None)
 
 
 def _secret_value(*names: str, default: str | None = None) -> str | None:
@@ -2512,7 +2517,11 @@ def _parse_google_calendar_datetime(value: str, timezone_name: str) -> dt.dateti
     return parsed.astimezone(tz)
 
 
-def _contact_calendar_busy_periods(selected_date: dt.date, timezone_name: str) -> tuple[list[tuple[dt.datetime, dt.datetime]], str | None]:
+def _contact_calendar_busy_periods(
+    selected_date: dt.date,
+    timezone_name: str,
+    end_date: dt.date | None = None,
+) -> tuple[list[tuple[dt.datetime, dt.datetime]], str | None]:
     if not _contact_calendar_configured():
         return [], "Google Calendar non configuré."
     access_token, token_error = _google_calendar_access_token()
@@ -2521,7 +2530,8 @@ def _contact_calendar_busy_periods(selected_date: dt.date, timezone_name: str) -
 
     tz = ZoneInfo(str(timezone_name))
     start_at = dt.datetime.combine(selected_date, dt.time(0, 0)).replace(tzinfo=tz)
-    end_at = start_at + dt.timedelta(days=1)
+    last_date = max(end_date or selected_date, selected_date)
+    end_at = dt.datetime.combine(last_date + dt.timedelta(days=1), dt.time(0, 0)).replace(tzinfo=tz)
     calendar_id = _secret_value("GOOGLE_CALENDAR_ID", default="primary") or "primary"
     try:
         response = requests.post(
@@ -2564,6 +2574,27 @@ def _contact_calendar_busy_periods(selected_date: dt.date, timezone_name: str) -
     return busy_periods, None
 
 
+def _contact_slots_outside_busy_periods(
+    selected_date: dt.date,
+    duration_min: int,
+    timezone_name: str,
+    slots: list[dt.time],
+    busy_periods: list[tuple[dt.datetime, dt.datetime]],
+) -> list[dt.time]:
+    tz = ZoneInfo(str(timezone_name))
+    now_local = dt.datetime.now(tz)
+    available: list[dt.time] = []
+    for slot in slots:
+        slot_start = dt.datetime.combine(selected_date, slot).replace(tzinfo=tz)
+        slot_end = slot_start + dt.timedelta(minutes=int(duration_min))
+        if slot_start <= now_local:
+            continue
+        overlaps_busy = any(slot_start < busy_end and slot_end > busy_start for busy_start, busy_end in busy_periods)
+        if not overlaps_busy:
+            available.append(slot)
+    return available
+
+
 def _filter_contact_available_slots(
     selected_date: dt.date,
     duration_min: int,
@@ -2573,15 +2604,13 @@ def _filter_contact_available_slots(
     busy_periods, busy_error = _contact_calendar_busy_periods(selected_date, timezone_name)
     if busy_error:
         return slots, busy_error
-    tz = ZoneInfo(str(timezone_name))
-    available: list[dt.time] = []
-    for slot in slots:
-        slot_start = dt.datetime.combine(selected_date, slot).replace(tzinfo=tz)
-        slot_end = slot_start + dt.timedelta(minutes=int(duration_min))
-        overlaps_busy = any(slot_start < busy_end and slot_end > busy_start for busy_start, busy_end in busy_periods)
-        if not overlaps_busy:
-            available.append(slot)
-    return available, None
+    return _contact_slots_outside_busy_periods(
+        selected_date,
+        duration_min,
+        timezone_name,
+        slots,
+        busy_periods,
+    ), None
 
 
 def _contact_time_slots(duration_min: int) -> list[dt.time]:
@@ -2594,6 +2623,34 @@ def _contact_time_slots(duration_min: int) -> list[dt.time]:
         slots.append(current.time())
         current += dt.timedelta(minutes=step)
     return slots
+
+
+def _nearest_contact_available_date(
+    duration_min: int,
+    timezone_name: str,
+    *,
+    horizon_days: int = 90,
+) -> tuple[dt.date, str | None]:
+    tz = ZoneInfo(str(timezone_name))
+    start_date = dt.datetime.now(tz).date()
+    end_date = start_date + dt.timedelta(days=max(int(horizon_days), 1))
+    busy_periods, busy_error = _contact_calendar_busy_periods(start_date, timezone_name, end_date)
+    if busy_error:
+        return start_date + dt.timedelta(days=1), busy_error
+
+    slots = _contact_time_slots(duration_min)
+    for day_offset in range((end_date - start_date).days + 1):
+        candidate = start_date + dt.timedelta(days=day_offset)
+        available = _contact_slots_outside_busy_periods(
+            candidate,
+            duration_min,
+            timezone_name,
+            slots,
+            busy_periods,
+        )
+        if available:
+            return candidate, None
+    return start_date, "Aucun créneau libre trouvé dans les 90 prochains jours."
 
 
 def _contact_mailto_link(contact: dict[str, Any]) -> str:
@@ -2703,10 +2760,24 @@ def _render_contact_fields() -> None:
                         disabled=meeting_kind == "Mail",
                     )
                 with s2:
+                    minimum_contact_date = max(
+                        dt.date.today(),
+                        dt.datetime.now(ZoneInfo(str(timezone_name))).date(),
+                    )
+                    if not bool(st.session_state.get("_contact_default_date_initialized", False)):
+                        default_duration = int(st.session_state.get("contact_duration_min", 30) or 30)
+                        if meeting_kind == "Mail":
+                            nearest_date = minimum_contact_date + dt.timedelta(days=1)
+                        else:
+                            nearest_date, _ = _nearest_contact_available_date(
+                                default_duration,
+                                str(timezone_name),
+                            )
+                        st.session_state["contact_date"] = max(nearest_date, minimum_contact_date)
+                        st.session_state["_contact_default_date_initialized"] = True
                     requested_date = st.date_input(
                         "Date",
-                        value=dt.date.today() + dt.timedelta(days=1),
-                        min_value=dt.date.today(),
+                        min_value=minimum_contact_date,
                         key="contact_date",
                         disabled=meeting_kind == "Mail",
                     )
@@ -53151,6 +53222,8 @@ def main() -> None:
     ):
         st.session_state["ui_settings_open"] = False
         st.session_state["feedback_dialog_open"] = False
+        st.session_state.pop("_contact_default_date_initialized", None)
+        st.session_state.pop("contact_date", None)
         st.session_state["contact_dialog_open"] = True
     if feedback_col.button(
         "💬 Avis",
