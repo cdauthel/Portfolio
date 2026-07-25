@@ -711,6 +711,30 @@ st.markdown(
     div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Sous-menu"] [role="radio"] > div:first-child {
         display: none !important;
     }
+    div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Sous-menu"] input[type="radio"],
+    div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Sous-menu"] svg {
+        display: none !important;
+        width: 0 !important;
+        min-width: 0 !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+    div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Sous-menu"] label[data-baseweb="radio"]::before,
+    div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Sous-menu"] label[data-baseweb="radio"]::after,
+    div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Sous-menu"] [role="radio"]::before,
+    div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Sous-menu"] [role="radio"]::after {
+        content: none !important;
+        display: none !important;
+    }
+    div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Sous-menu"] [data-testid="stMarkdownContainer"] {
+        display: block !important;
+        width: auto !important;
+        min-width: 0 !important;
+        opacity: 1 !important;
+    }
     div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Sous-menu"] label[data-baseweb="radio"]:hover,
     div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Sous-menu"] [role="radio"]:hover {
         border-color: #005f73;
