@@ -680,50 +680,56 @@ st.markdown(
         border-left-color: #005f73;
         background-color: #f2f7f9;
     }
-    /* Sous-menu horizontal (radio) sans cercle + trait sous onglet actif */
+    /* Sous-menu horizontal: boutons encadrés comme la navigation latérale */
     div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Sous-menu"] {
-        gap: 1rem;
-        align-items: flex-end;
+        gap: 0.45rem;
+        align-items: center;
+        flex-wrap: wrap;
+        border-bottom: 1px solid rgba(0, 95, 115, 0.16);
+        padding: 0 0 0.65rem 0;
+        margin: 0.1rem 0 1rem 0;
     }
     div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Sous-menu"] label[data-baseweb="radio"] {
-        border-bottom: 2px solid transparent;
-        padding-bottom: 0.3rem;
-        min-height: 2rem;
-        position: relative;
+        border: 1px solid rgba(0, 95, 115, 0.30);
+        border-radius: 7px;
+        padding: 0.38rem 0.72rem;
+        min-height: 2.05rem;
+        background: rgba(0, 95, 115, 0.035);
+        color: #24343a;
+        transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
     }
     div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Sous-menu"] [role="radio"] {
-        border-bottom: 2px solid transparent;
-        padding-bottom: 0.3rem;
-        min-height: 2rem;
-        position: relative;
+        border: 1px solid rgba(0, 95, 115, 0.30);
+        border-radius: 7px;
+        padding: 0.38rem 0.72rem;
+        min-height: 2.05rem;
+        background: rgba(0, 95, 115, 0.035);
+        color: #24343a;
+        transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
     }
     div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Sous-menu"] label[data-baseweb="radio"] > div:first-child,
     div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Sous-menu"] [role="radio"] > div:first-child {
         display: none !important;
     }
-    div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Sous-menu"] label[data-baseweb="radio"]:has(input:checked) {
-        border-bottom-color: transparent;
+    div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Sous-menu"] label[data-baseweb="radio"]:hover,
+    div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Sous-menu"] [role="radio"]:hover {
+        border-color: #005f73;
+        background-color: #eff7fa;
+        color: #005f73;
     }
-    div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Sous-menu"] label[data-baseweb="radio"]:has(input:checked)::after {
-        content: "";
-        position: absolute;
-        left: 50%;
-        transform: translateX(-50%);
-        bottom: 0;
-        width: 68%;
-        border-bottom: 2px solid #005f73;
+    div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Sous-menu"] label[data-baseweb="radio"]:has(input:checked) {
+        border-color: #005f73;
+        background-color: rgba(0, 95, 115, 0.11);
+        color: #005f73;
+        font-weight: 650;
+        box-shadow: inset 0 0 0 1px rgba(0, 95, 115, 0.08);
     }
     div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Sous-menu"] [role="radio"][aria-checked="true"] {
-        border-bottom-color: transparent;
-    }
-    div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Sous-menu"] [role="radio"][aria-checked="true"]::after {
-        content: "";
-        position: absolute;
-        left: 50%;
-        transform: translateX(-50%);
-        bottom: 0;
-        width: 68%;
-        border-bottom: 2px solid #005f73;
+        border-color: #005f73;
+        background-color: rgba(0, 95, 115, 0.11);
+        color: #005f73;
+        font-weight: 650;
+        box-shadow: inset 0 0 0 1px rgba(0, 95, 115, 0.08);
     }
     /* Onglets internes Réseaux de neurones: même lecture visuelle que st.tabs */
     div[data-testid="stRadio"]:has(div[role="radiogroup"][aria-label="Réseaux de neurones"]) {
@@ -1206,13 +1212,27 @@ def _apply_runtime_theme(dark_mode: bool) -> None:
             border-left-color: var(--dm-accent);
             background-color: var(--dm-surface-raised);
         }
-        div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Sous-menu"] label[data-baseweb="radio"]:has(input:checked)::after {
-            border-bottom: 3px solid var(--dm-accent-2);
-            box-shadow: 0 1px 0 rgba(254, 254, 254, 0.22);
+        div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Sous-menu"] {
+            border-bottom-color: var(--dm-border) !important;
         }
-        div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Sous-menu"] [role="radio"][aria-checked="true"]::after {
-            border-bottom: 3px solid var(--dm-accent-2);
-            box-shadow: 0 1px 0 rgba(254, 254, 254, 0.22);
+        div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Sous-menu"] label[data-baseweb="radio"],
+        div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Sous-menu"] [role="radio"] {
+            background: var(--dm-panel-inner) !important;
+            border-color: var(--dm-border) !important;
+            color: var(--dm-text-soft) !important;
+        }
+        div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Sous-menu"] label[data-baseweb="radio"]:hover,
+        div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Sous-menu"] [role="radio"]:hover {
+            background: var(--dm-surface-raised) !important;
+            border-color: var(--dm-border-strong) !important;
+            color: var(--dm-text) !important;
+        }
+        div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Sous-menu"] label[data-baseweb="radio"]:has(input:checked),
+        div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Sous-menu"] [role="radio"][aria-checked="true"] {
+            background: var(--dm-surface-raised) !important;
+            border-color: var(--dm-accent-2) !important;
+            color: var(--dm-text) !important;
+            box-shadow: inset 0 0 0 1px rgba(254, 254, 254, 0.18) !important;
         }
         div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Réseaux de neurones"] {
             border-bottom-color: var(--dm-border-strong);
