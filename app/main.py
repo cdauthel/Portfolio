@@ -2176,6 +2176,51 @@ def _install_dark_plotly_renderer() -> None:
     setattr(DeltaGenerator, "plotly_chart", plotly_chart)
 
 
+def _install_widget_session_default_guard() -> None:
+    """Avoid Streamlit warnings when examples prefill widget values."""
+    try:
+        from streamlit.delta_generator import DeltaGenerator
+    except Exception:
+        return
+
+    default_kwargs_by_method = {
+        "checkbox": ("value",),
+        "toggle": ("value",),
+        "slider": ("value",),
+        "select_slider": ("value",),
+        "number_input": ("value",),
+        "date_input": ("value",),
+        "time_input": ("value",),
+        "radio": ("index",),
+        "selectbox": ("index",),
+        "multiselect": ("default",),
+    }
+
+    def _strip_session_backed_default(kwargs: dict[str, Any], default_names: tuple[str, ...]) -> dict[str, Any]:
+        key = kwargs.get("key")
+        if key is None or key not in st.session_state:
+            return kwargs
+        clean_kwargs = dict(kwargs)
+        for default_name in default_names:
+            clean_kwargs.pop(default_name, None)
+        return clean_kwargs
+
+    def _patch_method(owner: Any, method_name: str, default_names: tuple[str, ...]) -> None:
+        current = getattr(owner, method_name, None)
+        if not callable(current) or bool(getattr(current, "_portfolio_widget_default_guard", False)):
+            return
+
+        def wrapped(*args: Any, **kwargs: Any) -> Any:
+            return current(*args, **_strip_session_backed_default(kwargs, default_names))
+
+        setattr(wrapped, "_portfolio_widget_default_guard", True)
+        setattr(owner, method_name, wrapped)
+
+    for name, default_names in default_kwargs_by_method.items():
+        _patch_method(DeltaGenerator, name, default_names)
+        _patch_method(st, name, default_names)
+
+
 def _translate_plotly_figure(fig: Any) -> Any:
     if fig is None:
         return fig
@@ -53628,6 +53673,7 @@ def main() -> None:
 
     _apply_runtime_theme(bool(st.session_state.get("ui_dark_mode", False)))
     _install_dark_plotly_renderer()
+    _install_widget_session_default_guard()
     _apply_ui_layout_preferences()
     _render_settings_dialog()
     _render_contact_dialog()
