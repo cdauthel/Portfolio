@@ -680,6 +680,41 @@ st.markdown(
         border-left-color: #005f73;
         background-color: #f2f7f9;
     }
+    .st-key-main_subpage_nav {
+        border-bottom: 1px solid rgba(0, 95, 115, 0.16);
+        padding: 0 0 0.68rem 0;
+        margin: 0.1rem 0 1rem 0;
+    }
+    .st-key-main_subpage_nav div[data-testid="stButton"] {
+        margin: 0;
+    }
+    .st-key-main_subpage_nav div[data-testid="stButton"] button {
+        min-height: 2.15rem;
+        width: 100%;
+        border-radius: 8px !important;
+        padding: 0.38rem 0.72rem !important;
+        border: 1px solid rgba(0, 95, 115, 0.32) !important;
+        background: rgba(0, 95, 115, 0.035) !important;
+        color: #24343a !important;
+        box-shadow: none !important;
+        transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+    }
+    .st-key-main_subpage_nav div[data-testid="stButton"] button:hover {
+        border-color: #005f73 !important;
+        background: #eff7fa !important;
+        color: #005f73 !important;
+    }
+    .st-key-main_subpage_nav div[data-testid="stButton"] button[kind="primary"] {
+        border-color: #005f73 !important;
+        background: rgba(0, 95, 115, 0.12) !important;
+        color: #005f73 !important;
+        font-weight: 650 !important;
+        box-shadow: inset 0 0 0 1px rgba(0, 95, 115, 0.08) !important;
+    }
+    .st-key-main_subpage_nav div[data-testid="stButton"] button p {
+        white-space: nowrap;
+        text-align: center;
+    }
     /* Sous-menu horizontal: boutons encadrés comme la navigation latérale */
     div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Sous-menu"] {
         gap: 0.45rem;
@@ -1236,6 +1271,25 @@ def _apply_runtime_theme(dark_mode: bool) -> None:
             border-left-color: var(--dm-accent);
             background-color: var(--dm-surface-raised);
         }
+        .st-key-main_subpage_nav {
+            border-bottom-color: var(--dm-border) !important;
+        }
+        .st-key-main_subpage_nav div[data-testid="stButton"] button {
+            background: var(--dm-panel-inner) !important;
+            border-color: var(--dm-border) !important;
+            color: var(--dm-text-soft) !important;
+        }
+        .st-key-main_subpage_nav div[data-testid="stButton"] button:hover {
+            background: var(--dm-surface-raised) !important;
+            border-color: var(--dm-border-strong) !important;
+            color: var(--dm-text) !important;
+        }
+        .st-key-main_subpage_nav div[data-testid="stButton"] button[kind="primary"] {
+            background: var(--dm-surface-raised) !important;
+            border-color: var(--dm-accent-2) !important;
+            color: var(--dm-text) !important;
+            box-shadow: inset 0 0 0 1px rgba(254, 254, 254, 0.18) !important;
+        }
         div[data-testid="stRadio"] div[role="radiogroup"][aria-label="Sous-menu"] {
             border-bottom-color: var(--dm-border) !important;
         }
@@ -1540,9 +1594,25 @@ def _nav_group_button_key(group_name: str) -> str:
     return f"nav_group_{slug}"
 
 
+def _subpage_button_key(section_name: str, subpage_name: str) -> str:
+    section_slug = re.sub(r"[^a-zA-Z0-9_]+", "_", section_name).strip("_").lower()
+    subpage_slug = re.sub(r"[^a-zA-Z0-9_]+", "_", subpage_name).strip("_").lower()
+    return f"subpage_btn_{section_slug}_{subpage_slug}"
+
+
 def _toggle_sidebar_nav_group(group_name: str) -> None:
     current = st.session_state.get("sidebar_open_nav_group")
     st.session_state["sidebar_open_nav_group"] = None if current == group_name else group_name
+
+
+def _activate_main_subpage(section_name: str, subpage_name: str) -> None:
+    st.session_state["_explicit_subpage_navigation"] = True
+    st.session_state["menu_section"] = section_name
+    st.session_state.setdefault("subpage_by_section", {})
+    st.session_state["subpage_by_section"][section_name] = subpage_name
+    st.session_state[f"submenu_{section_name}"] = subpage_name
+    st.session_state["_stable_menu_section"] = section_name
+    st.session_state["_stable_subpage"] = subpage_name
 
 
 def _activate_sidebar_section(section_name: str, group_name: str | None = None) -> None:
@@ -53915,16 +53985,23 @@ def main() -> None:
     subpage_key = f"submenu_{section}"
     if subpage_key not in st.session_state or st.session_state[subpage_key] not in subpages:
         st.session_state[subpage_key] = default_subpage if default_subpage in subpages else subpages[0]
-    subpage = st.radio(
-        "Sous-menu",
-        subpages,
-        horizontal=True,
-        label_visibility="collapsed",
-        key=subpage_key,
-        format_func=_display_subpage_label,
-        on_change=_mark_explicit_subpage_navigation,
-        args=(section,),
-    )
+    subpage = str(st.session_state[subpage_key])
+    subpage_nav = st.container(key="main_subpage_nav")
+    pages_per_row = 5
+    for row_start in range(0, len(subpages), pages_per_row):
+        row_pages = subpages[row_start : row_start + pages_per_row]
+        row_cols = subpage_nav.columns(len(row_pages), gap="small")
+        for col, page_name in zip(row_cols, row_pages, strict=False):
+            is_active = page_name == subpage
+            if col.button(
+                _display_subpage_label(page_name),
+                key=_subpage_button_key(section, page_name),
+                type="primary" if is_active else "secondary",
+                width="stretch",
+                on_click=_activate_main_subpage,
+                args=(section, page_name),
+            ):
+                subpage = page_name
     st.session_state["subpage_by_section"][section] = subpage
     _remember_rendered_navigation(section, subpage)
     _scroll_to_top_on_navigation(section, subpage)
