@@ -4594,7 +4594,21 @@ def render_profile_cv() -> None:
     root = Path(__file__).resolve().parents[1]
     cv_dir = root / "assets" / "cv"
 
-    image_candidates = [
+    cv_page_candidates = [
+        [
+            cv_dir / "CV_Dauthel_Cyriack_Portofolio1.png",
+            cv_dir / "CV_Dauthel_Cyriack_Portofolio1.jpg",
+            root / "CV_Dauthel_Cyriack_Portofolio1.png",
+            root / "CV_Dauthel_Cyriack_Portofolio1.jpg",
+        ],
+        [
+            cv_dir / "CV_Dauthel_Cyriack_Portofolio2.png",
+            cv_dir / "CV_Dauthel_Cyriack_Portofolio2.jpg",
+            root / "CV_Dauthel_Cyriack_Portofolio2.png",
+            root / "CV_Dauthel_Cyriack_Portofolio2.jpg",
+        ],
+    ]
+    legacy_image_candidates = [
         cv_dir / "CV_Dauthel_Cyriack.png",
         cv_dir / "CV_Dauthel_Cyriack.jpg",
         cv_dir / "CV_Cyriack_Dauthel.png",
@@ -4605,18 +4619,30 @@ def render_profile_cv() -> None:
         root / "CV_Dauthel_Cyriack.jpg",
     ]
     pdf_candidates = [
+        cv_dir / "CV_Dauthel_Cyriack_Portofolio.pdf",
+        root / "CV_Dauthel_Cyriack_Portofolio.pdf",
         cv_dir / "CV_Dauthel_Cyriack.pdf",
         cv_dir / "CV_Cyriack_Dauthel.pdf",
         root / "CV_Cyriack_Dauthel.pdf",
         root / "CV_Dauthel_Cyriack.pdf",
     ]
-    cv_image = next((p for p in image_candidates if p.exists()), None)
+    cv_pages = [
+        page_file
+        for page_candidates in cv_page_candidates
+        for page_file in [next((p for p in page_candidates if p.exists()), None)]
+        if page_file is not None
+    ]
+    if not cv_pages:
+        legacy_cv_image = next((p for p in legacy_image_candidates if p.exists()), None)
+        cv_pages = [legacy_cv_image] if legacy_cv_image is not None else []
     cv_pdf = next((p for p in pdf_candidates if p.exists()), None)
 
     col_left, col_right = st.columns([2.1, 1.0])
     with col_left:
-        if cv_image:
-            st.image(str(cv_image), caption="CV - aperçu", width="stretch")
+        if cv_pages:
+            for page_idx, cv_image in enumerate(cv_pages, start=1):
+                caption = f"CV - page {page_idx}" if len(cv_pages) > 1 else "CV - aperçu"
+                st.image(str(cv_image), caption=caption, width="stretch")
         else:
             st.warning("Image du CV introuvable dans `assets/cv/`.")
         st.markdown("### Aujourd'hui je me forme à...")
