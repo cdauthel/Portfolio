@@ -4585,11 +4585,11 @@ python -m py_compile app/main.py""",
 def render_profile_cv() -> None:
     st.markdown(
         "Ingénieur passionné, je conçois des solutions à fort impact mêlant intégration et analyse de données, "
-        "modélisation statistique et ingénierie de la donnée. Entre French Tech et recherche publique, j’ai "
+        "modélisation statistique et ingénierie de la donnée. Entre French Tech et recherche, j’ai "
         "déployé des outils d’aide à la décision, des modèles prédictifs et des pipelines robustes dans des "
-        "environnements urbains, industriels et agro-environnementaux. Curieux, rigoureux et orienté résultats, "
-        "je cherche à mettre mon expertise au service de projets à fort enjeu métier au sein d’une organisation "
-        "ambitieuse où la donnée est un moteur stratégique."
+        "environnements urbains, industriels et publics. Curieux, rigoureux et orienté résultats, je recherche "
+        "un poste stimulant au sein d’une organisation où je pourrai mobiliser mes compétences pour soutenir "
+        "les décisions stratégiques, améliorer la performance et contribuer à des projets à fort enjeu métier."
     )
     root = Path(__file__).resolve().parents[1]
     cv_dir = root / "assets" / "cv"
@@ -4769,8 +4769,17 @@ Chaque partie est sélectionnable pour une lecture fluide.
 - Collecte de données de production et participation aux analyses statistiques.
         """,
         "Expériences professionnelles": """
+### Compétences & Métiers
+**Consultant Data Analyst & Data Scientist, Freelance (9 mois, Paris) - 2025/2026**
+
+- Analyse des besoins de la direction et des équipes métiers, cartographie des sources et des processus existants, puis traduction en **KPI, règles de gestion et besoins Data**. Extraction, transformation et consolidation de données hétérogènes avec **SQL et Python**, avec mise en place de contrôles qualité et détection des incohérences.
+- Conception de **dashboards Power BI** dédiés au suivi de la performance, structuration des indicateurs et création de vues dynamiques pour analyser l’activité par période, produit, segment ou autre dimension métier. Automatisation et standardisation du reporting.
+- Développement de scripts **Python** pour automatiser la collecte et le traitement des données, intégration d’**APIs REST/JSON** et mise en place de traitements reproductibles afin de limiter les opérations manuelles et fiabiliser les flux.
+- Réalisation d’analyses exploratoires et statistiques : suivi des performances, analyse des tendances, écarts et anomalies, **tests statistiques et A/B testing**. Restitution des résultats sous forme de dashboards et de synthèses, accompagnée de recommandations opérationnelles à destination de la direction.
+- Analyse de **données commerciales, marketing et opérationnelles** pour identifier les facteurs de performance, construction de **modèles statistiques prédictifs et de segmentation**, analyse des tendances afin d’appuyer le pilotage de l’activité et les décisions business.
+
 ### VivaTech (ex. Groupe Publicis)
-**Consultant Data Analyst et Data-Scientist, Freelance (3 mois, Paris) - 2026**
+**Consultant Data Analyst, Freelance (3 mois, Paris) - 2026**
 
 - Gestion de projet: recueil du besoin data (sales, stakeholders internes et partenaires de l'evenement), formalisation des KPI, roadmap, benchmark et definition de la stack.
 - Conception de dashboards, mise en place des methodes de diffusion, cahier des charges, specifications fonctionnelles et techniques, dictionnaire de donnees et guide utilisateur, API web et API LLM.
